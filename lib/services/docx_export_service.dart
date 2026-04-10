@@ -134,12 +134,12 @@ class DocxExportService {
     final normalizedTeacher = teacherName?.trim() ?? '';
     final normalizedSchool = schoolName?.trim() ?? '';
     if (normalizedTeacher.isNotEmpty || normalizedSchool.isNotEmpty) {
-      const emptyColumnPadding = ['', ''];
+      const additionalEmptyCells = ['', ''];
       rows.add(
         _headerRow([
           normalizedTeacher.isEmpty ? '' : 'Teacher: $normalizedTeacher',
           normalizedSchool.isEmpty ? '' : 'School: $normalizedSchool',
-          ...emptyColumnPadding,
+          ...additionalEmptyCells,
         ]),
       );
     }
