@@ -71,4 +71,34 @@ void main() {
     expect(quizXml, contains('ScienceQuiz'));
     expect(quizXml, contains('What is HO?'));
   });
+
+  test('injects math as raw OMML XML in cell paragraph', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V2',
+      quizId: quiz.id,
+      seed: 3,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Compute',
+          math: r'\frac{1}{2}',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: [
+            QuestionOption(id: 'o1', text: 'Answer', math: r'\sqrt{4}'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect(quizXml, contains('xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'));
+    expect(quizXml, contains('<m:oMath>'));
+    expect(quizXml, contains('(1)/(2)'));
+    expect(quizXml, isNot(contains('&lt;m:oMath&gt;')));
+  });
 }

@@ -125,7 +125,7 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
-      final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
+      final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[Image: ${question.imageRef.trim()}]');
       }
@@ -138,6 +138,7 @@ class DocxExportService {
               prompt.toString(),
               colSpan: 3,
               rtl: isRtl,
+              mathXml: _mathToOmml(question.math),
               imageRelationshipId: imageAsset?.relationshipId,
             ),
           ],
@@ -149,9 +150,14 @@ class DocxExportService {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
         }
-        final text =
-            '${labels[index]}) ${_composeForExport(text: question.options[index].text, math: question.options[index].math)}';
-        return _cell(text, rtl: isRtl);
+        final option = question.options[index];
+        final optionText = _normalizeTextForExport(option.text);
+        final text = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
+        return _cell(
+          text,
+          rtl: isRtl,
+          mathXml: _mathToOmml(option.math),
+        );
       });
 
       rows.add(_row(optionCells));
@@ -202,7 +208,7 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
-      final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
+      final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[Image: ${question.imageRef.trim()}]');
       }
@@ -214,6 +220,7 @@ class DocxExportService {
             prompt.toString(),
             colSpan: 3,
             rtl: isRtl,
+            mathXml: _mathToOmml(question.math),
             imageRelationshipId: imageAsset?.relationshipId,
           ),
         ]),
@@ -227,12 +234,14 @@ class DocxExportService {
 
         final option = question.options[index];
         final isCorrect = option.id == question.correctOptionId;
-        final text = '${labels[index]}) ${_composeForExport(text: option.text, math: option.math)}';
+        final optionText = _normalizeTextForExport(option.text);
+        final text = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
         return _cell(
           text,
           rtl: isRtl,
           bold: isCorrect,
           fillColor: isCorrect ? 'C6EFCE' : null,
+          mathXml: _mathToOmml(option.math),
         );
       });
 
@@ -250,7 +259,7 @@ class DocxExportService {
     final bidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
   <w:body>
     <w:p>
       <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
@@ -313,6 +322,7 @@ class DocxExportService {
     String? fillColor,
     String align = 'left',
     bool rtl = false,
+    String? mathXml,
     String? imageRelationshipId,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
@@ -321,6 +331,7 @@ class DocxExportService {
     final effectiveAlign = align == 'left' ? fallbackAlign : align;
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
     final runs = _paragraphRuns(text, bold: bold);
+    final mathBlock = mathXml == null || mathXml.trim().isEmpty ? '' : '\n    $mathXml';
     final bidi = rtl ? '<w:bidi/>' : '';
     final imageParagraph = imageRelationshipId == null
         ? ''
@@ -347,7 +358,7 @@ class DocxExportService {
   </w:tcPr>
   <w:p>
     <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
-    $runs
+    $runs$mathBlock
   </w:p>
   $imageParagraph
 </w:tc>''';
@@ -674,7 +685,7 @@ class DocxExportService {
     required String text,
     required String math,
   }) {
-    final normalizedText = FriendlyMathFormatter.format(text);
+    final normalizedText = _normalizeTextForExport(text);
     final normalizedMath = FriendlyMathFormatter.format(math);
     if (normalizedMath.isEmpty) {
       return normalizedText;
@@ -683,6 +694,20 @@ class DocxExportService {
       return normalizedMath;
     }
     return '$normalizedText  ($normalizedMath)';
+  }
+
+  String _normalizeTextForExport(String text) {
+    return FriendlyMathFormatter.format(text);
+  }
+
+  String? _mathToOmml(String math) {
+    final normalized = FriendlyMathFormatter.format(math).trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+
+    final sanitized = normalized.replaceAll('\n', ' ');
+    return '<m:oMath><m:r><m:t>${_escape(sanitized)}</m:t></m:r></m:oMath>';
   }
 
   bool _containsArabic(String value) {
