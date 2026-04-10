@@ -154,17 +154,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                 controller: cropController,
                 interactive: true,
                 onCropped: (result) {
-                  try {
-                    final maybeImage = (result as dynamic).croppedImage;
-                    if (maybeImage is Uint8List && !completer.isCompleted) {
-                      completer.complete(maybeImage);
-                    } else if (!completer.isCompleted) {
-                      completer.complete(null);
-                    }
-                  } catch (_) {
+                  if (result is CropSuccess) {
                     if (!completer.isCompleted) {
-                      completer.complete(null);
+                      completer.complete(result.croppedImage);
                     }
+                  } else if (!completer.isCompleted) {
+                    completer.complete(null);
                   }
 
                   if (Navigator.of(cropDialogContext).canPop()) {
