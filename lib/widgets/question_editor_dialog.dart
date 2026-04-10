@@ -413,7 +413,7 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     final text = widget.controller.text;
     final selection = widget.controller.selection;
 
-    if (!selection.isValid || selection.start < 0 || selection.end < 0) {
+    if (!selection.isValid) {
       final appended = '$text$symbol';
       widget.controller.value = widget.controller.value.copyWith(
         text: appended,
@@ -423,9 +423,8 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
       return;
     }
 
-    final isForwardSelection = selection.start <= selection.end;
-    final start = isForwardSelection ? selection.start : selection.end;
-    final end = isForwardSelection ? selection.end : selection.start;
+    final start = selection.start;
+    final end = selection.end;
     final newText = text.replaceRange(start, end, symbol);
     final safeCursorOffset = cursorOffset.clamp(0, symbol.length);
     final targetOffset = start + symbol.length - safeCursorOffset;
