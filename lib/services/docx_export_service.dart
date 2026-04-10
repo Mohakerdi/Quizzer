@@ -120,37 +120,43 @@ class DocxExportService {
       _headerRow([
         'Solutions: ${quiz.title}',
         'Variant: ${variant.id}',
-        'Total: ${variant.questions.length}',
+        'Questions: ${variant.questions.length}',
         '',
-      ]),
-      _row([
-        _cell('Q#', bold: true, align: 'center', rtl: isRtl),
-        _cell('Correct Option', bold: true, align: 'center', rtl: isRtl),
-        _cell('Correct Answer', bold: true, rtl: isRtl),
-        _cell('Question', bold: true, rtl: isRtl),
       ]),
     ];
 
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
-      final options = question.options;
-      final correctIndex = options.indexWhere((o) => o.id == question.correctOptionId);
-      final resolvedIndex = correctIndex < 0 ? 0 : correctIndex;
-      final correct = options.isNotEmpty ? options[resolvedIndex] : null;
-      final optionLetter = ['A', 'B', 'C', 'D'];
-      final letter = resolvedIndex < optionLetter.length ? optionLetter[resolvedIndex] : '#${resolvedIndex + 1}';
+      final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
+      if (question.imageRef.trim().isNotEmpty) {
+        prompt.write('\n[Image: ${question.imageRef.trim()}]');
+      }
 
       rows.add(
         _row([
           _cell('${i + 1}', align: 'center', rtl: isRtl),
-          _cell(letter, align: 'center', bold: true, rtl: isRtl),
-          _cell(
-            correct == null ? '-' : _composeForExport(text: correct.text, math: correct.math),
-            rtl: isRtl,
-          ),
-          _cell(_composeForExport(text: question.text, math: question.math), rtl: isRtl),
+          _cell(prompt.toString(), colSpan: 3, rtl: isRtl),
         ]),
       );
+
+      final labels = ['A', 'B', 'C', 'D'];
+      final optionCells = List.generate(4, (index) {
+        if (index >= question.options.length) {
+          return _cell('', rtl: isRtl);
+        }
+
+        final option = question.options[index];
+        final isCorrect = option.id == question.correctOptionId;
+        final text = '${labels[index]}) ${_composeForExport(text: option.text, math: option.math)}';
+        return _cell(
+          text,
+          rtl: isRtl,
+          bold: isCorrect,
+          fillColor: isCorrect ? 'C6EFCE' : null,
+        );
+      });
+
+      rows.add(_row(optionCells));
     }
 
     return _documentTemplate(
@@ -211,7 +217,7 @@ class DocxExportService {
             value,
             bold: true,
             align: 'center',
-            shaded: true,
+            fillColor: 'EDEDED',
           ),
         )
         .toList();
@@ -224,12 +230,12 @@ class DocxExportService {
     String text, {
     int colSpan = 1,
     bool bold = false,
-    bool shaded = false,
+    String? fillColor,
     String align = 'left',
     bool rtl = false,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
-    final shading = shaded ? '<w:shd w:val="clear" w:fill="EDEDED"/>' : '';
+    final shading = fillColor == null ? '' : '<w:shd w:val="clear" w:fill="$fillColor"/>';
     final fallbackAlign = rtl ? 'right' : 'left';
     final effectiveAlign = align == 'left' ? fallbackAlign : align;
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');

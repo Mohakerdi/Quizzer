@@ -9,7 +9,6 @@ import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/services/editor_validator.dart';
-import 'package:adv_basics/widgets/math_input_field.dart';
 
 class QuizEditorScreen extends StatefulWidget {
   const QuizEditorScreen({
@@ -129,11 +128,24 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     return cropped?.path;
   }
 
+  String _mergeLegacyTextAndMath(String text, String math) {
+    final normalizedText = text.trim();
+    final normalizedMath = math.trim();
+    if (normalizedMath.isEmpty) {
+      return normalizedText;
+    }
+    if (normalizedText.isEmpty) {
+      return normalizedMath;
+    }
+    return '$normalizedText\n$normalizedMath';
+  }
+
   Future<void> _editQuestion({QuizQuestion? existing, int? index}) async {
     final source = existing ?? QuizQuestion.create();
 
-    final textController = TextEditingController(text: source.text);
-    var math = source.math;
+    final questionContentController = TextEditingController(
+      text: _mergeLegacyTextAndMath(source.text, source.math),
+    );
     var imagePath = source.imageRef;
     var options = source.options
         .map(
@@ -151,60 +163,58 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       required void Function(void Function()) setQuestionDialogState,
     }) async {
       final existingOption = optionIndex == null ? QuestionOption.create() : options[optionIndex];
-      final optionTextController = TextEditingController(text: existingOption.text);
-      var optionMath = existingOption.math;
+      final optionContentController = TextEditingController(
+        text: _mergeLegacyTextAndMath(existingOption.text, existingOption.math),
+      );
 
       await showDialog<void>(
         context: context,
-        builder: (ctx) => StatefulBuilder(
-          builder: (ctx, setLocalState) => AlertDialog(
-            title: Text(optionIndex == null ? 'Add option' : 'Edit option'),
-            content: SizedBox(
-              width: 520,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: optionTextController,
-                      decoration: const InputDecoration(labelText: 'Option text'),
+        builder: (ctx) => AlertDialog(
+          title: Text(optionIndex == null ? 'Add option' : 'Edit option'),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: optionContentController,
+                    minLines: 2,
+                    maxLines: 5,
+                    decoration: const InputDecoration(
+                      labelText: 'Option content',
+                      hintText: 'Write text or formula in one place',
                     ),
-                    const SizedBox(height: 12),
-                    MathInputField(
-                      label: 'Option math (LaTeX)',
-                      initialValue: optionMath,
-                      onChanged: (value) => setLocalState(() => optionMath = value),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final option = existingOption.copyWith(
-                    text: optionTextController.text,
-                    math: optionMath,
-                  );
-
-                  setQuestionDialogState(() {
-                    if (optionIndex == null) {
-                      options = [...options, option];
-                      correctOptionId = options.length == 1 ? option.id : correctOptionId;
-                    } else {
-                      options[optionIndex] = option;
-                    }
-                  });
-
-                  Navigator.of(ctx).pop();
-                },
-                child: const Text('Save'),
-              ),
-            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final option = existingOption.copyWith(
+                  text: optionContentController.text,
+                  math: '',
+                );
+
+                setQuestionDialogState(() {
+                  if (optionIndex == null) {
+                    options = [...options, option];
+                    correctOptionId = options.length == 1 ? option.id : correctOptionId;
+                  } else {
+                    options[optionIndex] = option;
+                  }
+                });
+
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
         ),
       );
     }
@@ -221,14 +231,13 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
-                    controller: textController,
-                    decoration: const InputDecoration(labelText: 'Question text'),
-                  ),
-                  const SizedBox(height: 12),
-                  MathInputField(
-                    label: 'Question math (LaTeX)',
-                    initialValue: math,
-                    onChanged: (value) => setLocalState(() => math = value),
+                    controller: questionContentController,
+                    minLines: 3,
+                    maxLines: 8,
+                    decoration: const InputDecoration(
+                      labelText: 'Question content',
+                      hintText: 'Write question text and formulas in one place',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -323,12 +332,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                           spacing: 4,
                           children: [
                             IconButton(
-                               icon: const Icon(Icons.edit),
-                               onPressed: () => openOptionEditor(
-                                 optionIndex: optionIndex,
-                                 setQuestionDialogState: setLocalState,
-                               ),
-                             ),
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => openOptionEditor(
+                                optionIndex: optionIndex,
+                                setQuestionDialogState: setLocalState,
+                              ),
+                            ),
                             IconButton(
                               icon: const Icon(Icons.delete),
                               onPressed: options.length <= 2
@@ -341,7 +350,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                                         }
                                       });
                                     },
-                            ),
+                             ),
                           ],
                         ),
                       ),
@@ -359,8 +368,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
             FilledButton(
               onPressed: () {
                 final updated = source.copyWith(
-                  text: textController.text,
-                  math: math,
+                  text: questionContentController.text,
+                  math: '',
                   imageRef: imagePath,
                   options: options,
                   correctOptionId: correctOptionId,

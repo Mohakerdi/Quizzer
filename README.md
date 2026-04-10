@@ -10,6 +10,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
    - Add/edit/remove/reorder questions.
    - Add/edit/remove options.
    - Mark the correct option by stable option ID.
+   - Unified single content field for question/option writing (text + formulas together).
    - Select question images from gallery and crop before saving.
 3. **Math-friendly authoring**
    - GeoGebra-like math keyboard input (`math_keyboard` package).
@@ -22,7 +23,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
    - Preview generated variants before exporting.
 6. **Export DOCX**
     - Export question paper DOCX (table-based layout).
-    - Export solutions DOCX (separate document with answer key).
+    - Export solutions DOCX using the same layout, with correct options highlighted.
     - Math text is exported in formula-style plain math output (not raw LaTeX markers).
 
 ## Persistence
