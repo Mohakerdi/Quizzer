@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:math_keyboard/math_keyboard.dart';
 
 class MathInputField extends StatefulWidget {
   const MathInputField({
@@ -20,26 +21,23 @@ class MathInputField extends StatefulWidget {
 }
 
 class _MathInputFieldState extends State<MathInputField> {
-  static const _symbols = [
-    r'\frac{}{}',
-    r'\sqrt{}',
-    '^{}',
-    '_{}',
-    r'\pi',
-    r'\theta',
-    r'\leq',
-    r'\geq',
-    r'\neq',
-    r'\times',
-    r'\div',
-  ];
-
-  late final TextEditingController _controller;
+  late final MathFieldEditingController _controller;
+  String _value = '';
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+    _controller = MathFieldEditingController();
+    _value = widget.initialValue;
+
+    if (_value.trim().isNotEmpty) {
+      try {
+        final expression = TeXParser(_value).parse();
+        _controller.updateValue(expression);
+      } catch (_) {
+        // Keep empty controller state if initial value cannot be parsed.
+      }
+    }
   }
 
   @override
@@ -48,48 +46,28 @@ class _MathInputFieldState extends State<MathInputField> {
     super.dispose();
   }
 
-  void _appendSymbol(String symbol) {
-    final text = _controller.text;
-    final selection = _controller.selection;
-    final cursor = selection.baseOffset < 0 ? text.length : selection.baseOffset;
-    final updated = text.replaceRange(cursor, cursor, symbol);
-    _controller.text = updated;
-    _controller.selection = TextSelection.collapsed(offset: cursor + symbol.length);
-    widget.onChanged(_controller.text);
-    setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        MathField(
           controller: _controller,
+          keyboardType: MathKeyboardType.expression,
+          variables: const ['x', 'y', 'z', 'a', 'b', 'c'],
           decoration: InputDecoration(
             labelText: widget.label,
             hintText: widget.hint,
+            border: const OutlineInputBorder(),
+            helperText: 'GeoGebra-like math keyboard enabled',
           ),
           onChanged: (value) {
+            setState(() => _value = value);
             widget.onChanged(value);
-            setState(() {});
           },
         ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: _symbols
-              .map(
-                (symbol) => ActionChip(
-                  label: Text(symbol),
-                  onPressed: () => _appendSymbol(symbol),
-                ),
-              )
-              .toList(),
-        ),
         const SizedBox(height: 8),
-        if (_controller.text.trim().isNotEmpty)
+        if (_value.trim().isNotEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(10),
@@ -98,7 +76,7 @@ class _MathInputFieldState extends State<MathInputField> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Math.tex(
-              _controller.text,
+              _value,
               onErrorFallback: (error) => Text(
                 'Invalid math expression',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),

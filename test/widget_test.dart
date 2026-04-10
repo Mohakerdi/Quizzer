@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:adv_basics/app.dart';
 
 void main() {
   testWidgets('renders quiz maker shell', (tester) async {
+    SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const QuizMakerApp());
     await tester.pumpAndSettle();
 

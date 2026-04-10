@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
@@ -9,6 +10,7 @@ class QuizMakerState extends Equatable {
     required this.selectedQuiz,
     required this.generatedVariants,
     required this.isLoading,
+    required this.locale,
     this.message,
   });
 
@@ -16,6 +18,7 @@ class QuizMakerState extends Equatable {
   final QuizModel? selectedQuiz;
   final List<GeneratedVariant> generatedVariants;
   final bool isLoading;
+  final Locale locale;
   final String? message;
 
   const QuizMakerState.initial()
@@ -23,6 +26,7 @@ class QuizMakerState extends Equatable {
         selectedQuiz = null,
         generatedVariants = const [],
         isLoading = true,
+        locale = const Locale('en'),
         message = null;
 
   QuizMakerState copyWith({
@@ -31,6 +35,7 @@ class QuizMakerState extends Equatable {
     bool clearSelectedQuiz = false,
     List<GeneratedVariant>? generatedVariants,
     bool? isLoading,
+    Locale? locale,
     String? message,
     bool clearMessage = false,
   }) {
@@ -39,10 +44,11 @@ class QuizMakerState extends Equatable {
       selectedQuiz: clearSelectedQuiz ? null : (selectedQuiz ?? this.selectedQuiz),
       generatedVariants: generatedVariants ?? this.generatedVariants,
       isLoading: isLoading ?? this.isLoading,
+      locale: locale ?? this.locale,
       message: clearMessage ? null : (message ?? this.message),
     );
   }
 
   @override
-  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, isLoading, message];
+  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, isLoading, locale, message];
 }

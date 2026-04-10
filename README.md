@@ -12,8 +12,9 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
    - Mark the correct option by stable option ID.
    - Optional fields: image reference, topic, difficulty.
 3. **Math-friendly authoring**
-   - Math input field with quick symbol palette.
+   - GeoGebra-like math keyboard input (`math_keyboard` package).
    - Live LaTeX preview for math expressions.
+   - Supports richer function/operator entry than simple symbol chips.
 4. **Generate Variants**
    - Generate multiple shuffled versions.
    - Question and option order are shuffled while preserving correct answers.
@@ -32,6 +33,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 - The question paper DOCX is table-based and print-friendly, but exact visual parity with the provided reference images may need further styling refinements.
 - Image references are currently stored/exported as text references in the document.
 - Solutions layout is implemented as a structured answer-key table and can be adjusted once final template details are confirmed.
+- Arabic locale/RTL is supported in UI and DOCX text flow for Arabic content detection.
 
 ## Development
 

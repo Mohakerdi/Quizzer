@@ -52,6 +52,13 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) {
+    final isRtl = _containsArabic(
+      [
+        quiz.title,
+        ...variant.questions.map((q) => q.composedPrompt),
+        ...variant.questions.expand((q) => q.options.map((o) => o.composedText)),
+      ].join(' '),
+    );
     final rows = <String>[
       _headerRow([
         'Quiz: ${quiz.title}',
@@ -71,8 +78,8 @@ class DocxExportService {
       rows.add(
         _row(
           [
-            _cell('Q${i + 1}', bold: true, align: 'center'),
-            _cell(prompt.toString(), colSpan: 3),
+            _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
+            _cell(prompt.toString(), colSpan: 3, rtl: isRtl),
           ],
         ),
       );
@@ -80,10 +87,10 @@ class DocxExportService {
       final labels = ['A', 'B', 'C', 'D'];
       final optionCells = List.generate(4, (index) {
         if (index >= question.options.length) {
-          return _cell('');
+          return _cell('', rtl: isRtl);
         }
         final text = '${labels[index]}) ${question.options[index].composedText}';
-        return _cell(text);
+        return _cell(text, rtl: isRtl);
       });
 
       rows.add(_row(optionCells));
@@ -92,6 +99,7 @@ class DocxExportService {
     return _documentTemplate(
       title: 'Question Paper',
       body: _table(rows.join()),
+      rtl: isRtl,
     );
   }
 
@@ -100,6 +108,13 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) {
+    final isRtl = _containsArabic(
+      [
+        quiz.title,
+        ...variant.questions.map((q) => q.composedPrompt),
+        ...variant.questions.expand((q) => q.options.map((o) => o.composedText)),
+      ].join(' '),
+    );
     final rows = <String>[
       _headerRow([
         'Solutions: ${quiz.title}',
@@ -108,10 +123,10 @@ class DocxExportService {
         '',
       ]),
       _row([
-        _cell('Q#', bold: true, align: 'center'),
-        _cell('Correct Option', bold: true, align: 'center'),
-        _cell('Correct Answer', bold: true),
-        _cell('Question', bold: true),
+        _cell('Q#', bold: true, align: 'center', rtl: isRtl),
+        _cell('Correct Option', bold: true, align: 'center', rtl: isRtl),
+        _cell('Correct Answer', bold: true, rtl: isRtl),
+        _cell('Question', bold: true, rtl: isRtl),
       ]),
     ];
 
@@ -126,10 +141,10 @@ class DocxExportService {
 
       rows.add(
         _row([
-          _cell('${i + 1}', align: 'center'),
-          _cell(letter, align: 'center', bold: true),
-          _cell(correct?.composedText ?? '-'),
-          _cell(question.composedPrompt),
+          _cell('${i + 1}', align: 'center', rtl: isRtl),
+          _cell(letter, align: 'center', bold: true, rtl: isRtl),
+          _cell(correct?.composedText ?? '-', rtl: isRtl),
+          _cell(question.composedPrompt, rtl: isRtl),
         ]),
       );
     }
@@ -137,15 +152,18 @@ class DocxExportService {
     return _documentTemplate(
       title: 'Answer Key',
       body: _table(rows.join()),
+      rtl: isRtl,
     );
   }
 
-  String _documentTemplate({required String title, required String body}) {
+  String _documentTemplate({required String title, required String body, required bool rtl}) {
+    final bidi = rtl ? '<w:bidi/>' : '';
+    final jc = rtl ? 'right' : 'center';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
     <w:p>
-      <w:pPr><w:jc w:val="center"/></w:pPr>
+      <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
       <w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${_escape(title)}</w:t></w:r>
     </w:p>
     <w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
@@ -204,11 +222,15 @@ class DocxExportService {
     bool bold = false,
     bool shaded = false,
     String align = 'left',
+    bool rtl = false,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
     final shading = shaded ? '<w:shd w:val="clear" w:fill="EDEDED"/>' : '';
-    final jc = align == 'center' ? 'center' : (align == 'right' ? 'right' : 'left');
+    final fallbackAlign = rtl ? 'right' : 'left';
+    final effectiveAlign = align == 'left' ? fallbackAlign : align;
+    final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
     final runs = _paragraphRuns(text, bold: bold);
+    final bidi = rtl ? '<w:bidi/>' : '';
 
     return '''<w:tc>
   <w:tcPr>
@@ -224,7 +246,7 @@ class DocxExportService {
     </w:tcMar>
   </w:tcPr>
   <w:p>
-    <w:pPr><w:jc w:val="$jc"/></w:pPr>
+    <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
     $runs
   </w:p>
 </w:tc>''';
@@ -255,6 +277,11 @@ class DocxExportService {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
+  }
+
+  bool _containsArabic(String value) {
+    final arabicRange = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
+    return arabicRange.hasMatch(value);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/material.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
@@ -156,5 +157,9 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
       return;
     }
     emit(state.copyWith(clearMessage: true));
+  }
+
+  void setLocale(Locale locale) {
+    emit(state.copyWith(locale: locale));
   }
 }

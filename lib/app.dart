@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:math_keyboard/math_keyboard.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/screens/quiz_editor_screen.dart';
@@ -17,20 +20,31 @@ class QuizMakerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Quizzer Maker',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5D3FD3)),
-      ),
-      home: BlocProvider(
-        create: (_) => QuizMakerCubit(
-          repository: QuizRepository(),
-          variantGenerator: const VariantGenerator(),
-          docxExportService: const DocxExportService(),
-        )..loadData(),
-        child: const QuizMakerHome(),
+    return BlocProvider(
+      create: (_) => QuizMakerCubit(
+        repository: QuizRepository(),
+        variantGenerator: const VariantGenerator(),
+        docxExportService: const DocxExportService(),
+      )..loadData(),
+      child: BlocBuilder<QuizMakerCubit, QuizMakerState>(
+        builder: (context, state) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Quizzer Maker',
+            locale: state.locale,
+            supportedLocales: const [Locale('en'), Locale('ar')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5D3FD3)),
+            ),
+            home: MathKeyboardViewInsets(child: const QuizMakerHome()),
+          );
+        },
       ),
     );
   }
@@ -59,11 +73,11 @@ class QuizMakerHome extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.tr(context, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('OK'),
+            child: Text(AppStrings.tr(context, 'ok')),
           ),
         ],
       ),
@@ -71,7 +85,11 @@ class QuizMakerHome extends StatelessWidget {
   }
 
   Future<void> _createQuiz(BuildContext context) async {
-    final title = await _promptText(context, 'Create Quiz', 'Quiz title');
+    final title = await _promptText(
+      context,
+      AppStrings.tr(context, 'createQuiz'),
+      AppStrings.tr(context, 'quizTitle'),
+    );
     if (title == null || title.trim().isEmpty || !context.mounted) {
       return;
     }
@@ -81,8 +99,8 @@ class QuizMakerHome extends StatelessWidget {
   Future<void> _renameQuiz(BuildContext context, QuizModel quiz) async {
     final title = await _promptText(
       context,
-      'Rename Quiz',
-      'Quiz title',
+      AppStrings.tr(context, 'renameQuiz'),
+      AppStrings.tr(context, 'quizTitle'),
       initialText: quiz.title,
     );
     if (title == null || title.trim().isEmpty || !context.mounted) {
@@ -95,8 +113,8 @@ class QuizMakerHome extends StatelessWidget {
   Future<void> _generateVariants(BuildContext context, QuizModel quiz) async {
     final countText = await _promptText(
       context,
-      'Generate Variants',
-      'How many versions?',
+      AppStrings.tr(context, 'generateVariants'),
+      AppStrings.tr(context, 'howManyVersions'),
       initialText: '2',
     );
 
@@ -109,7 +127,7 @@ class QuizMakerHome extends StatelessWidget {
       context.read<QuizMakerCubit>().clearMessage();
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('Please enter a valid number of variants.')));
+        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'invalidVariantsCount'))));
       return;
     }
 
@@ -149,7 +167,17 @@ class QuizMakerHome extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Quizzer Maker'),
+            title: Text(AppStrings.tr(context, 'appTitle')),
+            actions: [
+              PopupMenuButton<Locale>(
+                icon: const Icon(Icons.language),
+                onSelected: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: Locale('en'), child: Text('English')),
+                  PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
+                ],
+              ),
+            ],
           ),
           body: Row(
             children: [
@@ -168,7 +196,7 @@ class QuizMakerHome extends StatelessWidget {
               const VerticalDivider(width: 1),
               Expanded(
                 child: state.selectedQuiz == null
-                    ? const Center(child: Text('Create or select a quiz to start.'))
+                    ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
                     : QuizEditorScreen(
                         quiz: state.selectedQuiz!,
                         generatedVariants: state.generatedVariants,
@@ -183,7 +211,7 @@ class QuizMakerHome extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _createQuiz(context),
             icon: const Icon(Icons.add),
-            label: const Text('New Quiz'),
+            label: Text(AppStrings.tr(context, 'newQuiz')),
           ),
         );
       },
