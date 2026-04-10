@@ -308,55 +308,52 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _openDocxExportDialogAndExport(GeneratedVariant variant) async {
-    final teacherController = TextEditingController();
-    final schoolController = TextEditingController();
-    final shouldExport = await showDialog<bool>(
+    var teacherNameInput = '';
+    var schoolNameInput = '';
+    final exportDetails = await showDialog<({String teacherName, String schoolName})>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(AppStrings.tr(dialogContext, 'docxExportDetails')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: teacherController,
+            TextFormField(
               decoration: InputDecoration(
                 labelText: AppStrings.tr(dialogContext, 'teacherName'),
               ),
+              onChanged: (value) => teacherNameInput = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: schoolController,
+            TextFormField(
               decoration: InputDecoration(
                 labelText: AppStrings.tr(dialogContext, 'schoolName'),
               ),
+              onChanged: (value) => schoolNameInput = value,
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(AppStrings.tr(dialogContext, 'cancel')),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop((
+              teacherName: teacherNameInput.trim(),
+              schoolName: schoolNameInput.trim(),
+            )),
             child: Text(AppStrings.tr(dialogContext, 'exportDocx')),
           ),
         ],
       ),
     );
-    if (shouldExport != true) {
-      teacherController.dispose();
-      schoolController.dispose();
+    if (exportDetails == null) {
       return;
     }
-    final teacherName = teacherController.text.trim();
-    final schoolName = schoolController.text.trim();
-    teacherController.dispose();
-    schoolController.dispose();
     await widget.onExportVariant(
       variant,
-      teacherName: teacherName.isEmpty ? null : teacherName,
-      schoolName: schoolName.isEmpty ? null : schoolName,
+      teacherName: exportDetails.teacherName.isEmpty ? null : exportDetails.teacherName,
+      schoolName: exportDetails.schoolName.isEmpty ? null : exportDetails.schoolName,
     );
   }
 
