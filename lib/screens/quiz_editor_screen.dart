@@ -308,55 +308,17 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _openDocxExportDialogAndExport(GeneratedVariant variant) async {
-    final teacherController = TextEditingController();
-    final schoolController = TextEditingController();
-    final shouldExport = await showDialog<bool>(
+    final exportDetails = await showDialog<_DocxExportDetails>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(AppStrings.tr(dialogContext, 'docxExportDetails')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: teacherController,
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(dialogContext, 'teacherName'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: schoolController,
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(dialogContext, 'schoolName'),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(AppStrings.tr(dialogContext, 'cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(AppStrings.tr(dialogContext, 'exportDocx')),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => const _DocxExportDetailsDialog(),
     );
-    if (shouldExport != true) {
-      teacherController.dispose();
-      schoolController.dispose();
+    if (exportDetails == null) {
       return;
     }
-    final teacherName = teacherController.text.trim();
-    final schoolName = schoolController.text.trim();
-    teacherController.dispose();
-    schoolController.dispose();
     await widget.onExportVariant(
       variant,
-      teacherName: teacherName.isEmpty ? null : teacherName,
-      schoolName: schoolName.isEmpty ? null : schoolName,
+      teacherName: exportDetails.nullableTeacherName,
+      schoolName: exportDetails.nullableSchoolName,
     );
   }
 
@@ -436,6 +398,78 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DocxExportDetails {
+  const _DocxExportDetails({
+    required this.teacherName,
+    required this.schoolName,
+  });
+
+  final String teacherName;
+  final String schoolName;
+
+  String? get nullableTeacherName => teacherName.isEmpty ? null : teacherName;
+  String? get nullableSchoolName => schoolName.isEmpty ? null : schoolName;
+}
+
+class _DocxExportDetailsDialog extends StatefulWidget {
+  const _DocxExportDetailsDialog();
+
+  @override
+  State<_DocxExportDetailsDialog> createState() => _DocxExportDetailsDialogState();
+}
+
+class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
+  final _teacherController = TextEditingController();
+  final _schoolController = TextEditingController();
+
+  @override
+  void dispose() {
+    _teacherController.dispose();
+    _schoolController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppStrings.tr(context, 'docxExportDetails')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _teacherController,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'teacherName'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _schoolController,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'schoolName'),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(AppStrings.tr(context, 'cancel')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(
+            _DocxExportDetails(
+              teacherName: _teacherController.text.trim(),
+              schoolName: _schoolController.text.trim(),
+            ),
+          ),
+          child: Text(AppStrings.tr(context, 'exportDocx')),
+        ),
+      ],
     );
   }
 }
