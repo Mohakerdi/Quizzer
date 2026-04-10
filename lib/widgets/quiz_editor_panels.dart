@@ -67,53 +67,66 @@ class QuizQuestionsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListView.builder(
-        itemCount: questions.length,
-        itemBuilder: (context, index) {
-          final question = questions[index];
-          return ListTile(
-            title: Row(
+    return ListView.separated(
+      itemCount: questions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final question = questions[index];
+        return Card(
+          elevation: 0,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Q${index + 1}: '),
-                Expanded(
-                  child: MathOrText(
-                    question.composedPrompt,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                Row(
+                  children: [
+                    Text('Q${index + 1}: '),
+                    Expanded(
+                      child: MathOrText(
+                        question.composedPrompt,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppStrings.isArabic(context)
+                      ? 'الخيارات: ${question.options.length}'
+                      : 'Options: ${question.options.length}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_upward),
+                      onPressed: () => onMoveQuestion(index, -1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_downward),
+                      onPressed: () => onMoveQuestion(index, 1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => onEditQuestion(index),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: questions.length <= 1 ? null : () => onRemoveQuestion(index),
+                    ),
+                  ],
                 ),
               ],
             ),
-            subtitle: Text(
-              AppStrings.isArabic(context)
-                  ? 'الخيارات: ${question.options.length}'
-                  : 'Options: ${question.options.length}',
-            ),
-            trailing: Wrap(
-              spacing: 4,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_upward),
-                  onPressed: () => onMoveQuestion(index, -1),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_downward),
-                  onPressed: () => onMoveQuestion(index, 1),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => onEditQuestion(index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: questions.length <= 1 ? null : () => onRemoveQuestion(index),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

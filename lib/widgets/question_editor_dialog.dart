@@ -243,9 +243,6 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 final option = _options[optionIndex];
                 return Card(
                   child: ListTile(
-                    title: Text(
-                      '',
-                    ),
                     title: option.composedText.isEmpty
                         ? Text(AppStrings.tr(context, 'emptyOption'))
                         : MathOrText(
