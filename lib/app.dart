@@ -43,6 +43,15 @@ class QuizMakerApp extends StatelessWidget {
               useMaterial3: true,
               colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5D3FD3)),
             ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF5D3FD3),
+                brightness: Brightness.dark,
+              ),
+            ),
+            themeMode: state.themeMode,
             home: const QuizMakerHome(),
           );
         },
@@ -170,6 +179,13 @@ class QuizMakerHome extends StatelessWidget {
           appBar: AppBar(
             title: Text(AppStrings.tr(context, 'appTitle')),
             actions: [
+              IconButton(
+                icon: Icon(state.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
+                tooltip: state.themeMode == ThemeMode.dark
+                    ? AppStrings.tr(context, 'themeLight')
+                    : AppStrings.tr(context, 'themeDark'),
+                onPressed: () => context.read<QuizMakerCubit>().toggleThemeMode(),
+              ),
               PopupMenuButton<Locale>(
                 icon: const Icon(Icons.language),
                 onSelected: (locale) => context.read<QuizMakerCubit>().setLocale(locale),

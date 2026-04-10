@@ -300,7 +300,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
         width: double.infinity,
         fit: BoxFit.cover,
         errorBuilder: (ctx, __, ___) => Padding(
-          padding: EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8),
           child: Text(AppStrings.tr(ctx, 'unableToLoadImage')),
         ),
       );
@@ -312,7 +312,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       width: double.infinity,
       fit: BoxFit.cover,
       errorBuilder: (ctx, __, ___) => Padding(
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         child: Text(AppStrings.tr(ctx, 'unableToLoadImage')),
       ),
     );

@@ -11,6 +11,7 @@ class QuizMakerState extends Equatable {
     required this.generatedVariants,
     required this.isLoading,
     required this.locale,
+    required this.themeMode,
     this.message,
   });
 
@@ -19,6 +20,7 @@ class QuizMakerState extends Equatable {
   final List<GeneratedVariant> generatedVariants;
   final bool isLoading;
   final Locale locale;
+  final ThemeMode themeMode;
   final String? message;
 
   const QuizMakerState.initial()
@@ -27,6 +29,7 @@ class QuizMakerState extends Equatable {
         generatedVariants = const [],
         isLoading = true,
         locale = const Locale('en'),
+        themeMode = ThemeMode.light,
         message = null;
 
   QuizMakerState copyWith({
@@ -36,6 +39,7 @@ class QuizMakerState extends Equatable {
     List<GeneratedVariant>? generatedVariants,
     bool? isLoading,
     Locale? locale,
+    ThemeMode? themeMode,
     String? message,
     bool clearMessage = false,
   }) {
@@ -45,10 +49,11 @@ class QuizMakerState extends Equatable {
       generatedVariants: generatedVariants ?? this.generatedVariants,
       isLoading: isLoading ?? this.isLoading,
       locale: locale ?? this.locale,
+      themeMode: themeMode ?? this.themeMode,
       message: clearMessage ? null : (message ?? this.message),
     );
   }
 
   @override
-  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, isLoading, locale, message];
+  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, isLoading, locale, themeMode, message];
 }

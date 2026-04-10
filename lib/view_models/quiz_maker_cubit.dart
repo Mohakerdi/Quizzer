@@ -204,4 +204,9 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
   void setLocale(Locale locale) {
     emit(state.copyWith(locale: locale));
   }
+
+  void toggleThemeMode() {
+    final next = state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    emit(state.copyWith(themeMode: next));
+  }
 }

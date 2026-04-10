@@ -61,9 +61,7 @@ class _MathInputFieldState extends State<MathInputField> {
             labelText: widget.label,
             hintText: widget.hint,
             border: const OutlineInputBorder(),
-            helperText: AppStrings.isArabic(context)
-                ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة'
-                : 'GeoGebra-like math keyboard enabled',
+            helperText: AppStrings.tr(context, 'mathKeyboardHelper'),
           ),
           onChanged: (value) {
             setState(() => _value = value);
@@ -82,7 +80,7 @@ class _MathInputFieldState extends State<MathInputField> {
             child: Math.tex(
               _value,
               onErrorFallback: (error) => Text(
-                AppStrings.isArabic(context) ? 'تعبير رياضي غير صالح' : 'Invalid math expression',
+                AppStrings.tr(context, 'invalidMathExpression'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),

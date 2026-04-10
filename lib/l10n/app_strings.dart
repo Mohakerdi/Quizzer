@@ -110,6 +110,10 @@ class AppStrings {
         return ar ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة' : 'GeoGebra-like math keyboard enabled';
       case 'invalidMathExpression':
         return ar ? 'تعبير رياضي غير صالح' : 'Invalid math expression';
+      case 'themeDark':
+        return ar ? 'الوضع الداكن' : 'Dark mode';
+      case 'themeLight':
+        return ar ? 'الوضع الفاتح' : 'Light mode';
       default:
         return key;
     }
