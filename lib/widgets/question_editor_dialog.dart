@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
-import 'package:adv_basics/utils/friendly_math_formatter.dart';
 import 'package:adv_basics/widgets/math_or_text.dart';
 
 typedef PickAndCropImage =
@@ -396,15 +396,23 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     }
   }
 
-  void _insert(String value, {int cursorShift = 0}) {
+  void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
     final current = widget.controller.value;
     final selection = current.selection;
-    final start = selection.start >= 0 ? selection.start : current.text.length;
-    final end = selection.end >= 0 ? selection.end : current.text.length;
-    final updatedText = current.text.replaceRange(start, end, value);
-    final cursor = (start + value.length - cursorShift).clamp(0, updatedText.length);
-    widget.controller.value = TextEditingValue(
-      text: updatedText,
+
+    if (selection.baseOffset == -1 || selection.start < 0 || selection.end < 0) {
+      final text = '${current.text}$symbol';
+      widget.controller.value = current.copyWith(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      return;
+    }
+
+    final newText = current.text.replaceRange(selection.start, selection.end, symbol);
+    final cursor = (selection.start + symbol.length - cursorOffset).clamp(0, newText.length);
+    widget.controller.value = current.copyWith(
+      text: newText,
       selection: TextSelection.collapsed(offset: cursor),
     );
   }
@@ -429,16 +437,16 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
           spacing: 6,
           runSpacing: 6,
           children: [
-            _MathActionChip(label: '√', onTap: () => _insert('√()', cursorShift: 1)),
-            _MathActionChip(label: 'Fraction', onTap: () => _insert('()/()', cursorShift: 4)),
-            _MathActionChip(label: '≤', onTap: () => _insert(' <= ')),
-            _MathActionChip(label: '≥', onTap: () => _insert(' >= ')),
-            _MathActionChip(label: '≠', onTap: () => _insert(' != ')),
-            _MathActionChip(label: 'π', onTap: () => _insert('π')),
-            _MathActionChip(label: 'θ', onTap: () => _insert('θ')),
-            _MathActionChip(label: '×', onTap: () => _insert(' × ')),
-            _MathActionChip(label: '÷', onTap: () => _insert(' ÷ ')),
-            _MathActionChip(label: 'x²', onTap: () => _insert('^2')),
+            _MathActionChip(label: '√', onTap: () => _insertMathSymbol(r'$$\sqrt{}$$', cursorOffset: 3)),
+            _MathActionChip(label: 'Fraction', onTap: () => _insertMathSymbol(r'$$\frac{}{}$$', cursorOffset: 5)),
+            _MathActionChip(label: '≤', onTap: () => _insertMathSymbol(r'$$\leq$$')),
+            _MathActionChip(label: '≥', onTap: () => _insertMathSymbol(r'$$\geq$$')),
+            _MathActionChip(label: '≠', onTap: () => _insertMathSymbol(r'$$\neq$$')),
+            _MathActionChip(label: 'π', onTap: () => _insertMathSymbol(r'$$\pi$$')),
+            _MathActionChip(label: 'θ', onTap: () => _insertMathSymbol(r'$$\theta$$')),
+            _MathActionChip(label: '×', onTap: () => _insertMathSymbol(r'$$\times$$')),
+            _MathActionChip(label: '÷', onTap: () => _insertMathSymbol(r'$$\div$$')),
+            _MathActionChip(label: 'x²', onTap: () => _insertMathSymbol(r'$$^2$$')),
           ],
         ),
         if (text.trim().isNotEmpty) ...[
@@ -450,13 +458,65 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: SelectableText(
-              FriendlyMathFormatter.format(text),
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            child: _MixedMathPreview(text: text),
           ),
         ],
       ],
+    );
+  }
+}
+
+class _MixedMathPreview extends StatelessWidget {
+  const _MixedMathPreview({
+    required this.text,
+  });
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.bodyLarge ?? const TextStyle();
+    final errorColor = Theme.of(context).colorScheme.error;
+    final formulaMatcher = RegExp(r'\$\$(.+?)\$\$', dotAll: true);
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+
+    for (final match in formulaMatcher.allMatches(text)) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, match.start), style: baseStyle));
+      }
+
+      final expression = (match.group(1) ?? '').trim();
+      if (expression.isEmpty) {
+        spans.add(TextSpan(text: text.substring(match.start, match.end), style: baseStyle));
+      } else {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Math.tex(
+              expression,
+              textStyle: baseStyle,
+              onErrorFallback: (_) => Text(
+                text.substring(match.start, match.end),
+                style: baseStyle.copyWith(color: errorColor),
+              ),
+            ),
+          ),
+        );
+      }
+      cursor = match.end;
+    }
+
+    if (cursor < text.length) {
+      spans.add(TextSpan(text: text.substring(cursor), style: baseStyle));
+    }
+
+    if (spans.isEmpty) {
+      spans.add(TextSpan(text: text, style: baseStyle));
+    }
+
+    return RichText(
+      text: TextSpan(style: baseStyle, children: spans),
     );
   }
 }
