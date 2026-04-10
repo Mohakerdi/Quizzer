@@ -1,0 +1,18 @@
+import 'package:adv_basics/utils/friendly_math_formatter.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('normalizes cfrac style fractions', () {
+    expect(
+      FriendlyMathFormatter.format(r'\cfrac{\sin(x)}{x}'),
+      '(sin(x))/(x)',
+    );
+  });
+
+  test('strips leading backslash from math functions for export-safe text', () {
+    expect(
+      FriendlyMathFormatter.format(r'\sin(x) + \cos(x)'),
+      'sin(x) + cos(x)',
+    );
+  });
+}

@@ -30,10 +30,12 @@ class FriendlyMathFormatter {
       return '√(${m.group(1)})';
     });
 
-    final fracLatex = RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}');
+    final fracLatex = RegExp(r'\\(?:cfrac|dfrac|tfrac|frac)\{([^{}]+)\}\{([^{}]+)\}');
     while (fracLatex.hasMatch(text)) {
       text = text.replaceAllMapped(fracLatex, (m) => '(${m.group(1)})/(${m.group(2)})');
     }
+
+    text = text.replaceAllMapped(RegExp(r'\\([a-zA-Z]+)'), (m) => m.group(1) ?? '');
 
     final caretSuperscript = RegExp(r'([^\s])\^([0-9+-]+)');
     text = text.replaceAllMapped(
