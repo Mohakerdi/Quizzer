@@ -29,13 +29,18 @@ class DocxExportService {
   Future<String> _writeDocx(String fileName, String documentXml) async {
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/$fileName';
+    final contentTypesBytes = utf8.encode(_contentTypes);
+    final relsBytes = utf8.encode(_rels);
+    final docRelsBytes = utf8.encode(_docRels);
+    final documentBytes = utf8.encode(documentXml);
+    final stylesBytes = utf8.encode(_styles);
 
     final archive = Archive()
-      ..addFile(ArchiveFile('[Content_Types].xml', _contentTypes.length, utf8.encode(_contentTypes)))
-      ..addFile(ArchiveFile('_rels/.rels', _rels.length, utf8.encode(_rels)))
-      ..addFile(ArchiveFile('word/_rels/document.xml.rels', _docRels.length, utf8.encode(_docRels)))
-      ..addFile(ArchiveFile('word/document.xml', documentXml.length, utf8.encode(documentXml)))
-      ..addFile(ArchiveFile('word/styles.xml', _styles.length, utf8.encode(_styles)));
+      ..addFile(ArchiveFile('[Content_Types].xml', contentTypesBytes.length, contentTypesBytes))
+      ..addFile(ArchiveFile('_rels/.rels', relsBytes.length, relsBytes))
+      ..addFile(ArchiveFile('word/_rels/document.xml.rels', docRelsBytes.length, docRelsBytes))
+      ..addFile(ArchiveFile('word/document.xml', documentBytes.length, documentBytes))
+      ..addFile(ArchiveFile('word/styles.xml', stylesBytes.length, stylesBytes));
 
     final bytes = ZipEncoder().encode(archive);
     if (bytes == null) {
@@ -281,12 +286,29 @@ class DocxExportService {
   }
 
   String _escape(String value) {
-    return value
+    return _stripInvalidXmlChars(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
+  }
+
+  String _stripInvalidXmlChars(String value) {
+    final buffer = StringBuffer();
+    for (final rune in value.runes) {
+      final isAllowed =
+          rune == 0x9 ||
+          rune == 0xA ||
+          rune == 0xD ||
+          (rune >= 0x20 && rune <= 0xD7FF) ||
+          (rune >= 0xE000 && rune <= 0xFFFD) ||
+          (rune >= 0x10000 && rune <= 0x10FFFF);
+      if (isAllowed) {
+        buffer.writeCharCode(rune);
+      }
+    }
+    return buffer.toString();
   }
 
   String _composeForExport({
