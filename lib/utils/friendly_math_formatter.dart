@@ -35,7 +35,7 @@ class FriendlyMathFormatter {
       text = text.replaceAllMapped(fracLatex, (m) => '(${m.group(1)})/(${m.group(2)})');
     }
 
-    text = text.replaceAllMapped(RegExp(r'\\([a-zA-Z]+)'), (m) => m.group(1) ?? '');
+    text = text.replaceAllMapped(RegExp(r'\\([a-zA-Z]+)'), (m) => m.group(1)!);
 
     final caretSuperscript = RegExp(r'([^\s])\^([0-9+-]+)');
     text = text.replaceAllMapped(
