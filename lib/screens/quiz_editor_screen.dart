@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -108,30 +110,110 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       return null;
     }
 
-    var resolvedPath = selectedPath;
-    try {
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: selectedPath,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop image',
-            toolbarColor: Theme.of(context).colorScheme.primary,
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(title: 'Crop image'),
-          WebUiSettings(
-            context: dialogContext,
-            presentStyle: WebPresentStyle.dialog,
-          ),
-        ],
-      );
-      resolvedPath = cropped?.path ?? selectedPath;
-    } catch (_) {
-      resolvedPath = selectedPath;
+    final source = File(selectedPath);
+    if (!await source.exists()) {
+      return null;
     }
 
-    return _persistImagePath(resolvedPath);
+    final sourceBytes = await source.readAsBytes();
+    final croppedBytes = await _openCropDialog(
+      dialogContext: dialogContext,
+      imageBytes: sourceBytes,
+    );
+    if (croppedBytes == null) {
+      if (currentImagePath?.trim().isNotEmpty == true) {
+        return currentImagePath;
+      }
+      return _persistImagePath(selectedPath);
+    }
+
+    final extension = _extractImageExtension(selectedPath);
+    return _persistImageBytes(croppedBytes, extension: extension);
+  }
+
+  Future<Uint8List?> _openCropDialog({
+    required BuildContext dialogContext,
+    required Uint8List imageBytes,
+  }) async {
+    final cropController = CropController();
+    final completer = Completer<Uint8List?>();
+
+    if (!mounted) {
+      return null;
+    }
+
+    await showDialog<void>(
+      context: dialogContext,
+      barrierDismissible: false,
+      builder: (cropDialogContext) {
+        var isCropping = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Edit image'),
+            content: SizedBox(
+              width: 720,
+              height: 520,
+              child: Crop(
+                image: imageBytes,
+                controller: cropController,
+                interactive: true,
+                onCropped: (result) {
+                  switch (result) {
+                    case CropResult.success(:final croppedImage):
+                      if (!completer.isCompleted) {
+                        completer.complete(croppedImage);
+                      }
+                    case CropResult.error():
+                      if (!completer.isCompleted) {
+                        completer.complete(null);
+                      }
+                  }
+
+                  if (Navigator.of(cropDialogContext).canPop()) {
+                    Navigator.of(cropDialogContext).pop();
+                  }
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (!completer.isCompleted) {
+                    completer.complete(null);
+                  }
+                  Navigator.of(cropDialogContext).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isCropping
+                    ? null
+                    : () {
+                        setDialogState(() => isCropping = true);
+                        cropController.crop();
+                      },
+                child: Text(isCropping ? 'Applying...' : 'Apply'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      return await completer.future;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractImageExtension(String path) {
+    final fileName = path.split(Platform.pathSeparator).last;
+    final dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex <= 0 || dotIndex == fileName.length - 1) {
+      return '.jpg';
+    }
+    return fileName.substring(dotIndex);
   }
 
   Future<String> _persistImagePath(String inputPath) async {
@@ -151,6 +233,21 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     final targetPath = '${imagesDir.path}/question_${DateTime.now().microsecondsSinceEpoch}$extension';
     final persisted = await source.copy(targetPath);
     return persisted.path;
+  }
+
+  Future<String> _persistImageBytes(Uint8List bytes, {required String extension}) async {
+    final docs = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory('${docs.path}/question_images');
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    final normalizedExtension = extension.startsWith('.') ? extension : '.$extension';
+    final targetPath =
+        '${imagesDir.path}/question_${DateTime.now().microsecondsSinceEpoch}$normalizedExtension';
+    final file = File(targetPath);
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
   }
 
   String _mergeLegacyTextAndMath(String text, String math) {
