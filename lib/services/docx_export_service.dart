@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
@@ -14,24 +15,48 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) async {
-    final content = buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
-    return _writeDocx('quiz_${quiz.id}_${variant.id}.docx', content);
+    final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
+    final content = _buildQuizDocumentXml(
+      quiz: quiz,
+      variant: variant,
+      imageAssetsByQuestion: imageAssetsByQuestion,
+      includeImagePathFallback: true,
+    );
+    return _writeDocx(
+      'quiz_${quiz.id}_${variant.id}.docx',
+      content,
+      imageAssets: imageAssetsByQuestion.values.toList(),
+    );
   }
 
   Future<String> exportSolutions({
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) async {
-    final content = buildSolutionsDocumentXmlForTest(quiz: quiz, variant: variant);
-    return _writeDocx('solutions_${quiz.id}_${variant.id}.docx', content);
+    final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
+    final content = _buildSolutionsDocumentXml(
+      quiz: quiz,
+      variant: variant,
+      imageAssetsByQuestion: imageAssetsByQuestion,
+      includeImagePathFallback: true,
+    );
+    return _writeDocx(
+      'solutions_${quiz.id}_${variant.id}.docx',
+      content,
+      imageAssets: imageAssetsByQuestion.values.toList(),
+    );
   }
 
-  Future<String> _writeDocx(String fileName, String documentXml) async {
+  Future<String> _writeDocx(
+    String fileName,
+    String documentXml, {
+    List<_EmbeddedImageAsset> imageAssets = const [],
+  }) async {
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/$fileName';
-    final contentTypesBytes = utf8.encode(_contentTypes);
+    final contentTypesBytes = utf8.encode(_buildContentTypes(imageAssets));
     final relsBytes = utf8.encode(_rels);
-    final docRelsBytes = utf8.encode(_docRels);
+    final docRelsBytes = utf8.encode(_buildDocRels(imageAssets));
     final documentBytes = utf8.encode(documentXml);
     final stylesBytes = utf8.encode(_styles);
 
@@ -41,6 +66,15 @@ class DocxExportService {
       ..addFile(ArchiveFile('word/_rels/document.xml.rels', docRelsBytes.length, docRelsBytes))
       ..addFile(ArchiveFile('word/document.xml', documentBytes.length, documentBytes))
       ..addFile(ArchiveFile('word/styles.xml', stylesBytes.length, stylesBytes));
+    for (final imageAsset in imageAssets) {
+      archive.addFile(
+        ArchiveFile(
+          'word/${imageAsset.targetPath}',
+          imageAsset.bytes.length,
+          imageAsset.bytes,
+        ),
+      );
+    }
 
     final bytes = ZipEncoder().encode(archive);
     if (bytes == null) {
@@ -56,6 +90,20 @@ class DocxExportService {
   String buildQuizDocumentXmlForTest({
     required QuizModel quiz,
     required GeneratedVariant variant,
+  }) {
+    return _buildQuizDocumentXml(
+      quiz: quiz,
+      variant: variant,
+      imageAssetsByQuestion: const {},
+      includeImagePathFallback: true,
+    );
+  }
+
+  String _buildQuizDocumentXml({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
+    required bool includeImagePathFallback,
   }) {
     final isRtl = _containsArabic(
       [
@@ -75,8 +123,9 @@ class DocxExportService {
 
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
+      final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
-      if (question.imageRef.trim().isNotEmpty) {
+      if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[Image: ${question.imageRef.trim()}]');
       }
 
@@ -84,7 +133,12 @@ class DocxExportService {
         _row(
           [
             _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
-            _cell(prompt.toString(), colSpan: 3, rtl: isRtl),
+            _cell(
+              prompt.toString(),
+              colSpan: 3,
+              rtl: isRtl,
+              imageRelationshipId: imageAsset?.relationshipId,
+            ),
           ],
         ),
       );
@@ -114,6 +168,20 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) {
+    return _buildSolutionsDocumentXml(
+      quiz: quiz,
+      variant: variant,
+      imageAssetsByQuestion: const {},
+      includeImagePathFallback: true,
+    );
+  }
+
+  String _buildSolutionsDocumentXml({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
+    required bool includeImagePathFallback,
+  }) {
     final isRtl = _containsArabic(
       [
         quiz.title,
@@ -132,15 +200,21 @@ class DocxExportService {
 
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
+      final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
-      if (question.imageRef.trim().isNotEmpty) {
+      if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[Image: ${question.imageRef.trim()}]');
       }
 
       rows.add(
         _row([
           _cell('${i + 1}', align: 'center', rtl: isRtl),
-          _cell(prompt.toString(), colSpan: 3, rtl: isRtl),
+          _cell(
+            prompt.toString(),
+            colSpan: 3,
+            rtl: isRtl,
+            imageRelationshipId: imageAsset?.relationshipId,
+          ),
         ]),
       );
 
@@ -175,7 +249,7 @@ class DocxExportService {
     final bidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
   <w:body>
     <w:p>
       <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
@@ -238,6 +312,7 @@ class DocxExportService {
     String? fillColor,
     String align = 'left',
     bool rtl = false,
+    String? imageRelationshipId,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
     final shading = fillColor == null ? '' : '<w:shd w:val="clear" w:fill="$fillColor"/>';
@@ -246,6 +321,15 @@ class DocxExportService {
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
     final runs = _paragraphRuns(text, bold: bold);
     final bidi = rtl ? '<w:bidi/>' : '';
+    final imageParagraph = imageRelationshipId == null
+        ? ''
+        : '''
+  <w:p>
+    <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
+    <w:r>
+      ${_inlineImageDrawingXml(imageRelationshipId)}
+    </w:r>
+  </w:p>''';
 
     return '''<w:tc>
   <w:tcPr>
@@ -264,7 +348,49 @@ class DocxExportService {
     <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
     $runs
   </w:p>
+  $imageParagraph
 </w:tc>''';
+  }
+
+  String _inlineImageDrawingXml(String relationshipId) {
+    const cx = 3600000;
+    const cy = 2160000;
+    final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+    return '''<w:drawing>
+  <wp:inline distT="0" distB="0" distL="0" distR="0">
+    <wp:extent cx="$cx" cy="$cy"/>
+    <wp:effectExtent l="0" t="0" r="0" b="0"/>
+    <wp:docPr id="$imageId" name="QuestionImage$imageId"/>
+    <wp:cNvGraphicFramePr>
+      <a:graphicFrameLocks noChangeAspect="1"/>
+    </wp:cNvGraphicFramePr>
+    <a:graphic>
+      <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+        <pic:pic>
+          <pic:nvPicPr>
+            <pic:cNvPr id="$imageId" name="QuestionImage$imageId"/>
+            <pic:cNvPicPr/>
+          </pic:nvPicPr>
+          <pic:blipFill>
+            <a:blip r:embed="$relationshipId"/>
+            <a:stretch>
+              <a:fillRect/>
+            </a:stretch>
+          </pic:blipFill>
+          <pic:spPr>
+            <a:xfrm>
+              <a:off x="0" y="0"/>
+              <a:ext cx="$cx" cy="$cy"/>
+            </a:xfrm>
+            <a:prstGeom prst="rect">
+              <a:avLst/>
+            </a:prstGeom>
+          </pic:spPr>
+        </pic:pic>
+      </a:graphicData>
+    </a:graphic>
+  </wp:inline>
+</w:drawing>''';
   }
 
   String _paragraphRuns(String text, {required bool bold}) {
@@ -309,6 +435,187 @@ class DocxExportService {
       }
     }
     return buffer.toString();
+  }
+
+  Future<Map<int, _EmbeddedImageAsset>> _prepareImageAssets(
+    List<GeneratedQuestion> questions,
+  ) async {
+    final assetsByQuestion = <int, _EmbeddedImageAsset>{};
+    var imageIndex = 1;
+    for (var i = 0; i < questions.length; i++) {
+      final imageRef = questions[i].imageRef.trim();
+      if (imageRef.isEmpty) {
+        continue;
+      }
+
+      final loadedImage = await _loadImageForExport(imageRef);
+      if (loadedImage == null) {
+        continue;
+      }
+
+      final relationshipId = 'rIdImage$imageIndex';
+      final targetPath = 'media/image$imageIndex${loadedImage.extension}';
+      assetsByQuestion[i] = _EmbeddedImageAsset(
+        relationshipId: relationshipId,
+        targetPath: targetPath,
+        extension: loadedImage.extension,
+        bytes: loadedImage.bytes,
+      );
+      imageIndex++;
+    }
+    return assetsByQuestion;
+  }
+
+  Future<_LoadedImageData?> _loadImageForExport(String imageRef) async {
+    try {
+      final uri = Uri.tryParse(imageRef);
+      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        final client = HttpClient();
+        try {
+          final request = await client.getUrl(uri);
+          final response = await request.close();
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            return null;
+          }
+          final bytes = await consolidateHttpClientResponseBytes(response);
+          if (bytes.isEmpty) {
+            return null;
+          }
+          final extension = _normalizeImageExtension(
+            _extractImageExtension(uri.path),
+            bytes: bytes,
+          );
+          if (!_isSupportedImageExtension(extension)) {
+            return null;
+          }
+          return _LoadedImageData(bytes: bytes, extension: extension);
+        } finally {
+          client.close(force: true);
+        }
+      }
+
+      final file = File(imageRef);
+      if (!await file.exists()) {
+        return null;
+      }
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        return null;
+      }
+      final extension = _normalizeImageExtension(
+        _extractImageExtension(imageRef),
+        bytes: bytes,
+      );
+      if (!_isSupportedImageExtension(extension)) {
+        return null;
+      }
+      return _LoadedImageData(bytes: bytes, extension: extension);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _normalizeImageExtension(
+    String extension, {
+    Uint8List? bytes,
+  }) {
+    final normalized = extension.startsWith('.') ? extension.toLowerCase() : '.${extension.toLowerCase()}';
+    if (_isSupportedImageExtension(normalized)) {
+      return normalized;
+    }
+    if (bytes == null) {
+      return '.jpg';
+    }
+    return _detectImageExtension(bytes) ?? '.jpg';
+  }
+
+  String _extractImageExtension(String path) {
+    final slashIndex = path.lastIndexOf('/');
+    final fileName = slashIndex >= 0 ? path.substring(slashIndex + 1) : path;
+    final dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex <= 0 || dotIndex == fileName.length - 1) {
+      return '.jpg';
+    }
+    return fileName.substring(dotIndex).toLowerCase();
+  }
+
+  String? _detectImageExtension(Uint8List bytes) {
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return '.png';
+    }
+    if (bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return '.jpg';
+    }
+    if (bytes.length >= 6 &&
+        bytes[0] == 0x47 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x38) {
+      return '.gif';
+    }
+    if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D) {
+      return '.bmp';
+    }
+    return null;
+  }
+
+  bool _isSupportedImageExtension(String extension) {
+    return extension == '.png' ||
+        extension == '.jpg' ||
+        extension == '.jpeg' ||
+        extension == '.gif' ||
+        extension == '.bmp';
+  }
+
+  String _buildContentTypes(List<_EmbeddedImageAsset> imageAssets) {
+    final extensionDefaults = <String, String>{};
+    for (final asset in imageAssets) {
+      extensionDefaults[asset.extension.replaceFirst('.', '')] = _imageContentType(asset.extension);
+    }
+    final imageDefaults = extensionDefaults.entries
+        .map((entry) => '  <Default Extension="${entry.key}" ContentType="${entry.value}"/>')
+        .join('\n');
+    final imageDefaultsSection = imageDefaults.isEmpty ? '' : '\n$imageDefaults';
+    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>$imageDefaultsSection
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>''';
+  }
+
+  String _buildDocRels(List<_EmbeddedImageAsset> imageAssets) {
+    final imageRelationships = imageAssets
+        .map(
+          (asset) =>
+              '  <Relationship Id="${asset.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${asset.targetPath}"/>',
+        )
+        .join('\n');
+    final imageSection = imageRelationships.isEmpty ? '' : '\n$imageRelationships';
+    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>$imageSection
+</Relationships>''';
+  }
+
+  String _imageContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case '.png':
+        return 'image/png';
+      case '.gif':
+        return 'image/gif';
+      case '.bmp':
+        return 'image/bmp';
+      case '.jpg':
+      case '.jpeg':
+      default:
+        return 'image/jpeg';
+    }
   }
 
   String _composeForExport({
@@ -362,22 +669,9 @@ class DocxExportService {
   }
 }
 
-const _contentTypes = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-</Types>''';
-
 const _rels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>''';
-
-const _docRels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>''';
 
 const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -391,3 +685,27 @@ const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </w:rPrDefault>
   </w:docDefaults>
 </w:styles>''';
+
+class _EmbeddedImageAsset {
+  _EmbeddedImageAsset({
+    required this.relationshipId,
+    required this.targetPath,
+    required this.extension,
+    required this.bytes,
+  });
+
+  final String relationshipId;
+  final String targetPath;
+  final String extension;
+  final Uint8List bytes;
+}
+
+class _LoadedImageData {
+  _LoadedImageData({
+    required this.bytes,
+    required this.extension,
+  });
+
+  final Uint8List bytes;
+  final String extension;
+}
