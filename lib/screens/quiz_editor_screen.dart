@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/question_option.dart';
@@ -32,6 +36,7 @@ class QuizEditorScreen extends StatefulWidget {
 class _QuizEditorScreenState extends State<QuizEditorScreen> {
   late QuizModel _quiz;
   final _validator = const EditorValidator();
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -94,15 +99,42 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     );
   }
 
+  Future<String?> _pickAndCropImage({
+    required BuildContext dialogContext,
+    String? currentImagePath,
+  }) async {
+    final selectedPath = currentImagePath ??
+        (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
+    if (selectedPath == null || selectedPath.isEmpty) {
+      return null;
+    }
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: selectedPath,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop image',
+          toolbarColor: Theme.of(context).colorScheme.primary,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(title: 'Crop image'),
+        WebUiSettings(
+          context: dialogContext,
+          presentStyle: WebPresentStyle.dialog,
+        ),
+      ],
+    );
+
+    return cropped?.path;
+  }
+
   Future<void> _editQuestion({QuizQuestion? existing, int? index}) async {
     final source = existing ?? QuizQuestion.create();
 
     final textController = TextEditingController(text: source.text);
-    final imageController = TextEditingController(text: source.imageRef);
-    final topicController = TextEditingController(text: source.topic);
-    final difficultyController = TextEditingController(text: source.difficulty);
-
     var math = source.math;
+    var imagePath = source.imageRef;
     var options = source.options
         .map(
           (o) => QuestionOption(
@@ -199,30 +231,62 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     onChanged: (value) => setLocalState(() => math = value),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: imageController,
-                    decoration: const InputDecoration(
-                      labelText: 'Image URL/path (optional)',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: topicController,
-                          decoration: const InputDecoration(labelText: 'Topic (optional)'),
-                        ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final selected = await _pickAndCropImage(
+                            dialogContext: ctx,
+                          );
+                          if (selected == null) {
+                            return;
+                          }
+                          setLocalState(() => imagePath = selected);
+                        },
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: const Text('Select image from gallery'),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: difficultyController,
-                          decoration: const InputDecoration(labelText: 'Difficulty (optional)'),
+                      const SizedBox(width: 8),
+                      if (imagePath.trim().isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final selected = await _pickAndCropImage(
+                              dialogContext: ctx,
+                              currentImagePath: imagePath,
+                            );
+                            if (selected == null) {
+                              return;
+                            }
+                            setLocalState(() => imagePath = selected);
+                          },
+                          icon: const Icon(Icons.crop),
+                          label: const Text('Crop'),
                         ),
-                      ),
+                      const SizedBox(width: 8),
+                      if (imagePath.trim().isNotEmpty)
+                        TextButton.icon(
+                          onPressed: () => setLocalState(() => imagePath = ''),
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Remove'),
+                        ),
                     ],
                   ),
+                  if (imagePath.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(imagePath),
+                        height: 170,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Text('Unable to load selected image.'),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -297,9 +361,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                 final updated = source.copyWith(
                   text: textController.text,
                   math: math,
-                  imageRef: imageController.text,
-                  topic: topicController.text,
-                  difficulty: difficultyController.text,
+                  imageRef: imagePath,
                   options: options,
                   correctOptionId: correctOptionId,
                 );
@@ -406,7 +468,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                         return ListTile(
                           title: Text('Q${index + 1}: ${question.composedPrompt}'),
                           subtitle: Text(
-                            'Options: ${question.options.length} · Topic: ${question.topic.isEmpty ? '-' : question.topic} · Difficulty: ${question.difficulty.isEmpty ? '-' : question.difficulty}',
+                            'Options: ${question.options.length}',
                           ),
                           trailing: Wrap(
                             spacing: 4,

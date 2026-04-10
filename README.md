@@ -10,7 +10,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
    - Add/edit/remove/reorder questions.
    - Add/edit/remove options.
    - Mark the correct option by stable option ID.
-   - Optional fields: image reference, topic, difficulty.
+   - Select question images from gallery and crop before saving.
 3. **Math-friendly authoring**
    - GeoGebra-like math keyboard input (`math_keyboard` package).
    - Live LaTeX preview for math expressions.
@@ -21,8 +21,9 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 5. **Preview**
    - Preview generated variants before exporting.
 6. **Export DOCX**
-   - Export question paper DOCX (table-based layout).
-   - Export solutions DOCX (separate document with answer key).
+    - Export question paper DOCX (table-based layout).
+    - Export solutions DOCX (separate document with answer key).
+    - Math text is exported in formula-style plain math output (not raw LaTeX markers).
 
 ## Persistence
 
@@ -31,7 +32,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 ## Notes / MVP limitations
 
 - The question paper DOCX is table-based and print-friendly, but exact visual parity with the provided reference images may need further styling refinements.
-- Image references are currently stored/exported as text references in the document.
+- Images are stored as local paths and shown in app previews; DOCX currently includes image path references.
 - Solutions layout is implemented as a structured answer-key table and can be adjusted once final template details are confirmed.
 - Arabic locale/RTL is supported in UI and DOCX text flow for Arabic content detection.
 

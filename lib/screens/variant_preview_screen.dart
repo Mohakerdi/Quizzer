@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
@@ -31,7 +33,24 @@ class VariantPreviewScreen extends StatelessWidget {
                   Text('Q${index + 1}. ${question.composedPrompt}'),
                   if (question.imageRef.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text('Image: ${question.imageRef}'),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: question.imageRef.startsWith('http')
+                          ? Image.network(
+                              question.imageRef,
+                              height: 180,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Text('Image: ${question.imageRef}'),
+                            )
+                          : Image.file(
+                              File(question.imageRef),
+                              height: 180,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Text('Image: ${question.imageRef}'),
+                            ),
+                    ),
                   ],
                   const SizedBox(height: 10),
                   ...question.options.map((option) {

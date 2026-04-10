@@ -55,8 +55,8 @@ class DocxExportService {
     final isRtl = _containsArabic(
       [
         quiz.title,
-        ...variant.questions.map((q) => q.composedPrompt),
-        ...variant.questions.expand((q) => q.options.map((o) => o.composedText)),
+        ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
+        ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
       ].join(' '),
     );
     final rows = <String>[
@@ -70,7 +70,7 @@ class DocxExportService {
 
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
-      final prompt = StringBuffer(question.composedPrompt);
+      final prompt = StringBuffer(_composeForExport(text: question.text, math: question.math));
       if (question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[Image: ${question.imageRef.trim()}]');
       }
@@ -89,7 +89,8 @@ class DocxExportService {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
         }
-        final text = '${labels[index]}) ${question.options[index].composedText}';
+        final text =
+            '${labels[index]}) ${_composeForExport(text: question.options[index].text, math: question.options[index].math)}';
         return _cell(text, rtl: isRtl);
       });
 
@@ -111,8 +112,8 @@ class DocxExportService {
     final isRtl = _containsArabic(
       [
         quiz.title,
-        ...variant.questions.map((q) => q.composedPrompt),
-        ...variant.questions.expand((q) => q.options.map((o) => o.composedText)),
+        ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
+        ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
       ].join(' '),
     );
     final rows = <String>[
@@ -143,8 +144,11 @@ class DocxExportService {
         _row([
           _cell('${i + 1}', align: 'center', rtl: isRtl),
           _cell(letter, align: 'center', bold: true, rtl: isRtl),
-          _cell(correct?.composedText ?? '-', rtl: isRtl),
-          _cell(question.composedPrompt, rtl: isRtl),
+          _cell(
+            correct == null ? '-' : _composeForExport(text: correct.text, math: correct.math),
+            rtl: isRtl,
+          ),
+          _cell(_composeForExport(text: question.text, math: question.math), rtl: isRtl),
         ]),
       );
     }
@@ -277,6 +281,51 @@ class DocxExportService {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
+  }
+
+  String _composeForExport({
+    required String text,
+    required String math,
+  }) {
+    final normalizedText = text.trim();
+    final normalizedMath = _latexToFormulaText(math);
+    if (normalizedMath.isEmpty) {
+      return normalizedText;
+    }
+    if (normalizedText.isEmpty) {
+      return normalizedMath;
+    }
+    return '$normalizedText  ($normalizedMath)';
+  }
+
+  String _latexToFormulaText(String value) {
+    var text = value.trim();
+    if (text.isEmpty) {
+      return text;
+    }
+
+    text = text
+        .replaceAll(r'\pi', 'π')
+        .replaceAll(r'\theta', 'θ')
+        .replaceAll(r'\times', '×')
+        .replaceAll(r'\div', '÷')
+        .replaceAll(r'\leq', '≤')
+        .replaceAll(r'\geq', '≥')
+        .replaceAll(r'\neq', '≠');
+
+    final fracRegex = RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}');
+    while (fracRegex.hasMatch(text)) {
+      text = text.replaceAllMapped(fracRegex, (m) => '(${m.group(1)})/(${m.group(2)})');
+    }
+
+    final sqrtRegex = RegExp(r'\\sqrt\{([^{}]+)\}');
+    while (sqrtRegex.hasMatch(text)) {
+      text = text.replaceAllMapped(sqrtRegex, (m) => '√(${m.group(1)})');
+    }
+
+    text = text.replaceAllMapped(RegExp(r'\\([a-zA-Z]+)'), (m) => m.group(1) ?? '');
+    text = text.replaceAll('{', '').replaceAll('}', '');
+    return text;
   }
 
   bool _containsArabic(String value) {
