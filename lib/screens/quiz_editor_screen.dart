@@ -114,7 +114,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         .toList();
     var correctOptionId = source.correctOptionId;
 
-    Future<void> openOptionEditor({int? optionIndex}) async {
+    Future<void> openOptionEditor({
+      int? optionIndex,
+      required void Function(void Function()) setQuestionDialogState,
+    }) async {
       final existingOption = optionIndex == null ? QuestionOption.create() : options[optionIndex];
       final optionTextController = TextEditingController(text: existingOption.text);
       var optionMath = existingOption.math;
@@ -155,7 +158,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     math: optionMath,
                   );
 
-                  setState(() {
+                  setQuestionDialogState(() {
                     if (optionIndex == null) {
                       options = [...options, option];
                       correctOptionId = options.length == 1 ? option.id : correctOptionId;
@@ -225,8 +228,10 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     children: [
                       const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
                       const Spacer(),
-                      FilledButton.icon(
-                        onPressed: () => openOptionEditor(),
+                       FilledButton.icon(
+                        onPressed: () => openOptionEditor(
+                          setQuestionDialogState: setLocalState,
+                        ),
                         icon: const Icon(Icons.add),
                         label: const Text('Add option'),
                       ),
@@ -253,10 +258,13 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                         trailing: Wrap(
                           spacing: 4,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => openOptionEditor(optionIndex: optionIndex),
-                            ),
+                             IconButton(
+                               icon: const Icon(Icons.edit),
+                               onPressed: () => openOptionEditor(
+                                 optionIndex: optionIndex,
+                                 setQuestionDialogState: setLocalState,
+                               ),
+                             ),
                             IconButton(
                               icon: const Icon(Icons.delete),
                               onPressed: options.length <= 2
