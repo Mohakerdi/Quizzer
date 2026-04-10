@@ -20,6 +20,7 @@ class QuizEditorScreen extends StatefulWidget {
     required this.quiz,
     required this.generatedVariants,
     required this.onQuizChanged,
+    required this.onQuizAutoSave,
     required this.onGenerateVariants,
     required this.onPreviewVariant,
     required this.onExportVariant,
@@ -29,6 +30,7 @@ class QuizEditorScreen extends StatefulWidget {
   final QuizModel quiz;
   final List<GeneratedVariant> generatedVariants;
   final Future<void> Function(QuizModel quiz) onQuizChanged;
+  final Future<void> Function(QuizModel quiz) onQuizAutoSave;
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(GeneratedVariant variant) onExportVariant;
@@ -42,11 +44,19 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   late QuizModel _quiz;
   final _validator = const EditorValidator();
   final ImagePicker _imagePicker = ImagePicker();
+  Timer? _autosaveDebounce;
 
   @override
   void initState() {
     super.initState();
     _quiz = widget.quiz;
+  }
+
+  @override
+  void dispose() {
+    _autosaveDebounce?.cancel();
+    unawaited(widget.onQuizAutoSave(_quiz.copyWith(updatedAt: DateTime.now())));
+    super.dispose();
   }
 
   @override
@@ -58,6 +68,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _save() async {
+    _autosaveDebounce?.cancel();
     await widget.onQuizChanged(_quiz.copyWith(updatedAt: DateTime.now()));
     if (!mounted) {
       return;
@@ -66,6 +77,13 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(const SnackBar(content: Text('Quiz saved.')));
+  }
+
+  void _scheduleAutoSave() {
+    _autosaveDebounce?.cancel();
+    _autosaveDebounce = Timer(const Duration(milliseconds: 600), () {
+      unawaited(widget.onQuizAutoSave(_quiz.copyWith(updatedAt: DateTime.now())));
+    });
   }
 
   Future<void> _validate() async {
@@ -281,6 +299,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         updatedAt: DateTime.now(),
       );
     });
+    _scheduleAutoSave();
   }
 
   void _removeQuestion(int index) {
@@ -292,6 +311,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       final questions = [..._quiz.questions]..removeAt(index);
       _quiz = _quiz.copyWith(questions: questions, updatedAt: DateTime.now());
     });
+    _scheduleAutoSave();
   }
 
   void _moveQuestion(int index, int direction) {
@@ -306,6 +326,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       questions.insert(target, current);
       _quiz = _quiz.copyWith(questions: questions, updatedAt: DateTime.now());
     });
+    _scheduleAutoSave();
   }
 
   @override

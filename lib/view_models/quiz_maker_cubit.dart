@@ -117,7 +117,7 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
   }
 
   Future<void> saveQuiz(QuizModel quiz) async {
-    final saved = await _repository.upsertQuiz(quiz);
+    final saved = await _persistQuiz(quiz);
     emit(
       state.copyWith(
         quizzes: state.quizzes.map((q) => q.id == saved.id ? saved : q).toList(),
@@ -125,6 +125,22 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
         message: 'Quiz saved.',
       ),
     );
+  }
+
+  Future<void> saveQuizSilently(QuizModel quiz) async {
+    final saved = await _persistQuiz(quiz);
+    emit(
+      state.copyWith(
+        quizzes: state.quizzes.map((q) => q.id == saved.id ? saved : q).toList(),
+        selectedQuiz: saved,
+        clearMessage: true,
+      ),
+    );
+  }
+
+  Future<QuizModel> _persistQuiz(QuizModel quiz) async {
+    final saved = await _repository.upsertQuiz(quiz);
+    return saved;
   }
 
   Future<void> generateVariants({required QuizModel quiz, required int count}) async {

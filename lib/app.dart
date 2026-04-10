@@ -203,6 +203,7 @@ class QuizMakerHome extends StatelessWidget {
                         quiz: state.selectedQuiz!,
                         generatedVariants: state.generatedVariants,
                         onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
+                        onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
                         onGenerateVariants: (quiz) => _generateVariants(context, quiz),
                         onPreviewVariant: (variant) => _previewVariant(context, variant),
                         onExportVariant: (variant) => context.read<QuizMakerCubit>().exportVariant(variant),
