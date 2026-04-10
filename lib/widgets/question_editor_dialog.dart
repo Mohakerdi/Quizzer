@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
@@ -84,14 +85,12 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextField(
+                  _FriendlyMathInput(
                     controller: optionContentController,
+                    labelText: 'Option content',
+                    hintText: 'Write text or formula in one place',
                     minLines: 2,
                     maxLines: 5,
-                    decoration: const InputDecoration(
-                      labelText: 'Option content',
-                      hintText: 'Write text or formula in one place',
-                    ),
                   ),
                 ],
               ),
@@ -179,14 +178,12 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
+              _FriendlyMathInput(
                 controller: _questionContentController,
+                labelText: 'Question content',
+                hintText: 'Write question text and formulas in one place',
                 minLines: 3,
                 maxLines: 8,
-                decoration: const InputDecoration(
-                  labelText: 'Question content',
-                  hintText: 'Write question text and formulas in one place',
-                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -334,4 +331,153 @@ String _mergeLegacyTextAndMath(String text, String math) {
     return normalizedMath;
   }
   return '$normalizedText\n$normalizedMath';
+}
+
+class _FriendlyMathInput extends StatefulWidget {
+  const _FriendlyMathInput({
+    required this.controller,
+    required this.labelText,
+    required this.hintText,
+    required this.minLines,
+    required this.maxLines,
+  });
+
+  final TextEditingController controller;
+  final String labelText;
+  final String hintText;
+  final int minLines;
+  final int maxLines;
+
+  @override
+  State<_FriendlyMathInput> createState() => _FriendlyMathInputState();
+}
+
+class _FriendlyMathInputState extends State<_FriendlyMathInput> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _FriendlyMathInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onTextChanged);
+      widget.controller.addListener(_onTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _insert(String value, {int cursorShift = 0}) {
+    final current = widget.controller.value;
+    final selection = current.selection;
+    final start = selection.start >= 0 ? selection.start : current.text.length;
+    final end = selection.end >= 0 ? selection.end : current.text.length;
+    final updatedText = current.text.replaceRange(start, end, value);
+    final cursor = (start + value.length - cursorShift).clamp(0, updatedText.length);
+    widget.controller.value = TextEditingValue(
+      text: updatedText,
+      selection: TextSelection.collapsed(offset: cursor),
+    );
+  }
+
+  String _toLatex(String value) {
+    var text = value.trim();
+    if (text.isEmpty) {
+      return text;
+    }
+    text = text
+        .replaceAll('\\', '')
+        .replaceAll('<=', r' \leq ')
+        .replaceAll('>=', r' \geq ')
+        .replaceAll('!=', r' \neq ')
+        .replaceAll('×', r' \times ')
+        .replaceAll('÷', r' \div ');
+    text = text.replaceAllMapped(RegExp(r'√\(([^()]*)\)'), (m) => r'\sqrt{' '${m.group(1)}' r'}');
+    text = text.replaceAllMapped(RegExp(r'\(([^()]*)\)\s*/\s*\(([^()]*)\)'), (m) {
+      return r'\frac{' '${m.group(1)}' r'}{' '${m.group(2)}' r'}';
+    });
+    return text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.controller.text;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: widget.controller,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
+          decoration: InputDecoration(
+            labelText: widget.labelText,
+            hintText: widget.hintText,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            _MathActionChip(label: '√', onTap: () => _insert('√()', cursorShift: 1)),
+            _MathActionChip(label: 'Fraction', onTap: () => _insert('()/()', cursorShift: 4)),
+            _MathActionChip(label: '≤', onTap: () => _insert(' <= ')),
+            _MathActionChip(label: '≥', onTap: () => _insert(' >= ')),
+            _MathActionChip(label: '≠', onTap: () => _insert(' != ')),
+            _MathActionChip(label: 'π', onTap: () => _insert('π')),
+            _MathActionChip(label: 'θ', onTap: () => _insert('θ')),
+            _MathActionChip(label: '×', onTap: () => _insert(' × ')),
+            _MathActionChip(label: '÷', onTap: () => _insert(' ÷ ')),
+            _MathActionChip(label: 'x²', onTap: () => _insert('^2')),
+          ],
+        ),
+        if (text.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Math.tex(
+              _toLatex(text),
+              onErrorFallback: (_) => Text(text),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MathActionChip extends StatelessWidget {
+  const _MathActionChip({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      label: Text(label),
+      onPressed: onTap,
+    );
+  }
 }
