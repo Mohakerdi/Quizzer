@@ -7,6 +7,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/models/quiz_question.dart';
@@ -76,7 +77,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
 
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text('Quiz saved.')));
+      ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'quizSaved'))));
   }
 
   void _scheduleAutoSave() {
@@ -95,14 +96,14 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     if (errors.isEmpty) {
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('Quiz is valid.')));
+        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'quizValid'))));
       return;
     }
 
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Validation errors'),
+        title: Text(AppStrings.tr(context, 'validationErrors')),
         content: SizedBox(
           width: 520,
           child: SingleChildScrollView(
@@ -115,7 +116,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(AppStrings.tr(context, 'close')),
           ),
         ],
       ),
@@ -164,7 +165,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         var isCropping = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Edit image'),
+            title: Text(AppStrings.tr(context, 'editImage')),
             content: SizedBox(
               width: 720,
               height: 520,
@@ -188,24 +189,24 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
               ),
             ),
             actions: [
-              TextButton(
+                TextButton(
                 onPressed: () {
                   if (!completer.isCompleted) {
                     completer.complete(null);
                   }
                   Navigator.of(cropDialogContext).pop();
                 },
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
+                  child: Text(AppStrings.tr(context, 'cancel')),
+                ),
+                FilledButton(
                 onPressed: isCropping
                     ? null
                     : () {
                         setDialogState(() => isCropping = true);
                         cropController.crop();
                       },
-                child: Text(isCropping ? 'Applying...' : 'Apply'),
-              ),
+                  child: Text(isCropping ? AppStrings.tr(context, 'applying') : AppStrings.tr(context, 'apply')),
+                ),
             ],
           ),
         );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:math_keyboard/math_keyboard.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
+
 class MathInputField extends StatefulWidget {
   const MathInputField({
     super.key,
@@ -59,7 +61,9 @@ class _MathInputFieldState extends State<MathInputField> {
             labelText: widget.label,
             hintText: widget.hint,
             border: const OutlineInputBorder(),
-            helperText: 'GeoGebra-like math keyboard enabled',
+            helperText: AppStrings.isArabic(context)
+                ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة'
+                : 'GeoGebra-like math keyboard enabled',
           ),
           onChanged: (value) {
             setState(() => _value = value);
@@ -78,7 +82,7 @@ class _MathInputFieldState extends State<MathInputField> {
             child: Math.tex(
               _value,
               onErrorFallback: (error) => Text(
-                'Invalid math expression',
+                AppStrings.isArabic(context) ? 'تعبير رياضي غير صالح' : 'Invalid math expression',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),

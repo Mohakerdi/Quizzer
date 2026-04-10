@@ -106,6 +106,10 @@ class AppStrings {
         return ar ? 'حفظ السؤال' : 'Save question';
       case 'unableToLoadImage':
         return ar ? 'تعذر تحميل الصورة المحددة.' : 'Unable to load selected image.';
+      case 'mathKeyboardHelper':
+        return ar ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة' : 'GeoGebra-like math keyboard enabled';
+      case 'invalidMathExpression':
+        return ar ? 'تعبير رياضي غير صالح' : 'Invalid math expression';
       default:
         return key;
     }

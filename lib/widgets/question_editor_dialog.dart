@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/utils/friendly_math_formatter.dart';
@@ -79,7 +80,11 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(optionIndex == null ? 'Add option' : 'Edit option'),
+          title: Text(
+            optionIndex == null
+                ? AppStrings.tr(context, 'addOption')
+                : AppStrings.tr(context, 'editOption'),
+          ),
           content: SizedBox(
             width: 520,
             child: SingleChildScrollView(
@@ -87,8 +92,8 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 children: [
                   _FriendlyMathInput(
                     controller: optionContentController,
-                    labelText: 'Option content',
-                    hintText: 'Write text or formula in one place',
+                    labelText: AppStrings.tr(context, 'optionContent'),
+                    hintText: AppStrings.tr(context, 'optionContentHint'),
                     minLines: 2,
                     maxLines: 5,
                   ),
@@ -99,7 +104,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppStrings.tr(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () {
@@ -119,7 +124,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
 
                 Navigator.of(ctx).pop();
               },
-              child: const Text('Save'),
+              child: Text(AppStrings.tr(context, 'save')),
             ),
           ],
         ),
@@ -171,7 +176,11 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isNewQuestion ? 'Add question' : 'Edit question'),
+      title: Text(
+        widget.isNewQuestion
+            ? AppStrings.tr(context, 'addQuestionTitle')
+            : AppStrings.tr(context, 'editQuestionTitle'),
+      ),
       content: SizedBox(
         width: 720,
         child: SingleChildScrollView(
@@ -180,32 +189,32 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
             children: [
               _FriendlyMathInput(
                 controller: _questionContentController,
-                labelText: 'Question content',
-                hintText: 'Write question text and formulas in one place',
+                labelText: AppStrings.tr(context, 'questionContent'),
+                hintText: AppStrings.tr(context, 'questionContentHint'),
                 minLines: 3,
                 maxLines: 8,
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: _selectImage,
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Select image from gallery'),
-                  ),
+                    OutlinedButton.icon(
+                      onPressed: _selectImage,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(AppStrings.tr(context, 'selectImageFromGallery')),
+                    ),
                   const SizedBox(width: 8),
                   if (_imagePath.trim().isNotEmpty)
                     OutlinedButton.icon(
                       onPressed: _cropImage,
                       icon: const Icon(Icons.crop),
-                      label: const Text('Crop'),
+                      label: Text(AppStrings.tr(context, 'crop')),
                     ),
                   const SizedBox(width: 8),
                   if (_imagePath.trim().isNotEmpty)
                     TextButton.icon(
                       onPressed: () => setState(() => _imagePath = ''),
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('Remove'),
+                      label: Text(AppStrings.tr(context, 'remove')),
                     ),
                 ],
               ),
@@ -219,12 +228,12 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(AppStrings.tr(context, 'options'), style: const TextStyle(fontWeight: FontWeight.bold)),
                   const Spacer(),
                   FilledButton.icon(
                     onPressed: () => _openOptionEditor(),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add option'),
+                    label: Text(AppStrings.tr(context, 'addOption')),
                   ),
                 ],
               ),
@@ -234,7 +243,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 return Card(
                   child: ListTile(
                     title: Text(
-                      option.composedText.isEmpty ? '(empty option)' : option.composedText,
+                      option.composedText.isEmpty ? AppStrings.tr(context, 'emptyOption') : option.composedText,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -272,11 +281,11 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppStrings.tr(context, 'cancel')),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_buildUpdatedQuestion()),
-          child: const Text('Save question'),
+          child: Text(AppStrings.tr(context, 'saveQuestion')),
         ),
       ],
     );
@@ -290,9 +299,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
         height: 170,
         width: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Padding(
+        errorBuilder: (ctx, __, ___) => Padding(
           padding: EdgeInsets.all(8),
-          child: Text('Unable to load selected image.'),
+          child: Text(AppStrings.tr(ctx, 'unableToLoadImage')),
         ),
       );
     }
@@ -302,9 +311,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       height: 170,
       width: double.infinity,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Padding(
+      errorBuilder: (ctx, __, ___) => Padding(
         padding: EdgeInsets.all(8),
-        child: Text('Unable to load selected image.'),
+        child: Text(AppStrings.tr(ctx, 'unableToLoadImage')),
       ),
     );
   }

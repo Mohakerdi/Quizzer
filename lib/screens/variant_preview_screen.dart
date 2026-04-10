@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 
 class VariantPreviewScreen extends StatelessWidget {
@@ -18,7 +19,7 @@ class VariantPreviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Preview ${variant.id}'),
+        title: Text('${AppStrings.tr(context, 'previewVariant')} ${variant.id}'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -76,7 +77,7 @@ class VariantPreviewScreen extends StatelessWidget {
         height: 180,
         width: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+        errorBuilder: (context, __, ___) => Text(AppStrings.tr(context, 'unableToLoadImage')),
       );
     }
     if (imageRef.startsWith('http')) {
@@ -85,7 +86,7 @@ class VariantPreviewScreen extends StatelessWidget {
         height: 180,
         width: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+        errorBuilder: (context, __, ___) => Text(AppStrings.tr(context, 'unableToLoadImage')),
       );
     }
     return Image.file(
@@ -93,7 +94,7 @@ class VariantPreviewScreen extends StatelessWidget {
       height: 180,
       width: double.infinity,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+      errorBuilder: (context, __, ___) => Text(AppStrings.tr(context, 'unableToLoadImage')),
     );
   }
 

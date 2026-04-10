@@ -25,6 +25,7 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
   final VariantGenerator _variantGenerator;
   final DocxExportService _docxExportService;
   final GoogleFormsExportService _googleFormsExportService;
+  bool get _isArabic => state.locale.languageCode == 'ar';
 
   Future<void> loadData() async {
     emit(state.copyWith(isLoading: true, clearMessage: true));
@@ -145,7 +146,11 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
 
   Future<void> generateVariants({required QuizModel quiz, required int count}) async {
     if (count < 1) {
-      emit(state.copyWith(message: 'Please enter a valid number of variants.'));
+      emit(
+        state.copyWith(
+          message: _isArabic ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.',
+        ),
+      );
       return;
     }
 
@@ -155,7 +160,7 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     emit(
       state.copyWith(
         generatedVariants: variants,
-        message: 'Generated ${variants.length} variant(s).',
+        message: _isArabic ? 'تم توليد ${variants.length} نموذج(نماذج).' : 'Generated ${variants.length} variant(s).',
       ),
     );
   }

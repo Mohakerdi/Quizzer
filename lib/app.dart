@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:math_keyboard/math_keyboard.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
@@ -44,7 +43,7 @@ class QuizMakerApp extends StatelessWidget {
               useMaterial3: true,
               colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5D3FD3)),
             ),
-            home: MathKeyboardViewInsets(child: const QuizMakerHome()),
+            home: const QuizMakerHome(),
           );
         },
       ),
