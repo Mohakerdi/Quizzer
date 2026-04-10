@@ -322,19 +322,15 @@ class DocxExportService {
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
     final runs = _paragraphRuns(text, bold: bold);
     final bidi = rtl ? '<w:bidi/>' : '';
-    final content = imageRelationshipId == null
-        ? '''
+    final imageParagraph = imageRelationshipId == null
+        ? ''
+        : '''
   <w:p>
-    <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
-    $runs
-  </w:p>'''
-        : _questionContentWithImage(
-            text: text,
-            bold: bold,
-            jc: jc,
-            rtl: rtl,
-            imageRelationshipId: imageRelationshipId,
-          );
+    <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
+    <w:r>
+      ${_inlineImageDrawingXml(imageRelationshipId)}
+    </w:r>
+  </w:p>''';
 
     return '''<w:tc>
   <w:tcPr>
@@ -349,83 +345,21 @@ class DocxExportService {
       <w:right w:w="120" w:type="dxa"/>
     </w:tcMar>
   </w:tcPr>
-  $content
-</w:tc>''';
-  }
-
-  String _questionContentWithImage({
-    required String text,
-    required bool bold,
-    required String jc,
-    required bool rtl,
-    required String imageRelationshipId,
-  }) {
-    const imageCellWidthTwips = 3200;
-    const textCellWidthTwips = 6400;
-    const imageSizeEmu = 2095500;
-    final runs = _paragraphRuns(text, bold: bold);
-    final bidi = rtl ? '<w:bidi/>' : '';
-
-    final textCell = '''<w:tc>
-  <w:tcPr>
-    <w:tcW w:w="$textCellWidthTwips" w:type="dxa"/>
-    <w:vAlign w:val="top"/>
-  </w:tcPr>
   <w:p>
     <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
     $runs
   </w:p>
+  $imageParagraph
 </w:tc>''';
-
-    final imageCell = '''<w:tc>
-  <w:tcPr>
-    <w:tcW w:w="$imageCellWidthTwips" w:type="dxa"/>
-    <w:vAlign w:val="top"/>
-  </w:tcPr>
-  <w:p>
-    <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
-    <w:r>
-      ${_inlineImageDrawingXml(imageRelationshipId, widthEmu: imageSizeEmu, heightEmu: imageSizeEmu)}
-    </w:r>
-  </w:p>
-</w:tc>''';
-
-    final firstCell = rtl ? imageCell : textCell;
-    final secondCell = rtl ? textCell : imageCell;
-
-    return '''<w:tbl>
-  <w:tblPr>
-    <w:tblW w:w="0" w:type="auto"/>
-    <w:tblLayout w:type="fixed"/>
-    <w:tblBorders>
-      <w:top w:val="nil"/>
-      <w:left w:val="nil"/>
-      <w:bottom w:val="nil"/>
-      <w:right w:val="nil"/>
-      <w:insideH w:val="nil"/>
-      <w:insideV w:val="nil"/>
-    </w:tblBorders>
-  </w:tblPr>
-  <w:tblGrid>
-    <w:gridCol w:w="$textCellWidthTwips"/>
-    <w:gridCol w:w="$imageCellWidthTwips"/>
-  </w:tblGrid>
-  <w:tr>
-    $firstCell
-    $secondCell
-  </w:tr>
-</w:tbl>''';
   }
 
-  String _inlineImageDrawingXml(
-    String relationshipId, {
-    int widthEmu = 3600000,
-    int heightEmu = 2160000,
-  }) {
+  String _inlineImageDrawingXml(String relationshipId) {
+    const cx = 3600000;
+    const cy = 2160000;
     final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
     return '''<w:drawing>
   <wp:inline distT="0" distB="0" distL="0" distR="0">
-    <wp:extent cx="$widthEmu" cy="$heightEmu"/>
+    <wp:extent cx="$cx" cy="$cy"/>
     <wp:effectExtent l="0" t="0" r="0" b="0"/>
     <wp:docPr id="$imageId" name="QuestionImage$imageId"/>
     <wp:cNvGraphicFramePr>
@@ -447,7 +381,7 @@ class DocxExportService {
           <pic:spPr>
             <a:xfrm>
               <a:off x="0" y="0"/>
-              <a:ext cx="$widthEmu" cy="$heightEmu"/>
+              <a:ext cx="$cx" cy="$cy"/>
             </a:xfrm>
             <a:prstGeom prst="rect">
               <a:avLst/>
