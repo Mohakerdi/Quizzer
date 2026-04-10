@@ -15,4 +15,11 @@ void main() {
       'sin(x) + cos(x)',
     );
   });
+
+  test('preserves symbolic latex commands outside function whitelist', () {
+    expect(
+      FriendlyMathFormatter.format(r'\alpha + \beta'),
+      r'\alpha + \beta',
+    );
+  });
 }
