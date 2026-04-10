@@ -308,44 +308,9 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _openDocxExportDialogAndExport(GeneratedVariant variant) async {
-    var teacherNameInput = '';
-    var schoolNameInput = '';
-    final exportDetails = await showDialog<({String teacherName, String schoolName})>(
+    final exportDetails = await showDialog<_DocxExportDetails>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(AppStrings.tr(dialogContext, 'docxExportDetails')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(dialogContext, 'teacherName'),
-              ),
-              onChanged: (value) => teacherNameInput = value,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                labelText: AppStrings.tr(dialogContext, 'schoolName'),
-              ),
-              onChanged: (value) => schoolNameInput = value,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(AppStrings.tr(dialogContext, 'cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop((
-              teacherName: teacherNameInput.trim(),
-              schoolName: schoolNameInput.trim(),
-            )),
-            child: Text(AppStrings.tr(dialogContext, 'exportDocx')),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => const _DocxExportDetailsDialog(),
     );
     if (exportDetails == null) {
       return;
@@ -433,6 +398,75 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DocxExportDetails {
+  const _DocxExportDetails({
+    required this.teacherName,
+    required this.schoolName,
+  });
+
+  final String teacherName;
+  final String schoolName;
+}
+
+class _DocxExportDetailsDialog extends StatefulWidget {
+  const _DocxExportDetailsDialog();
+
+  @override
+  State<_DocxExportDetailsDialog> createState() => _DocxExportDetailsDialogState();
+}
+
+class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
+  final _teacherController = TextEditingController();
+  final _schoolController = TextEditingController();
+
+  @override
+  void dispose() {
+    _teacherController.dispose();
+    _schoolController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppStrings.tr(context, 'docxExportDetails')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _teacherController,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'teacherName'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _schoolController,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'schoolName'),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(AppStrings.tr(context, 'cancel')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(
+            _DocxExportDetails(
+              teacherName: _teacherController.text.trim(),
+              schoolName: _schoolController.text.trim(),
+            ),
+          ),
+          child: Text(AppStrings.tr(context, 'exportDocx')),
+        ),
+      ],
     );
   }
 }
