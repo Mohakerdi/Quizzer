@@ -317,8 +317,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     }
     await widget.onExportVariant(
       variant,
-      teacherName: exportDetails.teacherName.isEmpty ? null : exportDetails.teacherName,
-      schoolName: exportDetails.schoolName.isEmpty ? null : exportDetails.schoolName,
+      teacherName: exportDetails.nullableTeacherName,
+      schoolName: exportDetails.nullableSchoolName,
     );
   }
 
@@ -410,6 +410,9 @@ class _DocxExportDetails {
 
   final String teacherName;
   final String schoolName;
+
+  String? get nullableTeacherName => teacherName.isEmpty ? null : teacherName;
+  String? get nullableSchoolName => schoolName.isEmpty ? null : schoolName;
 }
 
 class _DocxExportDetailsDialog extends StatefulWidget {
