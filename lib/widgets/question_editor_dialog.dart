@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
+import 'package:adv_basics/utils/friendly_math_formatter.dart';
 
 typedef PickAndCropImage =
     Future<String?> Function({
@@ -397,31 +397,6 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     );
   }
 
-  /// Converts friendly inline math tokens to a lightweight LaTeX form for preview.
-  ///
-  /// Supported patterns are intentionally simple (`√(...)`, `(...)/(...)`, `<=`, `>=`, `!=`).
-  /// Nested parentheses inside the sqrt/fraction group are not expanded by this helper.
-  String _toLatex(String value) {
-    var text = value.trim();
-    if (text.isEmpty) {
-      return text;
-    }
-    text = text
-        .replaceAll('\\', '')
-        .replaceAll('<=', r' \leq ')
-        .replaceAll('>=', r' \geq ')
-        .replaceAll('!=', r' \neq ')
-        .replaceAll('×', r' \times ')
-        .replaceAll('÷', r' \div ');
-    // Intentionally matches only non-nested `√(...)` groups.
-    text = text.replaceAllMapped(RegExp(r'√\(([^()]*)\)'), (m) => r'\sqrt{' '${m.group(1)}' r'}');
-    // Intentionally matches only non-nested `(...)/(...)` groups.
-    text = text.replaceAllMapped(RegExp(r'\(([^()]*)\)\s*/\s*\(([^()]*)\)'), (m) {
-      return r'\frac{' '${m.group(1)}' r'}{' '${m.group(2)}' r'}';
-    });
-    return text;
-  }
-
   @override
   Widget build(BuildContext context) {
     final text = widget.controller.text;
@@ -463,9 +438,9 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Math.tex(
-              _toLatex(text),
-              onErrorFallback: (_) => Text(text),
+            child: SelectableText(
+              FriendlyMathFormatter.format(text),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:adv_basics/models/question_option.dart';
+import 'package:adv_basics/utils/friendly_math_formatter.dart';
 import 'package:uuid/uuid.dart';
 
 class QuizQuestion {
@@ -89,14 +90,14 @@ class QuizQuestion {
   }
 
   String get composedPrompt {
-    if (math.trim().isEmpty) {
-      return text.trim();
+    final normalizedText = FriendlyMathFormatter.format(text);
+    final normalizedMath = FriendlyMathFormatter.format(math);
+    if (normalizedMath.isEmpty) {
+      return normalizedText;
     }
-
-    if (text.trim().isEmpty) {
-      return r'$' + math.trim() + r'$';
+    if (normalizedText.isEmpty) {
+      return normalizedMath;
     }
-
-    return '${text.trim()}  (${r'$'}${math.trim()}${r'$'})';
+    return '$normalizedText  ($normalizedMath)';
   }
 }

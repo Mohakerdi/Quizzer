@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
+import 'package:adv_basics/utils/friendly_math_formatter.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -673,8 +674,8 @@ class DocxExportService {
     required String text,
     required String math,
   }) {
-    final normalizedText = text.trim();
-    final normalizedMath = _latexToFormulaText(math);
+    final normalizedText = FriendlyMathFormatter.format(text);
+    final normalizedMath = FriendlyMathFormatter.format(math);
     if (normalizedMath.isEmpty) {
       return normalizedText;
     }
@@ -682,48 +683,6 @@ class DocxExportService {
       return normalizedMath;
     }
     return '$normalizedText  ($normalizedMath)';
-  }
-
-  /// Converts a limited set of LaTeX-like tokens to plain-text math for DOCX export.
-  ///
-  /// Supported replacements include:
-  /// - Greek/symbol commands (`\pi`, `\theta`, `\times`, `\div`, `\leq`, `\geq`, `\neq`)
-  /// - Fractions (`\frac{a}{b}` -> `(a)/(b)`)
-  /// - Square roots (`\sqrt{x}` -> `√(x)`)
-  ///
-  /// Note: nested-brace fraction/sqrt groups are not fully parsed by this lightweight converter.
-  ///
-  /// Remaining command names (after backslash) and braces are stripped to keep readable text.
-  String _latexToFormulaText(String value) {
-    var text = value.trim();
-    if (text.isEmpty) {
-      return text;
-    }
-
-    text = text
-        .replaceAll(r'\pi', 'π')
-        .replaceAll(r'\theta', 'θ')
-        .replaceAll(r'\times', '×')
-        .replaceAll(r'\div', '÷')
-        .replaceAll(r'\leq', '≤')
-        .replaceAll(r'\geq', '≥')
-        .replaceAll(r'\neq', '≠');
-
-    // Lightweight pattern: supports only non-nested brace groups in \frac.
-    final fracRegex = RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}');
-    while (fracRegex.hasMatch(text)) {
-      text = text.replaceAllMapped(fracRegex, (m) => '(${m.group(1)})/(${m.group(2)})');
-    }
-
-    // Lightweight pattern: supports only non-nested brace groups in \sqrt.
-    final sqrtRegex = RegExp(r'\\sqrt\{([^{}]+)\}');
-    while (sqrtRegex.hasMatch(text)) {
-      text = text.replaceAllMapped(sqrtRegex, (m) => '√(${m.group(1)})');
-    }
-
-    text = text.replaceAllMapped(RegExp(r'\\([a-zA-Z]+)'), (m) => m.group(1) ?? '');
-    text = text.replaceAll('{', '').replaceAll('}', '');
-    return text;
   }
 
   bool _containsArabic(String value) {
