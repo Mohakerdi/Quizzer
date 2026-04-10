@@ -409,7 +409,9 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
         .replaceAll('!=', r' \neq ')
         .replaceAll('×', r' \times ')
         .replaceAll('÷', r' \div ');
+    // Intentionally matches only non-nested `√(...)` groups.
     text = text.replaceAllMapped(RegExp(r'√\(([^()]*)\)'), (m) => r'\sqrt{' '${m.group(1)}' r'}');
+    // Intentionally matches only non-nested `(...)/(...)` groups.
     text = text.replaceAllMapped(RegExp(r'\(([^()]*)\)\s*/\s*\(([^()]*)\)'), (m) {
       return r'\frac{' '${m.group(1)}' r'}{' '${m.group(2)}' r'}';
     });

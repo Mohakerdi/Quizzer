@@ -709,11 +709,13 @@ class DocxExportService {
         .replaceAll(r'\geq', '≥')
         .replaceAll(r'\neq', '≠');
 
+    // Lightweight pattern: supports only non-nested brace groups in \frac.
     final fracRegex = RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}');
     while (fracRegex.hasMatch(text)) {
       text = text.replaceAllMapped(fracRegex, (m) => '(${m.group(1)})/(${m.group(2)})');
     }
 
+    // Lightweight pattern: supports only non-nested brace groups in \sqrt.
     final sqrtRegex = RegExp(r'\\sqrt\{([^{}]+)\}');
     while (sqrtRegex.hasMatch(text)) {
       text = text.replaceAllMapped(sqrtRegex, (m) => '√(${m.group(1)})');
