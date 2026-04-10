@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 
 class QuizListScreen extends StatelessWidget {
@@ -27,27 +28,32 @@ class QuizListScreen extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          title: const Text('Quizzes'),
+          title: Text(AppStrings.tr(context, 'quizzes')),
           trailing: IconButton(
             icon: const Icon(Icons.add),
             onPressed: onCreateQuiz,
-            tooltip: 'Create quiz',
+            tooltip: AppStrings.tr(context, 'createQuizTooltip'),
           ),
         ),
         const Divider(height: 1),
         Expanded(
           child: quizzes.isEmpty
-              ? const Center(child: Text('No quizzes yet.'))
+              ? Center(child: Text(AppStrings.tr(context, 'noQuizzesYet')))
               : ListView.builder(
                   itemCount: quizzes.length,
                   itemBuilder: (context, index) {
                     final quiz = quizzes[index];
                     final selected = quiz.id == selectedQuizId;
 
+                    final ar = AppStrings.isArabic(context);
                     return ListTile(
                       selected: selected,
                       title: Text(quiz.title),
-                      subtitle: Text('${quiz.questions.length} question(s) · v${quiz.version}'),
+                      subtitle: Text(
+                        ar
+                            ? '${quiz.questions.length} سؤال · ن${quiz.version}'
+                            : '${quiz.questions.length} question(s) · v${quiz.version}',
+                      ),
                       onTap: () => onSelectQuiz(quiz),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) async {
@@ -61,10 +67,10 @@ class QuizListScreen extends StatelessWidget {
                             await onDeleteQuiz(quiz);
                           }
                         },
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(value: 'rename', child: Text('Rename')),
-                          PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                          PopupMenuItem(value: 'delete', child: Text('Delete')),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(value: 'rename', child: Text(AppStrings.tr(context, 'rename'))),
+                          PopupMenuItem(value: 'duplicate', child: Text(AppStrings.tr(context, 'duplicate'))),
+                          PopupMenuItem(value: 'delete', child: Text(AppStrings.tr(context, 'delete'))),
                         ],
                       ),
                     );

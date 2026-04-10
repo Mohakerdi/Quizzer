@@ -30,6 +30,82 @@ class AppStrings {
         return ar ? 'أنشئ أو اختر اختبارًا للبدء.' : 'Create or select a quiz to start.';
       case 'invalidVariantsCount':
         return ar ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.';
+      case 'quizzes':
+        return ar ? 'الاختبارات' : 'Quizzes';
+      case 'createQuizTooltip':
+        return ar ? 'إنشاء اختبار' : 'Create quiz';
+      case 'noQuizzesYet':
+        return ar ? 'لا توجد اختبارات بعد.' : 'No quizzes yet.';
+      case 'rename':
+        return ar ? 'إعادة تسمية' : 'Rename';
+      case 'duplicate':
+        return ar ? 'نسخ' : 'Duplicate';
+      case 'delete':
+        return ar ? 'حذف' : 'Delete';
+      case 'saveQuiz':
+        return ar ? 'حفظ الاختبار' : 'Save Quiz';
+      case 'validate':
+        return ar ? 'تحقق' : 'Validate';
+      case 'addQuestion':
+        return ar ? 'إضافة سؤال' : 'Add Question';
+      case 'generatedVariantsTitle':
+        return ar ? 'النماذج المُولَّدة' : 'Generated Variants';
+      case 'noVariantsYet':
+        return ar ? 'لم يتم توليد نماذج بعد.' : 'No variants generated yet.';
+      case 'preview':
+        return ar ? 'معاينة' : 'Preview';
+      case 'exportDocx':
+        return ar ? 'تصدير DOCX' : 'Export DOCX';
+      case 'exportGoogleForms':
+        return ar ? 'تصدير Google Forms' : 'Export Google Forms';
+      case 'quizSaved':
+        return ar ? 'تم حفظ الاختبار.' : 'Quiz saved.';
+      case 'quizValid':
+        return ar ? 'الاختبار صالح.' : 'Quiz is valid.';
+      case 'validationErrors':
+        return ar ? 'أخطاء التحقق' : 'Validation errors';
+      case 'close':
+        return ar ? 'إغلاق' : 'Close';
+      case 'editImage':
+        return ar ? 'تعديل الصورة' : 'Edit image';
+      case 'applying':
+        return ar ? 'جارٍ التطبيق...' : 'Applying...';
+      case 'apply':
+        return ar ? 'تطبيق' : 'Apply';
+      case 'previewVariant':
+        return ar ? 'معاينة النموذج' : 'Preview';
+      case 'questionContent':
+        return ar ? 'محتوى السؤال' : 'Question content';
+      case 'questionContentHint':
+        return ar ? 'اكتب نص السؤال والصيغ في مكان واحد' : 'Write question text and formulas in one place';
+      case 'optionContent':
+        return ar ? 'محتوى الخيار' : 'Option content';
+      case 'optionContentHint':
+        return ar ? 'اكتب النص أو الصيغة في مكان واحد' : 'Write text or formula in one place';
+      case 'addOption':
+        return ar ? 'إضافة خيار' : 'Add option';
+      case 'editOption':
+        return ar ? 'تعديل الخيار' : 'Edit option';
+      case 'save':
+        return ar ? 'حفظ' : 'Save';
+      case 'addQuestionTitle':
+        return ar ? 'إضافة سؤال' : 'Add question';
+      case 'editQuestionTitle':
+        return ar ? 'تعديل السؤال' : 'Edit question';
+      case 'selectImageFromGallery':
+        return ar ? 'اختر صورة من المعرض' : 'Select image from gallery';
+      case 'crop':
+        return ar ? 'قص' : 'Crop';
+      case 'remove':
+        return ar ? 'إزالة' : 'Remove';
+      case 'options':
+        return ar ? 'الخيارات' : 'Options';
+      case 'emptyOption':
+        return ar ? '(خيار فارغ)' : '(empty option)';
+      case 'saveQuestion':
+        return ar ? 'حفظ السؤال' : 'Save question';
+      case 'unableToLoadImage':
+        return ar ? 'تعذر تحميل الصورة المحددة.' : 'Unable to load selected image.';
       default:
         return key;
     }
