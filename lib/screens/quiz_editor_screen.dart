@@ -317,14 +317,14 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextFormField(
+            TextField(
               decoration: InputDecoration(
                 labelText: AppStrings.tr(dialogContext, 'teacherName'),
               ),
               onChanged: (value) => teacherNameInput = value,
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            TextField(
               decoration: InputDecoration(
                 labelText: AppStrings.tr(dialogContext, 'schoolName'),
               ),
