@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
@@ -369,9 +370,14 @@ class _FriendlyMathInput extends StatefulWidget {
 }
 
 class _FriendlyMathInputState extends State<_FriendlyMathInput> {
+  late final quill.QuillController _quillController;
+
   @override
   void initState() {
     super.initState();
+    _quillController = quill.QuillController.basic();
+    _setQuillText(widget.controller.text);
+    _quillController.addListener(_syncToTextController);
     widget.controller.addListener(_onTextChanged);
   }
 
@@ -381,39 +387,70 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onTextChanged);
       widget.controller.addListener(_onTextChanged);
+      _setQuillText(widget.controller.text);
     }
   }
 
   @override
   void dispose() {
+    _quillController.removeListener(_syncToTextController);
+    _quillController.dispose();
     widget.controller.removeListener(_onTextChanged);
     super.dispose();
   }
 
   void _onTextChanged() {
+    if (_plainTextFromQuill() != widget.controller.text) {
+      _setQuillText(widget.controller.text);
+    }
+
     if (mounted) {
       setState(() {});
     }
   }
 
-  void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
-    final current = widget.controller.value;
-    final selection = current.selection;
+  String _plainTextFromQuill() {
+    return _quillController.document.toPlainText().replaceFirst(RegExp(r'\n$'), '');
+  }
 
-    if (selection.baseOffset == -1 || selection.start < 0 || selection.end < 0) {
-      final text = '${current.text}$symbol';
-      widget.controller.value = current.copyWith(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
+  void _syncToTextController() {
+    final plainText = _plainTextFromQuill();
+    if (plainText == widget.controller.text) {
       return;
     }
+    widget.controller.value = widget.controller.value.copyWith(
+      text: plainText,
+      selection: TextSelection.collapsed(offset: plainText.length),
+    );
+  }
 
-    final newText = current.text.replaceRange(selection.start, selection.end, symbol);
-    final cursor = (selection.start + symbol.length - cursorOffset).clamp(0, newText.length);
-    widget.controller.value = current.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: cursor),
+  void _setQuillText(String value) {
+    final target = value;
+    final current = _plainTextFromQuill();
+    if (target == current) {
+      return;
+    }
+    final replaceLength =
+        (_quillController.document.length - 1).clamp(0, _quillController.document.length).toInt();
+    _quillController.replaceText(
+      0,
+      replaceLength,
+      target,
+      TextSelection.collapsed(offset: target.length),
+    );
+  }
+
+  void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
+    final selection = _quillController.selection;
+    final docLength = _quillController.document.length;
+    final start = selection.start >= 0 ? selection.start : docLength - 1;
+    final end = selection.end >= 0 ? selection.end : docLength - 1;
+    final cursor = (start + symbol.length - cursorOffset).clamp(0, docLength - 1 + symbol.length).toInt();
+    _quillController.replaceText(
+      start,
+      end - start,
+      symbol,
+      TextSelection.collapsed(offset: cursor),
     );
   }
 
@@ -423,16 +460,36 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: widget.controller,
-          minLines: widget.minLines,
-          maxLines: widget.maxLines,
-          decoration: InputDecoration(
-            labelText: widget.labelText,
-            hintText: widget.hintText,
+        Text(
+          widget.labelText,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        if (widget.hintText.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            widget.hintText,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
+        ],
+        const SizedBox(height: 8),
+        quill.QuillToolbar.basic(
+          controller: _quillController,
         ),
         const SizedBox(height: 8),
+        Container(
+          constraints: BoxConstraints(
+            minHeight: widget.minLines * 24,
+            maxHeight: widget.maxLines * 28,
+          ),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: quill.QuillEditor.basic(
+            controller: _quillController,
+          ),
+        ),
         Wrap(
           spacing: 6,
           runSpacing: 6,
