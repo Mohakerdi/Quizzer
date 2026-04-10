@@ -542,10 +542,10 @@ class DocxExportService {
   /// Detects common raster image formats from magic bytes.
   ///
   /// Supported signatures:
-  /// - PNG (`89 50 4E 47`)
-  /// - JPEG (`FF D8 FF`)
-  /// - GIF (`47 49 46 38`)
-  /// - BMP (`42 4D`)
+  /// - PNG (`0x89 0x50 0x4E 0x47` / `137 80 78 71`)
+  /// - JPEG (`0xFF 0xD8 0xFF` / `255 216 255`)
+  /// - GIF (`0x47 0x49 0x46 0x38` / `71 73 70 56`)
+  /// - BMP (`0x42 0x4D` / `66 77`)
   ///
   /// Returns a normalized extension (e.g. `.png`) or `null` when unknown.
   String? _detectImageExtension(Uint8List bytes) {
@@ -649,7 +649,7 @@ class DocxExportService {
   /// - Fractions (`\frac{a}{b}` -> `(a)/(b)`)
   /// - Square roots (`\sqrt{x}` -> `√(x)`)
   ///
-  /// Remaining command markers/slashes and braces are stripped to keep readable text.
+  /// Remaining command names (after backslash) and braces are stripped to keep readable text.
   String _latexToFormulaText(String value) {
     var text = value.trim();
     if (text.isEmpty) {
