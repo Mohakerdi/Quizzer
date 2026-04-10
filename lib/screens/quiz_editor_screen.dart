@@ -34,7 +34,11 @@ class QuizEditorScreen extends StatefulWidget {
   final Future<void> Function(QuizModel quiz) onQuizAutoSave;
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
-  final Future<void> Function(GeneratedVariant variant) onExportVariant;
+  final Future<void> Function(
+    GeneratedVariant variant, {
+    String? teacherName,
+    String? schoolName,
+  }) onExportVariant;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
   @override
@@ -303,6 +307,59 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     _scheduleAutoSave();
   }
 
+  Future<void> _openDocxExportDialogAndExport(GeneratedVariant variant) async {
+    final teacherController = TextEditingController();
+    final schoolController = TextEditingController();
+    final shouldExport = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.tr(dialogContext, 'docxExportDetails')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: teacherController,
+              decoration: InputDecoration(
+                labelText: AppStrings.tr(dialogContext, 'teacherName'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: schoolController,
+              decoration: InputDecoration(
+                labelText: AppStrings.tr(dialogContext, 'schoolName'),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.tr(dialogContext, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.tr(dialogContext, 'exportDocx')),
+          ),
+        ],
+      ),
+    );
+    if (shouldExport != true) {
+      teacherController.dispose();
+      schoolController.dispose();
+      return;
+    }
+    final teacherName = teacherController.text.trim();
+    final schoolName = schoolController.text.trim();
+    teacherController.dispose();
+    schoolController.dispose();
+    await widget.onExportVariant(
+      variant,
+      teacherName: teacherName.isEmpty ? null : teacherName,
+      schoolName: schoolName.isEmpty ? null : schoolName,
+    );
+  }
+
   void _removeQuestion(int index) {
     if (_quiz.questions.length <= 1) {
       return;
@@ -370,7 +427,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                   child: GeneratedVariantsPanel(
                     generatedVariants: widget.generatedVariants,
                     onPreviewVariant: widget.onPreviewVariant,
-                    onExportVariant: widget.onExportVariant,
+                    onExportVariant: _openDocxExportDialogAndExport,
                     onExportGoogleForms: widget.onExportGoogleForms,
                   ),
                 ),

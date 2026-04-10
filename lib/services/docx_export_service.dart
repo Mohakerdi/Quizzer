@@ -15,11 +15,15 @@ class DocxExportService {
   Future<String> exportQuizPaper({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? teacherName,
+    String? schoolName,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
+      teacherName: teacherName,
+      schoolName: schoolName,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -91,10 +95,14 @@ class DocxExportService {
   String buildQuizDocumentXmlForTest({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? teacherName,
+    String? schoolName,
   }) {
     return _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
+      teacherName: teacherName,
+      schoolName: schoolName,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -103,6 +111,8 @@ class DocxExportService {
   String _buildQuizDocumentXml({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? teacherName,
+    String? schoolName,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
@@ -121,6 +131,18 @@ class DocxExportService {
         'Date: ${variant.generatedAt.toIso8601String().split('T').first}',
       ]),
     ];
+    final normalizedTeacher = teacherName?.trim() ?? '';
+    final normalizedSchool = schoolName?.trim() ?? '';
+    if (normalizedTeacher.isNotEmpty || normalizedSchool.isNotEmpty) {
+      const additionalEmptyCells = ['', ''];
+      rows.add(
+        _headerRow([
+          normalizedTeacher.isEmpty ? '' : 'Teacher: $normalizedTeacher',
+          normalizedSchool.isEmpty ? '' : 'School: $normalizedSchool',
+          ...additionalEmptyCells,
+        ]),
+      );
+    }
 
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];

@@ -2,12 +2,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
+import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_model.dart';
+import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/services/docx_export_service.dart';
 import 'package:adv_basics/services/google_forms_export_service.dart';
 import 'package:adv_basics/services/quiz_repository.dart';
 import 'package:adv_basics/services/variant_generator.dart';
 import 'package:adv_basics/view_models/quiz_maker_state.dart';
+import 'package:uuid/uuid.dart';
 
 class QuizMakerCubit extends Cubit<QuizMakerState> {
   QuizMakerCubit({
@@ -58,6 +61,62 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
         generatedVariants: const [],
         message: 'Quiz created.',
       ),
+    );
+  }
+
+  Future<void> createQuizFromQuestionBank({
+    required String title,
+    required List<QuizQuestion> questions,
+  }) async {
+    if (title.trim().isEmpty || questions.isEmpty) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final quiz = QuizModel(
+      id: const Uuid().v4(),
+      title: title.trim(),
+      version: 1,
+      questions: questions.map(_cloneQuestionForNewQuiz).toList(),
+      createdAt: now,
+      updatedAt: now,
+    );
+    final created = await _repository.upsertQuiz(quiz);
+    emit(
+      state.copyWith(
+        quizzes: [...state.quizzes, created],
+        selectedQuiz: created,
+        generatedVariants: const [],
+        message: _isArabic ? 'تم إنشاء اختبار من بنك الأسئلة.' : 'Quiz created from question bank.',
+      ),
+    );
+  }
+
+  QuizQuestion _cloneQuestionForNewQuiz(QuizQuestion question) {
+    final optionIdMap = <String, String>{
+      for (final option in question.options) option.id: const Uuid().v4(),
+    };
+    final clonedOptions = question.options
+        .map(
+          (option) => QuestionOption(
+            id: optionIdMap[option.id] ?? const Uuid().v4(),
+            text: option.text,
+            math: option.math,
+          ),
+        )
+        .toList();
+    return QuizQuestion(
+      id: const Uuid().v4(),
+      text: question.text,
+      math: question.math,
+      imageRef: question.imageRef,
+      topic: question.topic,
+      difficulty: question.difficulty,
+      gradeLevel: question.gradeLevel,
+      unitOfStudy: question.unitOfStudy,
+      curriculum: question.curriculum,
+      options: clonedOptions,
+      correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
     );
   }
 
@@ -165,13 +224,22 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
   }
 
-  Future<void> exportVariant(GeneratedVariant variant) async {
+  Future<void> exportVariant(
+    GeneratedVariant variant, {
+    String? teacherName,
+    String? schoolName,
+  }) async {
     final quiz = state.selectedQuiz;
     if (quiz == null) {
       return;
     }
 
-    final quizDocPath = await _docxExportService.exportQuizPaper(quiz: quiz, variant: variant);
+    final quizDocPath = await _docxExportService.exportQuizPaper(
+      quiz: quiz,
+      variant: variant,
+      teacherName: teacherName,
+      schoolName: schoolName,
+    );
     final solutionDocPath = await _docxExportService.exportSolutions(quiz: quiz, variant: variant);
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));

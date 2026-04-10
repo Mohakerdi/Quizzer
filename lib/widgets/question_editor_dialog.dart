@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
@@ -49,6 +48,9 @@ class _QuestionEditorDialog extends StatefulWidget {
 
 class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   late final TextEditingController _questionContentController;
+  late final TextEditingController _gradeLevelController;
+  late final TextEditingController _unitOfStudyController;
+  late final TextEditingController _curriculumController;
   late String _imagePath;
   late List<QuestionOption> _options;
   late String _correctOptionId;
@@ -59,6 +61,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
     _questionContentController = TextEditingController(
       text: _mergeLegacyTextAndMath(widget.source.text, widget.source.math),
     );
+    _gradeLevelController = TextEditingController(text: widget.source.gradeLevel);
+    _unitOfStudyController = TextEditingController(text: widget.source.unitOfStudy);
+    _curriculumController = TextEditingController(text: widget.source.curriculum);
     _imagePath = widget.source.imageRef;
     _options = widget.source.options
         .map((o) => QuestionOption(id: o.id, text: o.text, math: o.math))
@@ -69,6 +74,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   @override
   void dispose() {
     _questionContentController.dispose();
+    _gradeLevelController.dispose();
+    _unitOfStudyController.dispose();
+    _curriculumController.dispose();
     super.dispose();
   }
 
@@ -170,6 +178,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       text: _questionContentController.text,
       math: '',
       imageRef: _imagePath,
+      gradeLevel: _gradeLevelController.text.trim(),
+      unitOfStudy: _unitOfStudyController.text.trim(),
+      curriculum: _curriculumController.text.trim(),
       options: _options,
       correctOptionId: _correctOptionId,
     );
@@ -195,6 +206,30 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 hintText: AppStrings.tr(context, 'questionContentHint'),
                 minLines: 3,
                 maxLines: 8,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _gradeLevelController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'gradeLevel'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _unitOfStudyController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'unitOfStudy'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _curriculumController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'curriculum'),
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -370,14 +405,22 @@ class _FriendlyMathInput extends StatefulWidget {
 }
 
 class _FriendlyMathInputState extends State<_FriendlyMathInput> {
-  late final quill.QuillController _quillController;
+  static const List<_MathInsertAction> _mathActions = [
+    _MathInsertAction(label: '√', symbol: r'$$\sqrt{}$$', cursorOffset: 3),
+    _MathInsertAction(label: 'Fraction', symbol: r'$$\frac{}{}$$', cursorOffset: 5),
+    _MathInsertAction(label: '≤', symbol: r'$$\leq$$'),
+    _MathInsertAction(label: '≥', symbol: r'$$\geq$$'),
+    _MathInsertAction(label: '≠', symbol: r'$$\neq$$'),
+    _MathInsertAction(label: 'π', symbol: r'$$\pi$$'),
+    _MathInsertAction(label: 'θ', symbol: r'$$\theta$$'),
+    _MathInsertAction(label: '×', symbol: r'$$\times$$'),
+    _MathInsertAction(label: '÷', symbol: r'$$\div$$'),
+    _MathInsertAction(label: 'x²', symbol: r'$$^2$$'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _quillController = quill.QuillController.basic();
-    _setQuillText(widget.controller.text);
-    _quillController.addListener(_syncToTextController);
     widget.controller.addListener(_onTextChanged);
   }
 
@@ -387,70 +430,46 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onTextChanged);
       widget.controller.addListener(_onTextChanged);
-      _setQuillText(widget.controller.text);
     }
   }
 
   @override
   void dispose() {
-    _quillController.removeListener(_syncToTextController);
-    _quillController.dispose();
     widget.controller.removeListener(_onTextChanged);
     super.dispose();
   }
 
   void _onTextChanged() {
-    if (_plainTextFromQuill() != widget.controller.text) {
-      _setQuillText(widget.controller.text);
-    }
-
     if (mounted) {
       setState(() {});
     }
   }
 
-  String _plainTextFromQuill() {
-    return _quillController.document.toPlainText().replaceFirst(RegExp(r'\n$'), '');
-  }
-
-  void _syncToTextController() {
-    final plainText = _plainTextFromQuill();
-    if (plainText == widget.controller.text) {
-      return;
-    }
-    widget.controller.value = widget.controller.value.copyWith(
-      text: plainText,
-      selection: TextSelection.collapsed(offset: plainText.length),
-    );
-  }
-
-  void _setQuillText(String value) {
-    final target = value;
-    final current = _plainTextFromQuill();
-    if (target == current) {
-      return;
-    }
-    final replaceLength =
-        (_quillController.document.length - 1).clamp(0, _quillController.document.length).toInt();
-    _quillController.replaceText(
-      0,
-      replaceLength,
-      target,
-      TextSelection.collapsed(offset: target.length),
-    );
-  }
-
   void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
-    final selection = _quillController.selection;
-    final docLength = _quillController.document.length;
-    final start = selection.start >= 0 ? selection.start : docLength - 1;
-    final end = selection.end >= 0 ? selection.end : docLength - 1;
-    final cursor = (start + symbol.length - cursorOffset).clamp(0, docLength - 1 + symbol.length).toInt();
-    _quillController.replaceText(
-      start,
-      end - start,
-      symbol,
-      TextSelection.collapsed(offset: cursor),
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
+
+    if (!selection.isValid) {
+      final appended = '$text$symbol';
+      widget.controller.value = widget.controller.value.copyWith(
+        text: appended,
+        selection: TextSelection.collapsed(offset: appended.length),
+        composing: TextRange.empty,
+      );
+      return;
+    }
+
+    final start = selection.start;
+    final end = selection.end;
+    final newText = text.replaceRange(start, end, symbol);
+    final safeCursorOffset = cursorOffset.clamp(0, symbol.length);
+    final targetOffset = start + symbol.length - safeCursorOffset;
+    final newCursor = targetOffset.clamp(0, newText.length).toInt();
+
+    widget.controller.value = widget.controller.value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursor),
+      composing: TextRange.empty,
     );
   }
 
@@ -472,39 +491,30 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
           ),
         ],
         const SizedBox(height: 8),
-        quill.QuillToolbar.basic(
-          controller: _quillController,
-        ),
-        const SizedBox(height: 8),
-        Container(
-          constraints: BoxConstraints(
-            minHeight: widget.minLines * 24,
-            maxHeight: widget.maxLines * 28,
-          ),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: quill.QuillEditor.basic(
-            controller: _quillController,
+        TextFormField(
+          controller: widget.controller,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
+          keyboardType: TextInputType.multiline,
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            isDense: true,
           ),
         ),
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: [
-            _MathActionChip(label: '√', onTap: () => _insertMathSymbol(r'$$\sqrt{}$$', cursorOffset: 3)),
-            _MathActionChip(label: 'Fraction', onTap: () => _insertMathSymbol(r'$$\frac{}{}$$', cursorOffset: 5)),
-            _MathActionChip(label: '≤', onTap: () => _insertMathSymbol(r'$$\leq$$')),
-            _MathActionChip(label: '≥', onTap: () => _insertMathSymbol(r'$$\geq$$')),
-            _MathActionChip(label: '≠', onTap: () => _insertMathSymbol(r'$$\neq$$')),
-            _MathActionChip(label: 'π', onTap: () => _insertMathSymbol(r'$$\pi$$')),
-            _MathActionChip(label: 'θ', onTap: () => _insertMathSymbol(r'$$\theta$$')),
-            _MathActionChip(label: '×', onTap: () => _insertMathSymbol(r'$$\times$$')),
-            _MathActionChip(label: '÷', onTap: () => _insertMathSymbol(r'$$\div$$')),
-            _MathActionChip(label: 'x²', onTap: () => _insertMathSymbol(r'$$^2$$')),
-          ],
+          children: _mathActions
+              .map(
+                (action) => _MathActionChip(
+                  label: action.label,
+                  onTap: () => _insertMathSymbol(
+                    action.symbol,
+                    cursorOffset: action.cursorOffset,
+                  ),
+                ),
+              )
+              .toList(),
         ),
         if (text.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -594,4 +604,16 @@ class _MathActionChip extends StatelessWidget {
       onPressed: onTap,
     );
   }
+}
+
+class _MathInsertAction {
+  const _MathInsertAction({
+    required this.label,
+    required this.symbol,
+    this.cursorOffset = 0,
+  });
+
+  final String label;
+  final String symbol;
+  final int cursorOffset;
 }

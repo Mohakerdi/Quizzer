@@ -42,6 +42,39 @@ void main() {
     expect(solutionsXml, contains('80'));
   });
 
+  test('adds teacher and school names to quiz header when provided', () {
+    final quiz = QuizModel.empty('Geometry');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Triangle angle',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: '80'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      teacherName: 'Ms. Jane',
+      schoolName: 'Sunrise School',
+    );
+
+    expect(quizXml, contains('Teacher: Ms. Jane'));
+    expect(quizXml, contains('School: Sunrise School'));
+  });
+
   test('strips invalid xml control characters from generated document xml', () {
     final quiz = QuizModel.empty('Science\u0001Quiz');
     final variant = GeneratedVariant(
@@ -100,5 +133,63 @@ void main() {
     expect(quizXml, contains('<m:oMath>'));
     expect(quizXml, contains('(1)/(2)'));
     expect(quizXml, isNot(contains('&lt;m:oMath&gt;')));
+  });
+
+  test('normalizes inline $$math$$ in text for export without raw delimiters', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V3',
+      quizId: quiz.id,
+      seed: 4,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Find sin(x) $$\frac{1}{x}$$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'$$\sqrt{4}$$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect(quizXml, contains('Find sin(x) (1)/(x)'));
+    expect(quizXml, contains('√(4)'));
+    expect(quizXml, isNot(contains(r'$$')));
+  });
+
+  test('normalizes escaped inline \\$\\$math\\$\\$ delimiters for export', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V4',
+      quizId: quiz.id,
+      seed: 5,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Find sin(x) \$\$\frac{1}{x}\$\$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'\$\$\sqrt{4}\$\$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect(quizXml, contains('Find sin(x) (1)/(x)'));
+    expect(quizXml, contains('√(4)'));
+    expect(quizXml, isNot(contains(r'\$\$')));
   });
 }

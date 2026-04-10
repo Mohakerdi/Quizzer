@@ -56,6 +56,12 @@ class AppStrings {
         return ar ? 'معاينة' : 'Preview';
       case 'exportDocx':
         return ar ? 'تصدير DOCX' : 'Export DOCX';
+      case 'docxExportDetails':
+        return ar ? 'تفاصيل رأس مستند DOCX' : 'DOCX header details';
+      case 'teacherName':
+        return ar ? 'اسم المعلم' : 'Teacher name';
+      case 'schoolName':
+        return ar ? 'اسم المدرسة' : 'School name';
       case 'exportGoogleForms':
         return ar ? 'تصدير Google Forms' : 'Export Google Forms';
       case 'quizSaved':
@@ -114,6 +120,32 @@ class AppStrings {
         return ar ? 'الوضع الداكن' : 'Dark mode';
       case 'themeLight':
         return ar ? 'الوضع الفاتح' : 'Light mode';
+      case 'quizEditorTab':
+        return ar ? 'محرر الاختبار' : 'Quiz Editor';
+      case 'questionBankTab':
+        return ar ? 'بنك الأسئلة' : 'Question Bank';
+      case 'gradeLevel':
+        return ar ? 'الصف' : 'Grade';
+      case 'unitOfStudy':
+        return ar ? 'الوحدة الدراسية' : 'Unit of study';
+      case 'curriculum':
+        return ar ? 'المنهج/المادة' : 'Curriculum';
+      case 'questionBankEmpty':
+        return ar ? 'لا توجد أسئلة في بنك الأسئلة بعد.' : 'No questions in the question bank yet.';
+      case 'filterQuestions':
+        return ar ? 'تصفية الأسئلة' : 'Filter questions';
+      case 'selectAllVisible':
+        return ar ? 'تحديد الكل (الظاهر)' : 'Select all visible';
+      case 'clearSelection':
+        return ar ? 'إلغاء التحديد' : 'Clear selection';
+      case 'selectedCount':
+        return ar ? 'تم تحديد' : 'Selected';
+      case 'createQuizFromSelection':
+        return ar ? 'إنشاء اختبار من المحدد' : 'Create quiz from selected';
+      case 'newQuizFromBankTitle':
+        return ar ? 'عنوان الاختبار الجديد' : 'New quiz title';
+      case 'bankQuestionSource':
+        return ar ? 'المصدر' : 'Source';
       default:
         return key;
     }

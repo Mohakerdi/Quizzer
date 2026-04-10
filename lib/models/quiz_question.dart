@@ -12,6 +12,9 @@ class QuizQuestion {
     this.imageRef = '',
     this.topic = '',
     this.difficulty = '',
+    this.gradeLevel = '',
+    this.unitOfStudy = '',
+    this.curriculum = '',
   });
 
   final String id;
@@ -20,6 +23,9 @@ class QuizQuestion {
   final String imageRef;
   final String topic;
   final String difficulty;
+  final String gradeLevel;
+  final String unitOfStudy;
+  final String curriculum;
   final List<QuestionOption> options;
   final String correctOptionId;
 
@@ -42,6 +48,9 @@ class QuizQuestion {
     String? imageRef,
     String? topic,
     String? difficulty,
+    String? gradeLevel,
+    String? unitOfStudy,
+    String? curriculum,
     List<QuestionOption>? options,
     String? correctOptionId,
   }) {
@@ -52,6 +61,9 @@ class QuizQuestion {
       imageRef: imageRef ?? this.imageRef,
       topic: topic ?? this.topic,
       difficulty: difficulty ?? this.difficulty,
+      gradeLevel: gradeLevel ?? this.gradeLevel,
+      unitOfStudy: unitOfStudy ?? this.unitOfStudy,
+      curriculum: curriculum ?? this.curriculum,
       options: options ?? this.options,
       correctOptionId: correctOptionId ?? this.correctOptionId,
     );
@@ -65,6 +77,9 @@ class QuizQuestion {
       'imageRef': imageRef,
       'topic': topic,
       'difficulty': difficulty,
+      'gradeLevel': gradeLevel,
+      'unitOfStudy': unitOfStudy,
+      'curriculum': curriculum,
       'options': options.map((o) => o.toJson()).toList(),
       'correctOptionId': correctOptionId,
     };
@@ -84,6 +99,9 @@ class QuizQuestion {
       imageRef: json['imageRef'] as String? ?? '',
       topic: json['topic'] as String? ?? '',
       difficulty: json['difficulty'] as String? ?? '',
+      gradeLevel: json['gradeLevel'] as String? ?? '',
+      unitOfStudy: json['unitOfStudy'] as String? ?? '',
+      curriculum: json['curriculum'] as String? ?? '',
       options: options,
       correctOptionId: json['correctOptionId'] as String? ?? fallbackCorrectId,
     );
