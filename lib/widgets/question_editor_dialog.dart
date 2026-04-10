@@ -423,11 +423,13 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
       return;
     }
 
-    final start = selection.start <= selection.end ? selection.start : selection.end;
-    final end = selection.start <= selection.end ? selection.end : selection.start;
+    final isForwardSelection = selection.start <= selection.end;
+    final start = isForwardSelection ? selection.start : selection.end;
+    final end = isForwardSelection ? selection.end : selection.start;
     final newText = text.replaceRange(start, end, symbol);
-    final targetOffset = start + symbol.length - cursorOffset;
-    final newCursor = targetOffset.clamp(start, newText.length).toInt();
+    final safeCursorOffset = cursorOffset.clamp(0, symbol.length);
+    final targetOffset = start + symbol.length - safeCursorOffset;
+    final newCursor = targetOffset.clamp(0, newText.length).toInt();
 
     widget.controller.value = widget.controller.value.copyWith(
       text: newText,
