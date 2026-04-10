@@ -12,6 +12,7 @@ import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/services/editor_validator.dart';
+import 'package:adv_basics/widgets/quiz_editor_panels.dart';
 
 class QuizEditorScreen extends StatefulWidget {
   const QuizEditorScreen({
@@ -557,32 +558,11 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              FilledButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save),
-                label: const Text('Save Quiz'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _validate,
-                icon: const Icon(Icons.rule),
-                label: const Text('Validate'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () => _editQuestion(),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Question'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => widget.onGenerateVariants(_quiz),
-                icon: const Icon(Icons.shuffle),
-                label: const Text('Generate Variants'),
-              ),
-            ],
+          QuizEditorActionsBar(
+            onSave: _save,
+            onValidate: _validate,
+            onAddQuestion: () => _editQuestion(),
+            onGenerateVariants: () => widget.onGenerateVariants(_quiz),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -591,85 +571,22 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Card(
-                    child: ListView.builder(
-                      itemCount: _quiz.questions.length,
-                      itemBuilder: (context, index) {
-                        final question = _quiz.questions[index];
-                        return ListTile(
-                          title: Text('Q${index + 1}: ${question.composedPrompt}'),
-                          subtitle: Text(
-                            'Options: ${question.options.length}',
-                          ),
-                          trailing: Wrap(
-                            spacing: 4,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.arrow_upward),
-                                onPressed: () => _moveQuestion(index, -1),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.arrow_downward),
-                                onPressed: () => _moveQuestion(index, 1),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => _editQuestion(existing: question, index: index),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: _quiz.questions.length <= 1 ? null : () => _removeQuestion(index),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                  child: QuizQuestionsPanel(
+                    questions: _quiz.questions,
+                    onMoveQuestion: _moveQuestion,
+                    onEditQuestion: (index) {
+                      _editQuestion(existing: _quiz.questions[index], index: index);
+                    },
+                    onRemoveQuestion: _removeQuestion,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   flex: 2,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text('Generated Variants', style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          Expanded(
-                            child: widget.generatedVariants.isEmpty
-                                ? const Center(child: Text('No variants generated yet.'))
-                                : ListView.builder(
-                                    itemCount: widget.generatedVariants.length,
-                                    itemBuilder: (context, index) {
-                                      final variant = widget.generatedVariants[index];
-                                      return ListTile(
-                                        title: Text(variant.id),
-                                        subtitle: Text('${variant.questions.length} question(s)'),
-                                        trailing: Wrap(
-                                          spacing: 4,
-                                          children: [
-                                            IconButton(
-                                              tooltip: 'Preview',
-                                              icon: const Icon(Icons.visibility),
-                                              onPressed: () => widget.onPreviewVariant(variant),
-                                            ),
-                                            IconButton(
-                                              tooltip: 'Export DOCX',
-                                              icon: const Icon(Icons.download),
-                                              onPressed: () => widget.onExportVariant(variant),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: GeneratedVariantsPanel(
+                    generatedVariants: widget.generatedVariants,
+                    onPreviewVariant: widget.onPreviewVariant,
+                    onExportVariant: widget.onExportVariant,
                   ),
                 ),
               ],
