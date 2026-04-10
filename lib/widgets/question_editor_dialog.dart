@@ -8,6 +8,7 @@ import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/utils/friendly_math_formatter.dart';
+import 'package:adv_basics/widgets/math_or_text.dart';
 
 typedef PickAndCropImage =
     Future<String?> Function({
@@ -243,10 +244,15 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 return Card(
                   child: ListTile(
                     title: Text(
-                      option.composedText.isEmpty ? AppStrings.tr(context, 'emptyOption') : option.composedText,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      '',
                     ),
+                    title: option.composedText.isEmpty
+                        ? Text(AppStrings.tr(context, 'emptyOption'))
+                        : MathOrText(
+                            option.composedText,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                     leading: Radio<String>(
                       value: option.id,
                       groupValue: _correctOptionId,

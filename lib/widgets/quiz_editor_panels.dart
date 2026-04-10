@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_question.dart';
+import 'package:adv_basics/widgets/math_or_text.dart';
 
 class QuizEditorActionsBar extends StatelessWidget {
   const QuizEditorActionsBar({
@@ -72,7 +73,18 @@ class QuizQuestionsPanel extends StatelessWidget {
         itemBuilder: (context, index) {
           final question = questions[index];
           return ListTile(
-            title: Text('Q${index + 1}: ${question.composedPrompt}'),
+            title: Row(
+              children: [
+                Text('Q${index + 1}: '),
+                Expanded(
+                  child: MathOrText(
+                    question.composedPrompt,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
             subtitle: Text(
               AppStrings.isArabic(context)
                   ? 'الخيارات: ${question.options.length}'

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
+import 'package:adv_basics/widgets/math_or_text.dart';
 
 class VariantPreviewScreen extends StatelessWidget {
   const VariantPreviewScreen({
@@ -33,7 +34,13 @@ class VariantPreviewScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Q${index + 1}. ${question.composedPrompt}'),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Q${index + 1}. '),
+                      Expanded(child: MathOrText(question.composedPrompt)),
+                    ],
+                  ),
                   if (question.imageRef.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),
                     ClipRRect(
@@ -55,7 +62,7 @@ class VariantPreviewScreen extends StatelessWidget {
                             color: isCorrect ? Colors.green : null,
                           ),
                           const SizedBox(width: 8),
-                          Expanded(child: Text(option.composedText)),
+                          Expanded(child: MathOrText(option.composedText)),
                         ],
                       ),
                     );
