@@ -33,7 +33,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 ## Notes / MVP limitations
 
 - The question paper DOCX is table-based and print-friendly, but exact visual parity with the provided reference images may need further styling refinements.
-- Images are stored as local paths and shown in app previews; DOCX currently includes image path references.
+- Images are stored as local/URL references for authoring and previews; DOCX export embeds image binaries directly when available, with a path-text fallback only if loading fails.
 - Solutions layout is implemented as a structured answer-key table and can be adjusted once final template details are confirmed.
 - Arabic locale/RTL is supported in UI and DOCX text flow for Arabic content detection.
 

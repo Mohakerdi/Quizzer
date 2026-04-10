@@ -539,6 +539,15 @@ class DocxExportService {
     return fileName.substring(dotIndex).toLowerCase();
   }
 
+  /// Detects common raster image formats from magic bytes.
+  ///
+  /// Supported signatures:
+  /// - PNG (`89 50 4E 47`)
+  /// - JPEG (`FF D8 FF`)
+  /// - GIF (`47 49 46 38`)
+  /// - BMP (`42 4D`)
+  ///
+  /// Returns a normalized extension (e.g. `.png`) or `null` when unknown.
   String? _detectImageExtension(Uint8List bytes) {
     if (bytes.length >= 8 &&
         bytes[0] == 0x89 &&
@@ -633,6 +642,14 @@ class DocxExportService {
     return '$normalizedText  ($normalizedMath)';
   }
 
+  /// Converts a limited set of LaTeX-like tokens to plain-text math for DOCX export.
+  ///
+  /// Supported replacements include:
+  /// - Greek/symbol commands (`\pi`, `\theta`, `\times`, `\div`, `\leq`, `\geq`, `\neq`)
+  /// - Fractions (`\frac{a}{b}` -> `(a)/(b)`)
+  /// - Square roots (`\sqrt{x}` -> `√(x)`)
+  ///
+  /// Remaining command markers/slashes and braces are stripped to keep readable text.
   String _latexToFormulaText(String value) {
     var text = value.trim();
     if (text.isEmpty) {
