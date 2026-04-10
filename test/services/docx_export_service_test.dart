@@ -130,4 +130,33 @@ void main() {
     expect(quizXml, contains('√(4)'));
     expect(quizXml, isNot(contains(r'$$')));
   });
+
+  test('normalizes escaped inline \\$\\$math\\$\\$ delimiters for export', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V4',
+      quizId: quiz.id,
+      seed: 5,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Find sin(x) \$\$\frac{1}{x}\$\$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'\$\$\sqrt{4}\$\$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect(quizXml, contains('Find sin(x) (1)/(x)'));
+    expect(quizXml, contains('√(4)'));
+    expect(quizXml, isNot(contains(r'\$\$')));
+  });
 }

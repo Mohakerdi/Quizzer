@@ -7,6 +7,9 @@ class FriendlyMathFormatter {
       return text;
     }
 
+    text = text.replaceAllMapped(RegExp(r'\\\$\$(.+?)\\\$\$', dotAll: true), (match) {
+      return (match.group(1) ?? '').trim();
+    });
     text = text.replaceAllMapped(RegExp(r'\$\$(.+?)\$\$', dotAll: true), (match) {
       return (match.group(1) ?? '').trim();
     });
