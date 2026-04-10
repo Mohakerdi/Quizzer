@@ -56,6 +56,12 @@ class AppStrings {
         return ar ? 'معاينة' : 'Preview';
       case 'exportDocx':
         return ar ? 'تصدير DOCX' : 'Export DOCX';
+      case 'docxExportDetails':
+        return ar ? 'تفاصيل رأس مستند DOCX' : 'DOCX header details';
+      case 'teacherName':
+        return ar ? 'اسم المعلم' : 'Teacher name';
+      case 'schoolName':
+        return ar ? 'اسم المدرسة' : 'School name';
       case 'exportGoogleForms':
         return ar ? 'تصدير Google Forms' : 'Export Google Forms';
       case 'quizSaved':

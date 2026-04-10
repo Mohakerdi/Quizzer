@@ -165,13 +165,22 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
   }
 
-  Future<void> exportVariant(GeneratedVariant variant) async {
+  Future<void> exportVariant(
+    GeneratedVariant variant, {
+    String? teacherName,
+    String? schoolName,
+  }) async {
     final quiz = state.selectedQuiz;
     if (quiz == null) {
       return;
     }
 
-    final quizDocPath = await _docxExportService.exportQuizPaper(quiz: quiz, variant: variant);
+    final quizDocPath = await _docxExportService.exportQuizPaper(
+      quiz: quiz,
+      variant: variant,
+      teacherName: teacherName,
+      schoolName: schoolName,
+    );
     final solutionDocPath = await _docxExportService.exportSolutions(quiz: quiz, variant: variant);
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));
