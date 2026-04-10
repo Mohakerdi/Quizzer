@@ -228,7 +228,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     children: [
                       const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
                       const Spacer(),
-                       FilledButton.icon(
+                      FilledButton.icon(
                         onPressed: () => openOptionEditor(
                           setQuestionDialogState: setLocalState,
                         ),
@@ -258,7 +258,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                         trailing: Wrap(
                           spacing: 4,
                           children: [
-                             IconButton(
+                            IconButton(
                                icon: const Icon(Icons.edit),
                                onPressed: () => openOptionEditor(
                                  optionIndex: optionIndex,
