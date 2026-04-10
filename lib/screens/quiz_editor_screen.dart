@@ -8,11 +8,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
-import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/services/editor_validator.dart';
 import 'package:adv_basics/widgets/quiz_editor_panels.dart';
+import 'package:adv_basics/widgets/question_editor_dialog.dart';
 
 class QuizEditorScreen extends StatefulWidget {
   const QuizEditorScreen({
@@ -102,10 +102,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     );
   }
 
-  Future<String?> _pickAndCropImage({
-    required BuildContext dialogContext,
-    String? currentImagePath,
-  }) async {
+  Future<String?> _pickAndCropImage({String? currentImagePath}) async {
     final selectedPath = currentImagePath ?? (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
     if (selectedPath == null || selectedPath.isEmpty) {
       return null;
@@ -118,7 +115,6 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
 
     final sourceBytes = await source.readAsBytes();
     final croppedBytes = await _openCropDialog(
-      dialogContext: dialogContext,
       imageBytes: sourceBytes,
     );
     if (croppedBytes == null) {
@@ -133,7 +129,6 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<Uint8List?> _openCropDialog({
-    required BuildContext dialogContext,
     required Uint8List imageBytes,
   }) async {
     final cropController = CropController();
@@ -144,7 +139,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     }
 
     await showDialog<void>(
-      context: dialogContext,
+      context: context,
       barrierDismissible: false,
       builder: (cropDialogContext) {
         var isCropping = false;
@@ -159,15 +154,17 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                 controller: cropController,
                 interactive: true,
                 onCropped: (result) {
-                  switch (result) {
-                    case CropResult.success(:final croppedImage):
-                      if (!completer.isCompleted) {
-                        completer.complete(croppedImage);
-                      }
-                    case CropResult.error():
-                      if (!completer.isCompleted) {
-                        completer.complete(null);
-                      }
+                  try {
+                    final maybeImage = (result as dynamic).croppedImage;
+                    if (maybeImage is Uint8List && !completer.isCompleted) {
+                      completer.complete(maybeImage);
+                    } else if (!completer.isCompleted) {
+                      completer.complete(null);
+                    }
+                  } catch (_) {
+                    if (!completer.isCompleted) {
+                      completer.complete(null);
+                    }
                   }
 
                   if (Navigator.of(cropDialogContext).canPop()) {
@@ -251,274 +248,30 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     return file.path;
   }
 
-  String _mergeLegacyTextAndMath(String text, String math) {
-    final normalizedText = text.trim();
-    final normalizedMath = math.trim();
-    if (normalizedMath.isEmpty) {
-      return normalizedText;
-    }
-    if (normalizedText.isEmpty) {
-      return normalizedMath;
-    }
-    return '$normalizedText\n$normalizedMath';
-  }
-
   Future<void> _editQuestion({QuizQuestion? existing, int? index}) async {
     final source = existing ?? QuizQuestion.create();
-
-    final questionContentController = TextEditingController(
-      text: _mergeLegacyTextAndMath(source.text, source.math),
+    final updated = await showQuestionEditorDialog(
+      context: context,
+      source: source,
+      isNewQuestion: existing == null,
+      onPickAndCropImage: ({currentImagePath}) => _pickAndCropImage(currentImagePath: currentImagePath),
     );
-    var imagePath = source.imageRef;
-    var options = source.options
-        .map(
-          (o) => QuestionOption(
-            id: o.id,
-            text: o.text,
-            math: o.math,
-          ),
-        )
-        .toList();
-    var correctOptionId = source.correctOptionId;
-
-    Future<void> openOptionEditor({
-      int? optionIndex,
-      required void Function(void Function()) setQuestionDialogState,
-    }) async {
-      final existingOption = optionIndex == null ? QuestionOption.create() : options[optionIndex];
-      final optionContentController = TextEditingController(
-        text: _mergeLegacyTextAndMath(existingOption.text, existingOption.math),
-      );
-
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(optionIndex == null ? 'Add option' : 'Edit option'),
-          content: SizedBox(
-            width: 520,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextField(
-                    controller: optionContentController,
-                    minLines: 2,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
-                      labelText: 'Option content',
-                      hintText: 'Write text or formula in one place',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final option = existingOption.copyWith(
-                  text: optionContentController.text,
-                  math: '',
-                );
-
-                setQuestionDialogState(() {
-                  if (optionIndex == null) {
-                    options = [...options, option];
-                    correctOptionId = options.length == 1 ? option.id : correctOptionId;
-                  } else {
-                    options[optionIndex] = option;
-                  }
-                });
-
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      );
+    if (updated == null) {
+      return;
     }
 
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocalState) => AlertDialog(
-          title: Text(existing == null ? 'Add question' : 'Edit question'),
-          content: SizedBox(
-            width: 720,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: questionContentController,
-                    minLines: 3,
-                    maxLines: 8,
-                    decoration: const InputDecoration(
-                      labelText: 'Question content',
-                      hintText: 'Write question text and formulas in one place',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final selected = await _pickAndCropImage(
-                            dialogContext: ctx,
-                          );
-                          if (selected == null) {
-                            return;
-                          }
-                          setLocalState(() => imagePath = selected);
-                        },
-                        icon: const Icon(Icons.photo_library_outlined),
-                        label: const Text('Select image from gallery'),
-                      ),
-                      const SizedBox(width: 8),
-                      if (imagePath.trim().isNotEmpty)
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final selected = await _pickAndCropImage(
-                              dialogContext: ctx,
-                              currentImagePath: imagePath,
-                            );
-                            if (selected == null) {
-                              return;
-                            }
-                            setLocalState(() => imagePath = selected);
-                          },
-                          icon: const Icon(Icons.crop),
-                          label: const Text('Crop'),
-                        ),
-                      const SizedBox(width: 8),
-                      if (imagePath.trim().isNotEmpty)
-                        TextButton.icon(
-                          onPressed: () => setLocalState(() => imagePath = ''),
-                          icon: const Icon(Icons.delete_outline),
-                          label: const Text('Remove'),
-                        ),
-                    ],
-                  ),
-                  if (imagePath.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(imagePath),
-                        height: 170,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text('Unable to load selected image.'),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      FilledButton.icon(
-                        onPressed: () => openOptionEditor(
-                          setQuestionDialogState: setLocalState,
-                        ),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add option'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ...List.generate(options.length, (optionIndex) {
-                    final option = options[optionIndex];
-
-                    return Card(
-                      child: ListTile(
-                        title: Text(option.composedText.isEmpty ? '(empty option)' : option.composedText),
-                        leading: Radio<String>(
-                          value: option.id,
-                          groupValue: correctOptionId,
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setLocalState(() => correctOptionId = value);
-                          },
-                        ),
-                        subtitle: Text('ID: ${option.id.substring(0, 8)}'),
-                        trailing: Wrap(
-                          spacing: 4,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => openOptionEditor(
-                                optionIndex: optionIndex,
-                                setQuestionDialogState: setLocalState,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: options.length <= 2
-                                  ? null
-                                  : () {
-                                      setLocalState(() {
-                                        final removed = options.removeAt(optionIndex);
-                                        if (correctOptionId == removed.id && options.isNotEmpty) {
-                                          correctOptionId = options.first.id;
-                                        }
-                                      });
-                                    },
-                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final updated = source.copyWith(
-                  text: questionContentController.text,
-                  math: '',
-                  imageRef: imagePath,
-                  options: options,
-                  correctOptionId: correctOptionId,
-                );
-
-                setState(() {
-                  final questions = [..._quiz.questions];
-                  if (index == null) {
-                    questions.add(updated);
-                  } else {
-                    questions[index] = updated;
-                  }
-                  _quiz = _quiz.copyWith(
-                    questions: questions,
-                    updatedAt: DateTime.now(),
-                  );
-                });
-
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Save question'),
-            ),
-          ],
-        ),
-      ),
-    );
+    setState(() {
+      final questions = [..._quiz.questions];
+      if (index == null) {
+        questions.add(updated);
+      } else {
+        questions[index] = updated;
+      }
+      _quiz = _quiz.copyWith(
+        questions: questions,
+        updatedAt: DateTime.now(),
+      );
+    });
   }
 
   void _removeQuestion(int index) {
