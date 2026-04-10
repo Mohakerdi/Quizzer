@@ -48,6 +48,9 @@ class _QuestionEditorDialog extends StatefulWidget {
 
 class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   late final TextEditingController _questionContentController;
+  late final TextEditingController _gradeLevelController;
+  late final TextEditingController _unitOfStudyController;
+  late final TextEditingController _curriculumController;
   late String _imagePath;
   late List<QuestionOption> _options;
   late String _correctOptionId;
@@ -58,6 +61,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
     _questionContentController = TextEditingController(
       text: _mergeLegacyTextAndMath(widget.source.text, widget.source.math),
     );
+    _gradeLevelController = TextEditingController(text: widget.source.gradeLevel);
+    _unitOfStudyController = TextEditingController(text: widget.source.unitOfStudy);
+    _curriculumController = TextEditingController(text: widget.source.curriculum);
     _imagePath = widget.source.imageRef;
     _options = widget.source.options
         .map((o) => QuestionOption(id: o.id, text: o.text, math: o.math))
@@ -68,6 +74,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   @override
   void dispose() {
     _questionContentController.dispose();
+    _gradeLevelController.dispose();
+    _unitOfStudyController.dispose();
+    _curriculumController.dispose();
     super.dispose();
   }
 
@@ -169,6 +178,9 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
       text: _questionContentController.text,
       math: '',
       imageRef: _imagePath,
+      gradeLevel: _gradeLevelController.text.trim(),
+      unitOfStudy: _unitOfStudyController.text.trim(),
+      curriculum: _curriculumController.text.trim(),
       options: _options,
       correctOptionId: _correctOptionId,
     );
@@ -194,6 +206,30 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 hintText: AppStrings.tr(context, 'questionContentHint'),
                 minLines: 3,
                 maxLines: 8,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _gradeLevelController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'gradeLevel'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _unitOfStudyController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'unitOfStudy'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _curriculumController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'curriculum'),
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
               Row(

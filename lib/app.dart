@@ -5,6 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
+import 'package:adv_basics/models/quiz_question.dart';
+import 'package:adv_basics/screens/question_bank_screen.dart';
 import 'package:adv_basics/screens/quiz_editor_screen.dart';
 import 'package:adv_basics/screens/quiz_list_screen.dart';
 import 'package:adv_basics/screens/variant_preview_screen.dart';
@@ -152,6 +154,39 @@ class QuizMakerHome extends StatelessWidget {
     );
   }
 
+  List<BankQuestionEntry> _collectQuestionBankEntries(List<QuizModel> quizzes) {
+    return quizzes
+        .expand(
+          (quiz) => quiz.questions.map(
+            (question) => BankQuestionEntry(
+              quizId: quiz.id,
+              quizTitle: quiz.title,
+              question: question,
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> _createQuizFromBankSelection(
+    BuildContext context,
+    List<QuizQuestion> selectedQuestions,
+  ) async {
+    final title = await _promptText(
+      context,
+      AppStrings.tr(context, 'createQuizFromSelection'),
+      AppStrings.tr(context, 'newQuizFromBankTitle'),
+      initialText: 'Quick Quiz',
+    );
+    if (title == null || title.trim().isEmpty || !context.mounted) {
+      return;
+    }
+    await context.read<QuizMakerCubit>().createQuizFromQuestionBank(
+          title: title.trim(),
+          questions: selectedQuestions,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<QuizMakerCubit, QuizMakerState>(
@@ -212,25 +247,49 @@ class QuizMakerHome extends StatelessWidget {
               ),
               const VerticalDivider(width: 1),
               Expanded(
-                child: state.selectedQuiz == null
-                    ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
-                    : QuizEditorScreen(
-                        quiz: state.selectedQuiz!,
-                        generatedVariants: state.generatedVariants,
-                        onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
-                        onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
-                        onGenerateVariants: (quiz) => _generateVariants(context, quiz),
-                        onPreviewVariant: (variant) => _previewVariant(context, variant),
-                        onExportVariant: (variant, {teacherName, schoolName}) => context
-                            .read<QuizMakerCubit>()
-                            .exportVariant(
-                              variant,
-                              teacherName: teacherName,
-                              schoolName: schoolName,
-                            ),
-                        onExportGoogleForms: (variant) =>
-                            context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                child: DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      TabBar(
+                        tabs: [
+                          Tab(text: AppStrings.tr(context, 'quizEditorTab')),
+                          Tab(text: AppStrings.tr(context, 'questionBankTab')),
+                        ],
                       ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            state.selectedQuiz == null
+                                ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
+                                : QuizEditorScreen(
+                                    quiz: state.selectedQuiz!,
+                                    generatedVariants: state.generatedVariants,
+                                    onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
+                                    onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
+                                    onGenerateVariants: (quiz) => _generateVariants(context, quiz),
+                                    onPreviewVariant: (variant) => _previewVariant(context, variant),
+                                    onExportVariant: (variant, {teacherName, schoolName}) => context
+                                        .read<QuizMakerCubit>()
+                                        .exportVariant(
+                                          variant,
+                                          teacherName: teacherName,
+                                          schoolName: schoolName,
+                                        ),
+                                    onExportGoogleForms: (variant) =>
+                                        context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                                  ),
+                            QuestionBankScreen(
+                              entries: _collectQuestionBankEntries(state.quizzes),
+                              onCreateQuizFromSelection: (questions) =>
+                                  _createQuizFromBankSelection(context, questions),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
