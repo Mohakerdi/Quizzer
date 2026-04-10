@@ -233,7 +233,11 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 final option = _options[optionIndex];
                 return Card(
                   child: ListTile(
-                    title: Text(option.composedText.isEmpty ? '(empty option)' : option.composedText),
+                    title: Text(
+                      option.composedText.isEmpty ? '(empty option)' : option.composedText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     leading: Radio<String>(
                       value: option.id,
                       groupValue: _correctOptionId,
@@ -244,7 +248,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                         setState(() => _correctOptionId = value);
                       },
                     ),
-                    subtitle: Text('ID: ${option.id.substring(0, 8)}'),
+                    subtitle: Text('ID: ${option.id.length > 8 ? option.id.substring(0, 8) : option.id}'),
                     trailing: Wrap(
                       spacing: 4,
                       children: [
