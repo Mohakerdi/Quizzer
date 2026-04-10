@@ -23,6 +23,7 @@ class QuizEditorScreen extends StatefulWidget {
     required this.onGenerateVariants,
     required this.onPreviewVariant,
     required this.onExportVariant,
+    required this.onExportGoogleForms,
   });
 
   final QuizModel quiz;
@@ -31,6 +32,7 @@ class QuizEditorScreen extends StatefulWidget {
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(GeneratedVariant variant) onExportVariant;
+  final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
   @override
   State<QuizEditorScreen> createState() => _QuizEditorScreenState();
@@ -347,6 +349,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     generatedVariants: widget.generatedVariants,
                     onPreviewVariant: widget.onPreviewVariant,
                     onExportVariant: widget.onExportVariant,
+                    onExportGoogleForms: widget.onExportGoogleForms,
                   ),
                 ),
               ],

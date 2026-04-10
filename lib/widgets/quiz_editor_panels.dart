@@ -107,11 +107,13 @@ class GeneratedVariantsPanel extends StatelessWidget {
     required this.generatedVariants,
     required this.onPreviewVariant,
     required this.onExportVariant,
+    required this.onExportGoogleForms,
   });
 
   final List<GeneratedVariant> generatedVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(GeneratedVariant variant) onExportVariant;
+  final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +147,11 @@ class GeneratedVariantsPanel extends StatelessWidget {
                                 tooltip: 'Export DOCX',
                                 icon: const Icon(Icons.download),
                                 onPressed: () => onExportVariant(variant),
+                              ),
+                              IconButton(
+                                tooltip: 'Export Google Forms',
+                                icon: const Icon(Icons.dynamic_form_outlined),
+                                onPressed: () => onExportGoogleForms(variant),
                               ),
                             ],
                           ),

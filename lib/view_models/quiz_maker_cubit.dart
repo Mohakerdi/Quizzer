@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
 import 'package:adv_basics/services/docx_export_service.dart';
+import 'package:adv_basics/services/google_forms_export_service.dart';
 import 'package:adv_basics/services/quiz_repository.dart';
 import 'package:adv_basics/services/variant_generator.dart';
 import 'package:adv_basics/view_models/quiz_maker_state.dart';
@@ -13,14 +14,17 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     required QuizRepository repository,
     required VariantGenerator variantGenerator,
     required DocxExportService docxExportService,
+    required GoogleFormsExportService googleFormsExportService,
   })  : _repository = repository,
         _variantGenerator = variantGenerator,
         _docxExportService = docxExportService,
+        _googleFormsExportService = googleFormsExportService,
         super(const QuizMakerState.initial());
 
   final QuizRepository _repository;
   final VariantGenerator _variantGenerator;
   final DocxExportService _docxExportService;
+  final GoogleFormsExportService _googleFormsExportService;
 
   Future<void> loadData() async {
     emit(state.copyWith(isLoading: true, clearMessage: true));
@@ -150,6 +154,23 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     final solutionDocPath = await _docxExportService.exportSolutions(quiz: quiz, variant: variant);
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));
+  }
+
+  Future<void> exportVariantToGoogleForms(GeneratedVariant variant) async {
+    final quiz = state.selectedQuiz;
+    if (quiz == null) {
+      return;
+    }
+
+    final result = await _googleFormsExportService.exportVariant(
+      quiz: quiz,
+      variant: variant,
+    );
+    emit(
+      state.copyWith(
+        message: 'Google Forms export files created:\n${result.scriptPath}\n${result.jsonPath}',
+      ),
+    );
   }
 
   void clearMessage() {

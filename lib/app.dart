@@ -10,6 +10,7 @@ import 'package:adv_basics/screens/quiz_editor_screen.dart';
 import 'package:adv_basics/screens/quiz_list_screen.dart';
 import 'package:adv_basics/screens/variant_preview_screen.dart';
 import 'package:adv_basics/services/docx_export_service.dart';
+import 'package:adv_basics/services/google_forms_export_service.dart';
 import 'package:adv_basics/services/quiz_repository.dart';
 import 'package:adv_basics/services/variant_generator.dart';
 import 'package:adv_basics/view_models/quiz_maker_cubit.dart';
@@ -25,6 +26,7 @@ class QuizMakerApp extends StatelessWidget {
         repository: QuizRepository(),
         variantGenerator: const VariantGenerator(),
         docxExportService: const DocxExportService(),
+        googleFormsExportService: const GoogleFormsExportService(),
       )..loadData(),
       child: BlocBuilder<QuizMakerCubit, QuizMakerState>(
         builder: (context, state) {
@@ -204,6 +206,8 @@ class QuizMakerHome extends StatelessWidget {
                         onGenerateVariants: (quiz) => _generateVariants(context, quiz),
                         onPreviewVariant: (variant) => _previewVariant(context, variant),
                         onExportVariant: (variant) => context.read<QuizMakerCubit>().exportVariant(variant),
+                        onExportGoogleForms: (variant) =>
+                            context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
                       ),
               ),
             ],
