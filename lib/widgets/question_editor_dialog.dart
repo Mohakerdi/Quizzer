@@ -393,6 +393,10 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
     );
   }
 
+  /// Converts friendly inline math tokens to a lightweight LaTeX form for preview.
+  ///
+  /// Supported patterns are intentionally simple (`√(...)`, `(...)/(...)`, `<=`, `>=`, `!=`).
+  /// Nested parentheses inside the sqrt/fraction group are not expanded by this helper.
   String _toLatex(String value) {
     var text = value.trim();
     if (text.isEmpty) {

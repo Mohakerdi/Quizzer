@@ -691,6 +691,8 @@ class DocxExportService {
   /// - Fractions (`\frac{a}{b}` -> `(a)/(b)`)
   /// - Square roots (`\sqrt{x}` -> `√(x)`)
   ///
+  /// Note: nested-brace fraction/sqrt groups are not fully parsed by this lightweight converter.
+  ///
   /// Remaining command names (after backslash) and braces are stripped to keep readable text.
   String _latexToFormulaText(String value) {
     var text = value.trim();
