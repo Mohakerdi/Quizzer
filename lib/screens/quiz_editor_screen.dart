@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
@@ -103,29 +103,28 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<String?> _pickAndCropImage({String? currentImagePath}) async {
-    final selectedPath = currentImagePath ?? (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
-    if (selectedPath == null || selectedPath.isEmpty) {
+    final selectedRef = currentImagePath ?? (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
+    if (selectedRef == null || selectedRef.isEmpty) {
       return null;
     }
 
-    final source = File(selectedPath);
-    if (!await source.exists()) {
+    final sourceBytes = await _loadImageBytesFromRef(selectedRef);
+    if (sourceBytes == null || sourceBytes.isEmpty) {
       return null;
     }
 
-    final sourceBytes = await source.readAsBytes();
     final croppedBytes = await _openCropDialog(
       imageBytes: sourceBytes,
     );
+    final extension = _extractImageExtensionFromRef(selectedRef);
     if (croppedBytes == null) {
       if (currentImagePath?.trim().isNotEmpty == true) {
         return currentImagePath;
       }
-      return _persistImagePath(selectedPath);
+      return _toDataImageUri(sourceBytes, extension: extension);
     }
 
-    final extension = _extractImageExtension(selectedPath);
-    return _persistImageBytes(croppedBytes, extension: extension);
+    return _toDataImageUri(croppedBytes, extension: extension);
   }
 
   Future<Uint8List?> _openCropDialog({
@@ -200,47 +199,60 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     }
   }
 
-  String _extractImageExtension(String path) {
-    final fileName = path.split(Platform.pathSeparator).last;
+  String _extractImageExtensionFromRef(String value) {
+    if (value.startsWith('data:image/')) {
+      final slash = value.indexOf('/');
+      final semicolon = value.indexOf(';', slash + 1);
+      if (slash >= 0 && semicolon > slash) {
+        final subtype = value.substring(slash + 1, semicolon).toLowerCase();
+        if (subtype == 'jpeg' || subtype == 'jpg') {
+          return '.jpg';
+        }
+        if (subtype == 'png' || subtype == 'gif' || subtype == 'bmp') {
+          return '.$subtype';
+        }
+      }
+      return '.jpg';
+    }
+    final normalized = value.replaceAll('\\', '/');
+    final fileName = normalized.split('/').last;
     final dotIndex = fileName.lastIndexOf('.');
     if (dotIndex <= 0 || dotIndex == fileName.length - 1) {
       return '.jpg';
     }
-    return fileName.substring(dotIndex);
+    return fileName.substring(dotIndex).toLowerCase();
   }
 
-  Future<String> _persistImagePath(String inputPath) async {
-    final source = File(inputPath);
+  Future<Uint8List?> _loadImageBytesFromRef(String imageRef) async {
+    if (imageRef.startsWith('data:image/')) {
+      final comma = imageRef.indexOf(',');
+      if (comma < 0 || comma + 1 >= imageRef.length) {
+        return null;
+      }
+      try {
+        return Uint8List.fromList(base64Decode(imageRef.substring(comma + 1)));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final source = File(imageRef);
     if (!await source.exists()) {
-      return inputPath;
+      return null;
     }
-
-    final docs = await getApplicationDocumentsDirectory();
-    final imagesDir = Directory('${docs.path}/question_images');
-    if (!await imagesDir.exists()) {
-      await imagesDir.create(recursive: true);
-    }
-
-    final dotIndex = inputPath.lastIndexOf('.');
-    final extension = dotIndex >= 0 ? inputPath.substring(dotIndex) : '.jpg';
-    final targetPath = '${imagesDir.path}/question_${DateTime.now().microsecondsSinceEpoch}$extension';
-    final persisted = await source.copy(targetPath);
-    return persisted.path;
+    return source.readAsBytes();
   }
 
-  Future<String> _persistImageBytes(Uint8List bytes, {required String extension}) async {
-    final docs = await getApplicationDocumentsDirectory();
-    final imagesDir = Directory('${docs.path}/question_images');
-    if (!await imagesDir.exists()) {
-      await imagesDir.create(recursive: true);
-    }
-
-    final normalizedExtension = extension.startsWith('.') ? extension : '.$extension';
-    final targetPath =
-        '${imagesDir.path}/question_${DateTime.now().microsecondsSinceEpoch}$normalizedExtension';
-    final file = File(targetPath);
-    await file.writeAsBytes(bytes, flush: true);
-    return file.path;
+  String _toDataImageUri(Uint8List bytes, {required String extension}) {
+    final normalized = extension.startsWith('.') ? extension.toLowerCase() : '.${extension.toLowerCase()}';
+    final mime = switch (normalized) {
+      '.png' => 'image/png',
+      '.gif' => 'image/gif',
+      '.bmp' => 'image/bmp',
+      '.jpg' || '.jpeg' => 'image/jpeg',
+      _ => 'image/jpeg',
+    };
+    return 'data:$mime;base64,${base64Encode(bytes)}';
   }
 
   Future<void> _editQuestion({QuizQuestion? existing, int? index}) async {

@@ -468,6 +468,18 @@ class DocxExportService {
 
   Future<_LoadedImageData?> _loadImageForExport(String imageRef) async {
     try {
+      final dataImage = _parseDataImageUri(imageRef);
+      if (dataImage != null && dataImage.bytes.isNotEmpty) {
+        final extension = _normalizeImageExtension(
+          dataImage.extension,
+          bytes: dataImage.bytes,
+        );
+        if (!_isSupportedImageExtension(extension)) {
+          return null;
+        }
+        return _LoadedImageData(bytes: dataImage.bytes, extension: extension);
+      }
+
       final uri = Uri.tryParse(imageRef);
       if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
         final client = HttpClient();
@@ -510,6 +522,36 @@ class DocxExportService {
         return null;
       }
       return _LoadedImageData(bytes: bytes, extension: extension);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  _ParsedDataImage? _parseDataImageUri(String value) {
+    if (!value.startsWith('data:image/')) {
+      return null;
+    }
+    final slash = value.indexOf('/');
+    final semicolon = value.indexOf(';', slash + 1);
+    final comma = value.indexOf(',', semicolon + 1);
+    if (slash < 0 || semicolon <= slash || comma <= semicolon) {
+      return null;
+    }
+    final meta = value.substring(semicolon + 1, comma).toLowerCase();
+    if (!meta.contains('base64')) {
+      return null;
+    }
+    final subtype = value.substring(slash + 1, semicolon).toLowerCase();
+    final extension = switch (subtype) {
+      'png' => '.png',
+      'gif' => '.gif',
+      'bmp' => '.bmp',
+      'jpeg' || 'jpg' => '.jpg',
+      _ => '.jpg',
+    };
+    try {
+      final bytes = Uint8List.fromList(base64Decode(value.substring(comma + 1)));
+      return _ParsedDataImage(bytes: bytes, extension: extension);
     } catch (_) {
       return null;
     }
@@ -719,6 +761,16 @@ class _EmbeddedImageAsset {
 
 class _LoadedImageData {
   _LoadedImageData({
+    required this.bytes,
+    required this.extension,
+  });
+
+  final Uint8List bytes;
+  final String extension;
+}
+
+class _ParsedDataImage {
+  _ParsedDataImage({
     required this.bytes,
     required this.extension,
   });

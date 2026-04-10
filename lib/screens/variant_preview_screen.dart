@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -35,21 +37,7 @@ class VariantPreviewScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: question.imageRef.startsWith('http')
-                          ? Image.network(
-                              question.imageRef,
-                              height: 180,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Text('Image: ${question.imageRef}'),
-                            )
-                          : Image.file(
-                              File(question.imageRef),
-                              height: 180,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Text('Image: ${question.imageRef}'),
-                            ),
+                      child: _buildPreviewImage(question.imageRef),
                     ),
                   ],
                   const SizedBox(height: 10),
@@ -78,5 +66,49 @@ class VariantPreviewScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _buildPreviewImage(String imageRef) {
+    final dataBytes = _decodeDataImageBytes(imageRef);
+    if (dataBytes != null) {
+      return Image.memory(
+        dataBytes,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+      );
+    }
+    if (imageRef.startsWith('http')) {
+      return Image.network(
+        imageRef,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+      );
+    }
+    return Image.file(
+      File(imageRef),
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Text('Image: $imageRef'),
+    );
+  }
+
+  Uint8List? _decodeDataImageBytes(String value) {
+    if (!value.startsWith('data:image/')) {
+      return null;
+    }
+    final comma = value.indexOf(',');
+    if (comma < 0 || comma + 1 >= value.length) {
+      return null;
+    }
+    try {
+      return Uint8List.fromList(base64Decode(value.substring(comma + 1)));
+    } catch (_) {
+      return null;
+    }
   }
 }

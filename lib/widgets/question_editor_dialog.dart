@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -214,16 +216,7 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(_imagePath),
-                    height: 170,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text('Unable to load selected image.'),
-                    ),
-                  ),
+                  child: _buildImagePreview(_imagePath),
                 ),
               ],
               const SizedBox(height: 16),
@@ -286,6 +279,48 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
         ),
       ],
     );
+  }
+
+  Widget _buildImagePreview(String imageRef) {
+    final dataBytes = _decodeDataImageBytes(imageRef);
+    if (dataBytes != null) {
+      return Image.memory(
+        dataBytes,
+        height: 170,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Padding(
+          padding: EdgeInsets.all(8),
+          child: Text('Unable to load selected image.'),
+        ),
+      );
+    }
+
+    return Image.file(
+      File(imageRef),
+      height: 170,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Padding(
+        padding: EdgeInsets.all(8),
+        child: Text('Unable to load selected image.'),
+      ),
+    );
+  }
+
+  Uint8List? _decodeDataImageBytes(String value) {
+    if (!value.startsWith('data:image/')) {
+      return null;
+    }
+    final comma = value.indexOf(',');
+    if (comma < 0 || comma + 1 >= value.length) {
+      return null;
+    }
+    try {
+      return Uint8List.fromList(base64Decode(value.substring(comma + 1)));
+    } catch (_) {
+      return null;
+    }
   }
 }
 
