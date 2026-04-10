@@ -28,7 +28,11 @@ class DocxExportService {
       includeImagePathFallback: true,
     );
     return _writeDocx(
-      'quiz_${quiz.id}_${variant.id}.docx',
+      _buildExportFileName(
+        quiz: quiz,
+        variant: variant,
+        exportType: 'questions',
+      ),
       content,
       imageAssets: imageAssetsByQuestion.values.toList(),
     );
@@ -46,7 +50,11 @@ class DocxExportService {
       includeImagePathFallback: true,
     );
     return _writeDocx(
-      'solutions_${quiz.id}_${variant.id}.docx',
+      _buildExportFileName(
+        quiz: quiz,
+        variant: variant,
+        exportType: 'answers',
+      ),
       content,
       imageAssets: imageAssetsByQuestion.values.toList(),
     );
@@ -106,6 +114,38 @@ class DocxExportService {
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
+  }
+
+  @visibleForTesting
+  String buildExportFileNameForTest({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required String exportType,
+  }) {
+    return _buildExportFileName(
+      quiz: quiz,
+      variant: variant,
+      exportType: exportType,
+    );
+  }
+
+  String _buildExportFileName({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required String exportType,
+  }) {
+    final quizName = _sanitizeFileNameSegment(quiz.title);
+    final version = 'v${quiz.version}';
+    final variantId = _sanitizeFileNameSegment(variant.id);
+    return '${quizName}_${version}_${variantId}_$exportType.docx';
+  }
+
+  String _sanitizeFileNameSegment(String value) {
+    final normalized = value.trim().toLowerCase();
+    final replaced = normalized.replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final collapsed = replaced.replaceAll(RegExp(r'_+'), '_');
+    final cleaned = collapsed.replaceAll(RegExp(r'^_|_$'), '');
+    return cleaned.isEmpty ? 'quiz' : cleaned;
   }
 
   String _buildQuizDocumentXml({

@@ -192,4 +192,31 @@ void main() {
     expect(quizXml, contains('√(4)'));
     expect(quizXml, isNot(contains(r'\$\$')));
   });
+
+  test('builds export filenames with quiz name, version, variant and type', () {
+    final quiz = QuizModel.empty('Algebra Final Exam');
+    final versionedQuiz = quiz.copyWith(version: 7);
+    final variant = GeneratedVariant(
+      id: 'V2',
+      quizId: quiz.id,
+      seed: 6,
+      generatedAt: DateTime(2026),
+      questions: const [],
+    );
+    final service = const DocxExportService();
+
+    final questionsName = service.buildExportFileNameForTest(
+      quiz: versionedQuiz,
+      variant: variant,
+      exportType: 'questions',
+    );
+    final answersName = service.buildExportFileNameForTest(
+      quiz: versionedQuiz,
+      variant: variant,
+      exportType: 'answers',
+    );
+
+    expect(questionsName, 'algebra_final_exam_v7_v2_questions.docx');
+    expect(answersName, 'algebra_final_exam_v7_v2_answers.docx');
+  });
 }
