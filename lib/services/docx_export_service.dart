@@ -136,8 +136,8 @@ class DocxExportService {
     if (normalizedTeacher.isNotEmpty || normalizedSchool.isNotEmpty) {
       rows.add(
         _headerRow([
-          'Teacher: $normalizedTeacher',
-          'School: $normalizedSchool',
+          normalizedTeacher.isEmpty ? '' : 'Teacher: $normalizedTeacher',
+          normalizedSchool.isEmpty ? '' : 'School: $normalizedSchool',
           '',
           '',
         ]),
