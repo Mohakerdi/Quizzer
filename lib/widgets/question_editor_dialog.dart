@@ -129,19 +129,19 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   }
 
   Future<void> _selectImage() async {
-    final selected = await widget.onPickAndCropImage();
-    if (selected == null) {
+    final selectedImagePath = await widget.onPickAndCropImage();
+    if (selectedImagePath == null) {
       return;
     }
-    setState(() => _imagePath = selected);
+    setState(() => _imagePath = selectedImagePath);
   }
 
   Future<void> _cropImage() async {
-    final selected = await widget.onPickAndCropImage(currentImagePath: _imagePath);
-    if (selected == null) {
+    final croppedImagePath = await widget.onPickAndCropImage(currentImagePath: _imagePath);
+    if (croppedImagePath == null) {
       return;
     }
-    setState(() => _imagePath = selected);
+    setState(() => _imagePath = croppedImagePath);
   }
 
   void _removeOptionAt(int optionIndex) {
