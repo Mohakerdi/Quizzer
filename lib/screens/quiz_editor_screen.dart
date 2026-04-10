@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/question_option.dart';
@@ -102,30 +103,54 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     required BuildContext dialogContext,
     String? currentImagePath,
   }) async {
-    final selectedPath = currentImagePath ??
-        (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
+    final selectedPath = currentImagePath ?? (await _imagePicker.pickImage(source: ImageSource.gallery))?.path;
     if (selectedPath == null || selectedPath.isEmpty) {
       return null;
     }
 
-    final cropped = await ImageCropper().cropImage(
-      sourcePath: selectedPath,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Crop image',
-          toolbarColor: Theme.of(context).colorScheme.primary,
-          toolbarWidgetColor: Colors.white,
-          lockAspectRatio: false,
-        ),
-        IOSUiSettings(title: 'Crop image'),
-        WebUiSettings(
-          context: dialogContext,
-          presentStyle: WebPresentStyle.dialog,
-        ),
-      ],
-    );
+    var resolvedPath = selectedPath;
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: selectedPath,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop image',
+            toolbarColor: Theme.of(context).colorScheme.primary,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(title: 'Crop image'),
+          WebUiSettings(
+            context: dialogContext,
+            presentStyle: WebPresentStyle.dialog,
+          ),
+        ],
+      );
+      resolvedPath = cropped?.path ?? selectedPath;
+    } catch (_) {
+      resolvedPath = selectedPath;
+    }
 
-    return cropped?.path;
+    return _persistImagePath(resolvedPath);
+  }
+
+  Future<String> _persistImagePath(String inputPath) async {
+    final source = File(inputPath);
+    if (!await source.exists()) {
+      return inputPath;
+    }
+
+    final docs = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory('${docs.path}/question_images');
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    final dotIndex = inputPath.lastIndexOf('.');
+    final extension = dotIndex >= 0 ? inputPath.substring(dotIndex) : '.jpg';
+    final targetPath = '${imagesDir.path}/question_${DateTime.now().microsecondsSinceEpoch}$extension';
+    final persisted = await source.copy(targetPath);
+    return persisted.path;
   }
 
   String _mergeLegacyTextAndMath(String text, String math) {
