@@ -359,6 +359,7 @@ class DocxExportService {
   String _documentTemplate({required String title, required String body, required bool rtl}) {
     final bidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
+    final spacerJc = rtl ? 'right' : 'left';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
   <w:body>
@@ -366,7 +367,7 @@ class DocxExportService {
       <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
       <w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${_escape(title)}</w:t></w:r>
     </w:p>
-    <w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
+    <w:p><w:pPr>$bidi<w:jc w:val="$spacerJc"/></w:pPr><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
     $body
     <w:sectPr>
       <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
@@ -434,11 +435,12 @@ class DocxExportService {
     final runs = _paragraphRuns(text, bold: bold, rtl: rtl);
     final mathBlock = mathXml == null || mathXml.trim().isEmpty ? '' : '\n    $mathXml';
     final bidi = rtl ? '<w:bidi/>' : '';
+    final imageParagraphJc = rtl ? 'right' : 'center';
     final imageParagraph = imageRelationshipId == null
         ? ''
         : '''
   <w:p>
-    <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
+    <w:pPr>$bidi<w:jc w:val="$imageParagraphJc"/></w:pPr>
     <w:r>
       ${_anchoredImageDrawingXml(imageRelationshipId)}
     </w:r>

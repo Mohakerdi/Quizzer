@@ -174,6 +174,10 @@ void main() {
     expect(arabicXml, contains('<w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>'));
     expect(arabicXml, contains('<w:rPr><w:rtl/></w:rPr>'));
     expect(englishXml, contains('<w:pPr><w:jc w:val="left"/></w:pPr>'));
+    expect(
+      arabicXml,
+      contains('<w:p><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>'),
+    );
   });
 
   test('adds teacher and school names to quiz header when provided', () {
