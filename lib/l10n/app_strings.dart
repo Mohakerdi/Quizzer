@@ -28,6 +28,8 @@ class AppStrings {
         return ar ? 'موافق' : 'OK';
       case 'selectQuiz':
         return ar ? 'أنشئ أو اختر اختبارًا للبدء.' : 'Create or select a quiz to start.';
+      case 'selectedQuiz':
+        return ar ? 'المحدد حاليًا' : 'Currently selected';
       case 'invalidVariantsCount':
         return ar ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.';
       case 'quizzes':

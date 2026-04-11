@@ -44,34 +44,72 @@ class QuizListScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final quiz = quizzes[index];
                     final selected = quiz.id == selectedQuizId;
+                    final theme = Theme.of(context);
+                    final colorScheme = theme.colorScheme;
 
                     final ar = AppStrings.isArabic(context);
-                    return ListTile(
-                      selected: selected,
-                      title: Text(quiz.title),
-                      subtitle: Text(
-                        ar
-                            ? '${quiz.questions.length} سؤال · ن${quiz.version}'
-                            : '${quiz.questions.length} question(s) · v${quiz.version}',
-                      ),
-                      onTap: () => onSelectQuiz(quiz),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) async {
-                          if (value == 'rename') {
-                            await onRenameQuiz(quiz);
-                          }
-                          if (value == 'duplicate') {
-                            await onDuplicateQuiz(quiz);
-                          }
-                          if (value == 'delete') {
-                            await onDeleteQuiz(quiz);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(value: 'rename', child: Text(AppStrings.tr(context, 'rename'))),
-                          PopupMenuItem(value: 'duplicate', child: Text(AppStrings.tr(context, 'duplicate'))),
-                          PopupMenuItem(value: 'delete', child: Text(AppStrings.tr(context, 'delete'))),
-                        ],
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Material(
+                        color: selected ? colorScheme.primaryContainer : colorScheme.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+                            width: selected ? 2 : 1,
+                          ),
+                        ),
+                        child: ListTile(
+                          selected: selected,
+                          leading: Icon(
+                            selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                            color: selected ? colorScheme.primary : colorScheme.outline,
+                          ),
+                          title: Text(
+                            quiz.title,
+                            style: TextStyle(
+                              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                ar
+                                    ? '${quiz.questions.length} سؤال · ن${quiz.version}'
+                                    : '${quiz.questions.length} question(s) · v${quiz.version}',
+                              ),
+                              if (selected)
+                                Text(
+                                  AppStrings.tr(context, 'selectedQuiz'),
+                                  style: TextStyle(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          onTap: () => onSelectQuiz(quiz),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (value) async {
+                              if (value == 'rename') {
+                                await onRenameQuiz(quiz);
+                              }
+                              if (value == 'duplicate') {
+                                await onDuplicateQuiz(quiz);
+                              }
+                              if (value == 'delete') {
+                                await onDeleteQuiz(quiz);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(value: 'rename', child: Text(AppStrings.tr(context, 'rename'))),
+                              PopupMenuItem(value: 'duplicate', child: Text(AppStrings.tr(context, 'duplicate'))),
+                              PopupMenuItem(value: 'delete', child: Text(AppStrings.tr(context, 'delete'))),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
