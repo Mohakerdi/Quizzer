@@ -22,4 +22,18 @@ void main() {
       r'\alpha + \beta',
     );
   });
+
+  test('normalizes indexed latex roots', () {
+    expect(
+      FriendlyMathFormatter.format(r'\sqrt[3]{x} + \sqrt[12]{y}'),
+      '³√(x) + ¹²√(y)',
+    );
+  });
+
+  test('normalizes indexed roots without leading backslash', () {
+    expect(
+      FriendlyMathFormatter.format(r'sqrt[3]{x}'),
+      '³√(x)',
+    );
+  });
 }

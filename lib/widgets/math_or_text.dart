@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:adv_basics/utils/friendly_math_formatter.dart';
 
 class MathOrText extends StatelessWidget {
   const MathOrText(
@@ -17,19 +18,30 @@ class MathOrText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = value.trim();
+    final text = FriendlyMathFormatter.format(value).trim();
     if (text.isEmpty) {
       return Text('', style: style, maxLines: maxLines, overflow: overflow);
     }
 
     final containsArabic = _containsArabic(text);
+    if (containsArabic) {
+      return Text(
+        text,
+        style: style,
+        maxLines: maxLines,
+        overflow: overflow,
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.start,
+      );
+    }
+
     if (!_looksLikeMathExpression(text)) {
       return Text(
         text,
         style: style,
         maxLines: maxLines,
         overflow: overflow,
-        textDirection: containsArabic ? TextDirection.rtl : null,
+        textDirection: null,
         textAlign: TextAlign.start,
       );
     }
@@ -42,7 +54,7 @@ class MathOrText extends StatelessWidget {
         style: style,
         maxLines: maxLines,
         overflow: overflow,
-        textDirection: containsArabic ? TextDirection.rtl : null,
+        textDirection: null,
         textAlign: TextAlign.start,
       ),
     );

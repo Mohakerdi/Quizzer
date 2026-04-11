@@ -412,6 +412,40 @@ void main() {
     expect(quizXml, isNot(contains(r'$$')));
   });
 
+  test('normalizes indexed roots in inline equations for export', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V6',
+      quizId: quiz.id,
+      seed: 7,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'ما الحل إذا علمت أن $$\sqrt[3]{x} = \frac{4}{2}$$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'$$\sqrt[12]{y}$$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'ar',
+    );
+
+    expect(quizXml, contains('³√(x) = (4)/(2)'));
+    expect(quizXml, contains('¹²√(y)'));
+    expect(quizXml, isNot(contains(r'sqrt[3]{x}')));
+    expect(quizXml, isNot(contains(r'$$')));
+  });
+
   test('builds export filenames with quiz name, version, variant and type', () {
     final quiz = QuizModel.empty('Algebra Final Exam');
     final versionedQuiz = quiz.copyWith(version: 7);
