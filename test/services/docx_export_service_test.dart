@@ -396,4 +396,14 @@ void main() {
     expect(questionsName, 'algebra_final_exam_v7_v2_questions.docx');
     expect(answersName, 'algebra_final_exam_v7_v2_answers.docx');
   });
+
+  test('builds anchored square-wrapped image drawing XML for DOCX export', () {
+    final service = const DocxExportService();
+    final xml = service.buildImageDrawingXmlForTest('rIdImage3');
+
+    expect(xml, contains('<wp:anchor'));
+    expect(xml, contains('<wp:wrapSquare wrapText="bothSides"/>'));
+    expect(xml, isNot(contains('<wp:inline')));
+    expect(xml, contains('<a:blip r:embed="rIdImage3"/>'));
+  });
 }

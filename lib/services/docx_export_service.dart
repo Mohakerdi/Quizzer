@@ -440,7 +440,7 @@ class DocxExportService {
   <w:p>
     <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
     <w:r>
-      ${_inlineImageDrawingXml(imageRelationshipId)}
+      ${_anchoredImageDrawingXml(imageRelationshipId)}
     </w:r>
   </w:p>''';
 
@@ -465,14 +465,27 @@ class DocxExportService {
 </w:tc>''';
   }
 
-  String _inlineImageDrawingXml(String relationshipId) {
+  @visibleForTesting
+  String buildImageDrawingXmlForTest(String relationshipId) {
+    return _anchoredImageDrawingXml(relationshipId);
+  }
+
+  String _anchoredImageDrawingXml(String relationshipId) {
     const cx = 3600000;
     const cy = 2160000;
     final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
     return '''<w:drawing>
-  <wp:inline distT="0" distB="0" distL="0" distR="0">
+  <wp:anchor distT="0" distB="0" distL="114300" distR="114300" simplePos="0" relativeHeight="251658240" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">
+    <wp:simplePos x="0" y="0"/>
+    <wp:positionH relativeFrom="column">
+      <wp:posOffset>0</wp:posOffset>
+    </wp:positionH>
+    <wp:positionV relativeFrom="paragraph">
+      <wp:posOffset>0</wp:posOffset>
+    </wp:positionV>
     <wp:extent cx="$cx" cy="$cy"/>
     <wp:effectExtent l="0" t="0" r="0" b="0"/>
+    <wp:wrapSquare wrapText="bothSides"/>
     <wp:docPr id="$imageId" name="QuestionImage$imageId"/>
     <wp:cNvGraphicFramePr>
       <a:graphicFrameLocks noChangeAspect="1"/>
@@ -502,7 +515,7 @@ class DocxExportService {
         </pic:pic>
       </a:graphicData>
     </a:graphic>
-  </wp:inline>
+  </wp:anchor>
 </w:drawing>''';
   }
 
