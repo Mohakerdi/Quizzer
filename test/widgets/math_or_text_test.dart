@@ -1,6 +1,5 @@
 import 'package:adv_basics/widgets/math_or_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -13,7 +12,6 @@ void main() {
       ),
     );
 
-    expect(find.byType(Text), findsOneWidget);
-    expect(find.byType(Math), findsNothing);
+    expect(find.text('ما الحل إذا علمت أن ³√(x) = (4)/(2)'), findsOneWidget);
   });
 }

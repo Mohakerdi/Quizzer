@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:adv_basics/utils/friendly_math_formatter.dart';
 
 class MathOrText extends StatelessWidget {
@@ -24,47 +23,17 @@ class MathOrText extends StatelessWidget {
     }
 
     final containsArabic = _containsArabic(text);
-    if (containsArabic) {
-      return Text(
-        text,
-        style: style,
-        maxLines: maxLines,
-        overflow: overflow,
-        textDirection: TextDirection.rtl,
-        textAlign: TextAlign.start,
-      );
-    }
-
-    if (!_looksLikeMathExpression(text)) {
-      return Text(
-        text,
-        style: style,
-        maxLines: maxLines,
-        overflow: overflow,
-        textDirection: null,
-        textAlign: TextAlign.start,
-      );
-    }
-
-    return Math.tex(
+    return Text(
       text,
-      textStyle: style ?? DefaultTextStyle.of(context).style,
-      onErrorFallback: (_) => Text(
-        text,
-        style: style,
-        maxLines: maxLines,
-        overflow: overflow,
-        textDirection: null,
-        textAlign: TextAlign.start,
-      ),
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+      textDirection: containsArabic ? TextDirection.rtl : null,
+      textAlign: TextAlign.start,
     );
   }
 
   bool _containsArabic(String value) {
     return RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]').hasMatch(value);
-  }
-
-  bool _looksLikeMathExpression(String value) {
-    return RegExp(r'(\\[a-zA-Z]+)|\$\$|\\\$\$|[_^{}]').hasMatch(value);
   }
 }

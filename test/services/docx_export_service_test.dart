@@ -288,7 +288,7 @@ void main() {
     expect(quizXml, contains('What is HO?'));
   });
 
-  test('injects math as raw OMML XML in cell paragraph', () {
+  test('exports legacy math fields as normalized plain text', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V2',
@@ -312,13 +312,12 @@ void main() {
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
-    expect(quizXml, contains('xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'));
-    expect(quizXml, contains('<m:oMath>'));
+    expect(quizXml, isNot(contains('<m:oMath>')));
     expect(quizXml, contains('(1)/(2)'));
-    expect(quizXml, isNot(contains('&lt;m:oMath&gt;')));
+    expect(quizXml, contains('√(4)'));
   });
 
-  test('exports inline $$math$$ in text as OMML without raw delimiters', () {
+  test('exports inline $$math$$ in text as normalized plain text', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V3',
@@ -343,13 +342,13 @@ void main() {
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
     expect(quizXml, contains('Find sin(x)'));
-    expect(quizXml, contains('<m:oMath>'));
     expect(quizXml, contains('(1)/(x)'));
     expect(quizXml, contains('√(4)'));
+    expect(quizXml, isNot(contains('<m:oMath>')));
     expect(quizXml, isNot(contains(r'$$')));
   });
 
-  test('exports escaped inline \\$\\$math\\$\\$ delimiters as OMML', () {
+  test('exports escaped inline \\$\\$math\\$\\$ delimiters as plain text', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V4',
@@ -374,13 +373,13 @@ void main() {
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
     expect(quizXml, contains('Find sin(x)'));
-    expect(quizXml, contains('<m:oMath>'));
     expect(quizXml, contains('(1)/(x)'));
     expect(quizXml, contains('√(4)'));
+    expect(quizXml, isNot(contains('<m:oMath>')));
     expect(quizXml, isNot(contains(r'\$\$')));
   });
 
-  test('exports multiple inline equations in prompt and option text', () {
+  test('exports multiple inline equations as normalized plain text', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V5',
@@ -404,7 +403,7 @@ void main() {
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
-    expect('<m:oMath>'.allMatches(quizXml).length, equals(4));
+    expect('<m:oMath>'.allMatches(quizXml).length, equals(0));
     expect(quizXml, contains('(1)/(2)'));
     expect(quizXml, contains('√(9)'));
     expect(quizXml, contains('x²'));

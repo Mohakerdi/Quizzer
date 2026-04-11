@@ -20,11 +20,6 @@ class DocxExportService {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
-  // Supports both canonical `$$...$$` and escaped `\$\$...\$\$` delimiters.
-  static final RegExp _inlineMathDelimiterPattern = RegExp(
-    r'\\?\$\$(.+?)\\?\$\$',
-    dotAll: true,
-  );
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
@@ -229,7 +224,6 @@ class DocxExportService {
               prompt.toString(),
               colSpan: 3,
               rtl: isRtl,
-              mathXml: _mathToOmml(question.math),
               imageRelationshipId: imageAsset?.relationshipId,
             ),
           ], isRtl),
@@ -250,7 +244,6 @@ class DocxExportService {
         return _cell(
           text,
           rtl: isRtl,
-          mathXml: _mathToOmml(option.math),
         );
       });
 
@@ -322,7 +315,6 @@ class DocxExportService {
               prompt.toString(),
               colSpan: 3,
               rtl: isRtl,
-              mathXml: _mathToOmml(question.math),
               imageRelationshipId: imageAsset?.relationshipId,
             ),
           ], isRtl),
@@ -347,7 +339,6 @@ class DocxExportService {
           rtl: isRtl,
           bold: isCorrect,
           fillColor: isCorrect ? 'C6EFCE' : null,
-          mathXml: _mathToOmml(option.math),
         );
       });
 
@@ -429,7 +420,6 @@ class DocxExportService {
     String? fillColor,
     String align = 'left',
     bool rtl = false,
-    String? mathXml,
     String? imageRelationshipId,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
@@ -441,7 +431,6 @@ class DocxExportService {
       text,
       bold: bold,
       rtl: rtl,
-      legacyMathXml: mathXml,
     );
     final bidi = rtl ? '<w:bidi/>' : '';
     final imageParagraphJc = rtl ? 'right' : 'center';
@@ -480,39 +469,8 @@ class DocxExportService {
     String text, {
     required bool bold,
     required bool rtl,
-    String? legacyMathXml,
   }) {
-    final buffer = StringBuffer();
-    var cursor = 0;
-
-    for (final match in _inlineMathDelimiterPattern.allMatches(text)) {
-      if (match.start > cursor) {
-        buffer.write(_paragraphRuns(text.substring(cursor, match.start), bold: bold, rtl: rtl));
-      }
-
-      final expression = (match.group(1) ?? '').trim();
-      final inlineMathXml = _mathToOmml(expression);
-      if (inlineMathXml == null) {
-        buffer.write(_paragraphRuns(text.substring(match.start, match.end), bold: bold, rtl: rtl));
-      } else {
-        buffer.write(inlineMathXml);
-      }
-      cursor = match.end;
-    }
-
-    if (cursor < text.length) {
-      buffer.write(_paragraphRuns(text.substring(cursor), bold: bold, rtl: rtl));
-    }
-
-    if (buffer.isEmpty) {
-      buffer.write(_paragraphRuns(text, bold: bold, rtl: rtl));
-    }
-
-    if (legacyMathXml != null && legacyMathXml.trim().isNotEmpty) {
-      buffer.write('\n    $legacyMathXml');
-    }
-
-    return buffer.toString();
+    return _paragraphRuns(text, bold: bold, rtl: rtl);
   }
 
   @visibleForTesting
@@ -869,16 +827,6 @@ class DocxExportService {
 
   String _normalizeTextForExport(String text) {
     return FriendlyMathFormatter.format(text);
-  }
-
-  String? _mathToOmml(String math) {
-    final normalized = FriendlyMathFormatter.format(math).trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-
-    final sanitized = normalized.replaceAll('\n', ' ');
-    return '<m:oMath><m:r><m:t>${_escape(sanitized)}</m:t></m:r></m:oMath>';
   }
 
   bool _containsArabic(String value) {
