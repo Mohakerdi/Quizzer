@@ -269,13 +269,15 @@ class QuizMakerHome extends StatelessWidget {
                                     onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
                                     onGenerateVariants: (quiz) => _generateVariants(context, quiz),
                                     onPreviewVariant: (variant) => _previewVariant(context, variant),
-                                    onExportVariant: (variant, {teacherName, schoolName, exportLanguageCode}) => context
+                                    onExportVariant:
+                                        (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
                                         .read<QuizMakerCubit>()
                                         .exportVariant(
                                           variant,
                                           teacherName: teacherName,
                                           schoolName: schoolName,
                                           exportLanguageCode: exportLanguageCode,
+                                          optionLabelStyle: optionLabelStyle,
                                         ),
                                     onExportGoogleForms: (variant) =>
                                         context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),

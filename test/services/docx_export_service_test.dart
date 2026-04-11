@@ -61,6 +61,41 @@ void main() {
     expect(quizXml, contains('<w:gridCol w:w="3170"/>'));
   });
 
+  test('uses arabic option labels when arabic label style is selected', () {
+    final quiz = QuizModel.empty('Geometry');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Triangle angle',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: '80'),
+            QuestionOption(id: 'o2', text: '50'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'ar',
+      optionLabelStyle: 'arabic',
+    );
+
+    expect(quizXml, contains('أ) 80'));
+    expect(quizXml, contains('ب) 50'));
+    expect(quizXml, isNot(contains('A) 80')));
+  });
+
   test('adds teacher and school names to quiz header when provided', () {
     final quiz = QuizModel.empty('Geometry');
     final variant = GeneratedVariant(

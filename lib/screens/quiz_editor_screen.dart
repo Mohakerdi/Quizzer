@@ -39,6 +39,7 @@ class QuizEditorScreen extends StatefulWidget {
     String? teacherName,
     String? schoolName,
     String? exportLanguageCode,
+    String? optionLabelStyle,
   }) onExportVariant;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
@@ -321,6 +322,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       teacherName: exportDetails.nullableTeacherName,
       schoolName: exportDetails.nullableSchoolName,
       exportLanguageCode: exportDetails.exportLanguageCode,
+      optionLabelStyle: exportDetails.optionLabelStyle,
     );
   }
 
@@ -409,11 +411,13 @@ class _DocxExportDetails {
     required this.teacherName,
     required this.schoolName,
     required this.exportLanguageCode,
+    required this.optionLabelStyle,
   });
 
   final String teacherName;
   final String schoolName;
   final String exportLanguageCode;
+  final String optionLabelStyle;
 
   String? get nullableTeacherName => teacherName.isEmpty ? null : teacherName;
   String? get nullableSchoolName => schoolName.isEmpty ? null : schoolName;
@@ -429,12 +433,19 @@ class _DocxExportDetailsDialog extends StatefulWidget {
 class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
   final _teacherController = TextEditingController();
   final _schoolController = TextEditingController();
+  bool _defaultsInitialized = false;
   late String _exportLanguageCode;
+  late String _optionLabelStyle;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_defaultsInitialized) {
+      return;
+    }
     _exportLanguageCode = AppStrings.isArabic(context) ? 'ar' : 'en';
+    _optionLabelStyle = AppStrings.isArabic(context) ? 'arabic' : 'latin';
+    _defaultsInitialized = true;
   }
 
   @override
@@ -489,6 +500,31 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
               });
             },
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _optionLabelStyle,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'optionLabelStyle'),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'latin',
+                child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
+              ),
+              DropdownMenuItem(
+                value: 'arabic',
+                child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _optionLabelStyle = value;
+              });
+            },
+          ),
         ],
       ),
       actions: [
@@ -502,6 +538,7 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
               teacherName: _teacherController.text.trim(),
               schoolName: _schoolController.text.trim(),
               exportLanguageCode: _exportLanguageCode,
+              optionLabelStyle: _optionLabelStyle,
             ),
           ),
           child: Text(AppStrings.tr(context, 'exportDocx')),

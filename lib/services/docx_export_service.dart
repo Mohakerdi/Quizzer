@@ -11,6 +11,14 @@ import 'package:path_provider/path_provider.dart';
 
 class DocxExportService {
   const DocxExportService();
+  static const int _pageWidthTwips = 11906;
+  static const int _pageHeightTwips = 16838;
+  static const int _pageMarginTwips = 600;
+  static const int _tableTotalWidthTwips = _pageWidthTwips - (_pageMarginTwips * 2); // 10706
+  static const int _firstColumnWidthTwips = 1200;
+  static const int _secondColumnWidthTwips = 3168;
+  static const int _thirdColumnWidthTwips = 3168;
+  static const int _fourthColumnWidthTwips = 3170;
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
@@ -18,6 +26,7 @@ class DocxExportService {
     String? teacherName,
     String? schoolName,
     String? exportLanguageCode,
+    String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildQuizDocumentXml(
@@ -26,6 +35,7 @@ class DocxExportService {
       teacherName: teacherName,
       schoolName: schoolName,
       exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -44,12 +54,14 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
     String? exportLanguageCode,
+    String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
       exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -110,6 +122,7 @@ class DocxExportService {
     String? teacherName,
     String? schoolName,
     String? exportLanguageCode,
+    String? optionLabelStyle,
   }) {
     return _buildQuizDocumentXml(
       quiz: quiz,
@@ -117,6 +130,7 @@ class DocxExportService {
       teacherName: teacherName,
       schoolName: schoolName,
       exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -160,6 +174,7 @@ class DocxExportService {
     String? teacherName,
     String? schoolName,
     String? exportLanguageCode,
+    String? optionLabelStyle,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
@@ -215,7 +230,10 @@ class DocxExportService {
         ),
       );
 
-      final labels = ['A', 'B', 'C', 'D'];
+      final labels = _resolveOptionLabels(
+        optionLabelStyle: optionLabelStyle,
+        exportInArabic: exportInArabic,
+      );
       final optionCells = List.generate(4, (index) {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
@@ -245,11 +263,13 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
     String? exportLanguageCode,
+    String? optionLabelStyle,
   }) {
     return _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
       exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -259,6 +279,7 @@ class DocxExportService {
     required QuizModel quiz,
     required GeneratedVariant variant,
     String? exportLanguageCode,
+    String? optionLabelStyle,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
@@ -300,7 +321,10 @@ class DocxExportService {
         ]),
       );
 
-      final labels = ['A', 'B', 'C', 'D'];
+      final labels = _resolveOptionLabels(
+        optionLabelStyle: optionLabelStyle,
+        exportInArabic: exportInArabic,
+      );
       final optionCells = List.generate(4, (index) {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
@@ -342,8 +366,8 @@ class DocxExportService {
     <w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
     $body
     <w:sectPr>
-      <w:pgSz w:w="11906" w:h="16838"/>
-      <w:pgMar w:top="600" w:right="600" w:bottom="600" w:left="600"/>
+      <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
+      <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
     </w:sectPr>
   </w:body>
 </w:document>''';
@@ -352,7 +376,7 @@ class DocxExportService {
   String _table(String rows) {
     return '''<w:tbl>
   <w:tblPr>
-    <w:tblW w:w="10706" w:type="dxa"/>
+    <w:tblW w:w="$_tableTotalWidthTwips" w:type="dxa"/>
     <w:tblLayout w:type="fixed"/>
     <w:tblBorders>
       <w:top w:val="single" w:sz="12"/>
@@ -364,10 +388,10 @@ class DocxExportService {
     </w:tblBorders>
   </w:tblPr>
   <w:tblGrid>
-    <w:gridCol w:w="1200"/>
-    <w:gridCol w:w="3168"/>
-    <w:gridCol w:w="3168"/>
-    <w:gridCol w:w="3170"/>
+    <w:gridCol w:w="$_firstColumnWidthTwips"/>
+    <w:gridCol w:w="$_secondColumnWidthTwips"/>
+    <w:gridCol w:w="$_thirdColumnWidthTwips"/>
+    <w:gridCol w:w="$_fourthColumnWidthTwips"/>
   </w:tblGrid>
   $rows
 </w:tbl>''';
@@ -791,6 +815,15 @@ class DocxExportService {
 
   bool _isArabicLanguageCode(String? languageCode) {
     return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
+  }
+
+  List<String> _resolveOptionLabels({
+    required String? optionLabelStyle,
+    required bool exportInArabic,
+  }) {
+    final normalized = (optionLabelStyle ?? '').trim().toLowerCase();
+    final useArabic = normalized == 'arabic' || (normalized.isEmpty && exportInArabic);
+    return useArabic ? const ['أ', 'ب', 'ج', 'د'] : const ['A', 'B', 'C', 'D'];
   }
 }
 

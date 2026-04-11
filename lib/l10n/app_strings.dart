@@ -68,6 +68,12 @@ class AppStrings {
         return ar ? 'الإنجليزية' : 'English';
       case 'exportLanguageArabic':
         return ar ? 'العربية' : 'Arabic';
+      case 'optionLabelStyle':
+        return ar ? 'تنسيق ترقيم الخيارات' : 'Choice label style';
+      case 'optionLabelStyleLatin':
+        return ar ? 'A / B / C / D' : 'A / B / C / D';
+      case 'optionLabelStyleArabic':
+        return ar ? 'أ / ب / ج / د' : 'أ / ب / ج / د';
       case 'exportGoogleForms':
         return ar ? 'تصدير Google Forms' : 'Export Google Forms';
       case 'quizSaved':
