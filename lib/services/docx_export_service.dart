@@ -18,6 +18,7 @@ class DocxExportService {
   static const int _firstColumnWidthTwips = 1200;
   static const int _secondColumnWidthTwips = 3168;
   static const int _thirdColumnWidthTwips = 3168;
+  // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
 
   Future<String> exportQuizPaper({
