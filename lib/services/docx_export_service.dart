@@ -431,7 +431,7 @@ class DocxExportService {
     final fallbackAlign = rtl ? 'right' : 'left';
     final effectiveAlign = align == 'left' ? fallbackAlign : align;
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
-    final runs = _paragraphRuns(text, bold: bold);
+    final runs = _paragraphRuns(text, bold: bold, rtl: rtl);
     final mathBlock = mathXml == null || mathXml.trim().isEmpty ? '' : '\n    $mathXml';
     final bidi = rtl ? '<w:bidi/>' : '';
     final imageParagraph = imageRelationshipId == null
@@ -506,14 +506,21 @@ class DocxExportService {
 </w:drawing>''';
   }
 
-  String _paragraphRuns(String text, {required bool bold}) {
+  String _paragraphRuns(String text, {required bool bold, required bool rtl}) {
     final escapedLines = _escape(text).split('\n');
     final buffer = StringBuffer();
     for (var i = 0; i < escapedLines.length; i++) {
       final line = escapedLines[i];
       buffer.write('<w:r>');
-      if (bold) {
-        buffer.write('<w:rPr><w:b/></w:rPr>');
+      if (bold || rtl) {
+        final runProperties = StringBuffer();
+        if (bold) {
+          runProperties.write('<w:b/>');
+        }
+        if (rtl) {
+          runProperties.write('<w:rtl/>');
+        }
+        buffer.write('<w:rPr>$runProperties</w:rPr>');
       }
       buffer.write('<w:t xml:space="preserve">${line.isEmpty ? ' ' : line}</w:t>');
       buffer.write('</w:r>');

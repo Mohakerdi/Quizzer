@@ -136,6 +136,46 @@ void main() {
     expect(quizXml.indexOf('د) الخيار الرابع'), lessThan(quizXml.indexOf('أ) الخيار الأول')));
   });
 
+  test('aligns arabic export text to right and english export text to left', () {
+    final quiz = QuizModel.empty('Language');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'مرحبا',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: 'الخيار الأول'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final arabicXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'ar',
+      optionLabelStyle: 'arabic',
+    );
+    final englishXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'en',
+      optionLabelStyle: 'latin',
+    );
+
+    expect(arabicXml, contains('<w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr>'));
+    expect(arabicXml, contains('<w:rPr><w:rtl/></w:rPr>'));
+    expect(englishXml, contains('<w:pPr><w:jc w:val="left"/></w:pPr>'));
+  });
+
   test('adds teacher and school names to quiz header when provided', () {
     final quiz = QuizModel.empty('Geometry');
     final variant = GeneratedVariant(
