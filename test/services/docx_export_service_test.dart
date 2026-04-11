@@ -318,7 +318,7 @@ void main() {
     expect(quizXml, isNot(contains('&lt;m:oMath&gt;')));
   });
 
-  test('normalizes inline $$math$$ in text for export without raw delimiters', () {
+  test('exports inline $$math$$ in text as OMML without raw delimiters', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V3',
@@ -342,12 +342,14 @@ void main() {
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
-    expect(quizXml, contains('Find sin(x) (1)/(x)'));
+    expect(quizXml, contains('Find sin(x)'));
+    expect(quizXml, contains('<m:oMath>'));
+    expect(quizXml, contains('(1)/(x)'));
     expect(quizXml, contains('√(4)'));
     expect(quizXml, isNot(contains(r'$$')));
   });
 
-  test('normalizes escaped inline \\$\\$math\\$\\$ delimiters for export', () {
+  test('exports escaped inline \\$\\$math\\$\\$ delimiters as OMML', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(
       id: 'V4',
@@ -371,9 +373,43 @@ void main() {
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
-    expect(quizXml, contains('Find sin(x) (1)/(x)'));
+    expect(quizXml, contains('Find sin(x)'));
+    expect(quizXml, contains('<m:oMath>'));
+    expect(quizXml, contains('(1)/(x)'));
     expect(quizXml, contains('√(4)'));
     expect(quizXml, isNot(contains(r'\$\$')));
+  });
+
+  test('exports multiple inline equations in prompt and option text', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V5',
+      quizId: quiz.id,
+      seed: 6,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Compute $$\frac{1}{2}$$ then $$\sqrt{9}$$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'$$x^2$$ and $$\pi$$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect('<m:oMath>'.allMatches(quizXml).length, greaterThanOrEqualTo(4));
+    expect(quizXml, contains('(1)/(2)'));
+    expect(quizXml, contains('√(9)'));
+    expect(quizXml, contains('x²'));
+    expect(quizXml, contains('π'));
+    expect(quizXml, isNot(contains(r'$$')));
   });
 
   test('builds export filenames with quiz name, version, variant and type', () {

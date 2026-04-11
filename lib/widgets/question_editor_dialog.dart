@@ -8,6 +8,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
 import 'package:adv_basics/models/quiz_question.dart';
+import 'package:adv_basics/widgets/math_input_field.dart';
 import 'package:adv_basics/widgets/math_or_text.dart';
 
 typedef PickAndCropImage =
@@ -446,11 +447,15 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
   }
 
   void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
+    _insertAtSelection(symbol, cursorOffset: cursorOffset);
+  }
+
+  void _insertAtSelection(String insertion, {int cursorOffset = 0}) {
     final text = widget.controller.text;
     final selection = widget.controller.selection;
 
     if (!selection.isValid) {
-      final appended = '$text$symbol';
+      final appended = '$text$insertion';
       widget.controller.value = widget.controller.value.copyWith(
         text: appended,
         selection: TextSelection.collapsed(offset: appended.length),
@@ -461,9 +466,9 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
 
     final start = selection.start;
     final end = selection.end;
-    final newText = text.replaceRange(start, end, symbol);
-    final safeCursorOffset = cursorOffset.clamp(0, symbol.length);
-    final targetOffset = start + symbol.length - safeCursorOffset;
+    final newText = text.replaceRange(start, end, insertion);
+    final safeCursorOffset = cursorOffset.clamp(0, insertion.length);
+    final targetOffset = start + insertion.length - safeCursorOffset;
     final newCursor = targetOffset.clamp(0, newText.length).toInt();
 
     widget.controller.value = widget.controller.value.copyWith(
@@ -471,6 +476,17 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
       selection: TextSelection.collapsed(offset: newCursor),
       composing: TextRange.empty,
     );
+  }
+
+  Future<void> _openEquationEditor() async {
+    final inserted = await showDialog<String>(
+      context: context,
+      builder: (ctx) => const _EquationEditorDialog(),
+    );
+    if (inserted == null || inserted.trim().isEmpty) {
+      return;
+    }
+    _insertAtSelection(inserted);
   }
 
   @override
@@ -504,17 +520,21 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: _mathActions
-              .map(
-                (action) => _MathActionChip(
-                  label: action.label,
-                  onTap: () => _insertMathSymbol(
-                    action.symbol,
-                    cursorOffset: action.cursorOffset,
-                  ),
+          children: [
+            _MathActionChip(
+              label: AppStrings.tr(context, 'insertEquation'),
+              onTap: _openEquationEditor,
+            ),
+            ..._mathActions.map(
+              (action) => _MathActionChip(
+                label: action.label,
+                onTap: () => _insertMathSymbol(
+                  action.symbol,
+                  cursorOffset: action.cursorOffset,
                 ),
-              )
-              .toList(),
+              ),
+            ),
+          ],
         ),
         if (text.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -616,4 +636,44 @@ class _MathInsertAction {
   final String label;
   final String symbol;
   final int cursorOffset;
+}
+
+class _EquationEditorDialog extends StatefulWidget {
+  const _EquationEditorDialog();
+
+  @override
+  State<_EquationEditorDialog> createState() => _EquationEditorDialogState();
+}
+
+class _EquationEditorDialogState extends State<_EquationEditorDialog> {
+  String _equation = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final canInsert = _equation.trim().isNotEmpty;
+    return AlertDialog(
+      title: Text(AppStrings.tr(context, 'equationEditorTitle')),
+      content: SizedBox(
+        width: 560,
+        child: MathInputField(
+          label: AppStrings.tr(context, 'equationFieldLabel'),
+          initialValue: _equation,
+          hint: AppStrings.tr(context, 'equationFieldHint'),
+          onChanged: (value) => setState(() => _equation = value.trim()),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(AppStrings.tr(context, 'cancel')),
+        ),
+        FilledButton(
+          onPressed: canInsert
+              ? () => Navigator.of(context).pop('$$${_equation.trim()}$$')
+              : null,
+          child: Text(AppStrings.tr(context, 'insertEquation')),
+        ),
+      ],
+    );
+  }
 }

@@ -130,6 +130,14 @@ class AppStrings {
         return ar ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة' : 'GeoGebra-like math keyboard enabled';
       case 'invalidMathExpression':
         return ar ? 'تعبير رياضي غير صالح' : 'Invalid math expression';
+      case 'insertEquation':
+        return ar ? 'إدراج معادلة' : 'Insert equation';
+      case 'equationEditorTitle':
+        return ar ? 'محرر المعادلة' : 'Equation editor';
+      case 'equationFieldLabel':
+        return ar ? 'المعادلة' : 'Equation';
+      case 'equationFieldHint':
+        return ar ? 'اكتب الصيغة الرياضية' : 'Type the math expression';
       case 'themeDark':
         return ar ? 'الوضع الداكن' : 'Dark mode';
       case 'themeLight':

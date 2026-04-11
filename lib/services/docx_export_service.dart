@@ -432,8 +432,12 @@ class DocxExportService {
     final fallbackAlign = rtl ? 'right' : 'left';
     final effectiveAlign = align == 'left' ? fallbackAlign : align;
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
-    final runs = _paragraphRuns(text, bold: bold, rtl: rtl);
-    final mathBlock = mathXml == null || mathXml.trim().isEmpty ? '' : '\n    $mathXml';
+    final paragraphContent = _buildParagraphContent(
+      text,
+      bold: bold,
+      rtl: rtl,
+      legacyMathXml: mathXml,
+    );
     final bidi = rtl ? '<w:bidi/>' : '';
     final imageParagraphJc = rtl ? 'right' : 'center';
     final imageParagraph = imageRelationshipId == null
@@ -461,10 +465,50 @@ class DocxExportService {
   </w:tcPr>
   <w:p>
     <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
-    $runs$mathBlock
+    $paragraphContent
   </w:p>
   $imageParagraph
 </w:tc>''';
+  }
+
+  String _buildParagraphContent(
+    String text, {
+    required bool bold,
+    required bool rtl,
+    String? legacyMathXml,
+  }) {
+    final inlineMathMatcher = RegExp(r'\\?\$\$(.+?)\\?\$\$', dotAll: true);
+    final buffer = StringBuffer();
+    var cursor = 0;
+
+    for (final match in inlineMathMatcher.allMatches(text)) {
+      if (match.start > cursor) {
+        buffer.write(_paragraphRuns(text.substring(cursor, match.start), bold: bold, rtl: rtl));
+      }
+
+      final expression = (match.group(1) ?? '').trim();
+      final inlineMathXml = _mathToOmml(expression);
+      if (inlineMathXml == null) {
+        buffer.write(_paragraphRuns(text.substring(match.start, match.end), bold: bold, rtl: rtl));
+      } else {
+        buffer.write(inlineMathXml);
+      }
+      cursor = match.end;
+    }
+
+    if (cursor < text.length) {
+      buffer.write(_paragraphRuns(text.substring(cursor), bold: bold, rtl: rtl));
+    }
+
+    if (buffer.isEmpty) {
+      buffer.write(_paragraphRuns(text, bold: bold, rtl: rtl));
+    }
+
+    if (legacyMathXml != null && legacyMathXml.trim().isNotEmpty) {
+      buffer.write('\n    $legacyMathXml');
+    }
+
+    return buffer.toString();
   }
 
   @visibleForTesting
