@@ -352,7 +352,7 @@ class DocxExportService {
   String _table(String rows) {
     return '''<w:tbl>
   <w:tblPr>
-    <w:tblW w:w="0" w:type="auto"/>
+    <w:tblW w:w="10706" w:type="dxa"/>
     <w:tblLayout w:type="fixed"/>
     <w:tblBorders>
       <w:top w:val="single" w:sz="12"/>
@@ -364,10 +364,10 @@ class DocxExportService {
     </w:tblBorders>
   </w:tblPr>
   <w:tblGrid>
-    <w:gridCol w:w="1400"/>
-    <w:gridCol w:w="3300"/>
-    <w:gridCol w:w="3300"/>
-    <w:gridCol w:w="3300"/>
+    <w:gridCol w:w="1200"/>
+    <w:gridCol w:w="3168"/>
+    <w:gridCol w:w="3168"/>
+    <w:gridCol w:w="3170"/>
   </w:tblGrid>
   $rows
 </w:tbl>''';

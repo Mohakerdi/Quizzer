@@ -42,6 +42,25 @@ void main() {
     expect(solutionsXml, contains('80'));
   });
 
+  test('uses fixed in-bounds table width for exported DOCX', () {
+    final quiz = QuizModel.empty('Geometry');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: const [],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+
+    expect(quizXml, contains('<w:tblW w:w="10706" w:type="dxa"/>'));
+    expect(quizXml, contains('<w:gridCol w:w="1200"/>'));
+    expect(quizXml, contains('<w:gridCol w:w="3168"/>'));
+    expect(quizXml, contains('<w:gridCol w:w="3170"/>'));
+  });
+
   test('adds teacher and school names to quiz header when provided', () {
     final quiz = QuizModel.empty('Geometry');
     final variant = GeneratedVariant(
