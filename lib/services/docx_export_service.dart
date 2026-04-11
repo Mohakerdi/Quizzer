@@ -20,6 +20,11 @@ class DocxExportService {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
+  // Supports both canonical `$$...$$` and escaped `\$\$...\$\$` delimiters.
+  static final RegExp _inlineMathDelimiterPattern = RegExp(
+    r'\\?\$\$(.+?)\\?\$\$',
+    dotAll: true,
+  );
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
@@ -477,11 +482,10 @@ class DocxExportService {
     required bool rtl,
     String? legacyMathXml,
   }) {
-    final inlineMathMatcher = RegExp(r'\\?\$\$(.+?)\\?\$\$', dotAll: true);
     final buffer = StringBuffer();
     var cursor = 0;
 
-    for (final match in inlineMathMatcher.allMatches(text)) {
+    for (final match in _inlineMathDelimiterPattern.allMatches(text)) {
       if (match.start > cursor) {
         buffer.write(_paragraphRuns(text.substring(cursor, match.start), bold: bold, rtl: rtl));
       }

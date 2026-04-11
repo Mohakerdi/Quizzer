@@ -483,7 +483,7 @@ class _FriendlyMathInputState extends State<_FriendlyMathInput> {
       context: context,
       builder: (ctx) => const _EquationEditorDialog(),
     );
-    if (inserted == null || inserted.trim().isEmpty) {
+    if (inserted == null || inserted.isEmpty) {
       return;
     }
     _insertAtSelection(inserted);

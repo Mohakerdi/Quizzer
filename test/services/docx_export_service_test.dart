@@ -404,7 +404,7 @@ void main() {
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
 
-    expect('<m:oMath>'.allMatches(quizXml).length, greaterThanOrEqualTo(4));
+    expect('<m:oMath>'.allMatches(quizXml).length, equals(4));
     expect(quizXml, contains('(1)/(2)'));
     expect(quizXml, contains('√(9)'));
     expect(quizXml, contains('x²'));
