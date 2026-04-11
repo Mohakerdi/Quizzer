@@ -22,6 +22,18 @@ class MathOrText extends StatelessWidget {
       return Text('', style: style, maxLines: maxLines, overflow: overflow);
     }
 
+    final containsArabic = _containsArabic(text);
+    if (!_looksLikeMathExpression(text)) {
+      return Text(
+        text,
+        style: style,
+        maxLines: maxLines,
+        overflow: overflow,
+        textDirection: containsArabic ? TextDirection.rtl : null,
+        textAlign: TextAlign.start,
+      );
+    }
+
     return Math.tex(
       text,
       textStyle: style ?? DefaultTextStyle.of(context).style,
@@ -30,7 +42,17 @@ class MathOrText extends StatelessWidget {
         style: style,
         maxLines: maxLines,
         overflow: overflow,
+        textDirection: containsArabic ? TextDirection.rtl : null,
+        textAlign: TextAlign.start,
       ),
     );
+  }
+
+  bool _containsArabic(String value) {
+    return RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]').hasMatch(value);
+  }
+
+  bool _looksLikeMathExpression(String value) {
+    return RegExp(r'(\\[a-zA-Z]+)|\$\$|\\\$\$|[_^{}]').hasMatch(value);
   }
 }

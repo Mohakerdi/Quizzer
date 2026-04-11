@@ -78,6 +78,8 @@ void main() {
           options: const [
             QuestionOption(id: 'o1', text: '80'),
             QuestionOption(id: 'o2', text: '50'),
+            QuestionOption(id: 'o3', text: '43'),
+            QuestionOption(id: 'o4', text: '180'),
           ],
         ),
       ],
@@ -93,7 +95,45 @@ void main() {
 
     expect(quizXml, contains('أ) 80'));
     expect(quizXml, contains('ب) 50'));
+    expect(quizXml, contains('ج) 43'));
+    expect(quizXml, contains('د) 180'));
     expect(quizXml, isNot(contains('A) 80')));
+  });
+
+  test('flips table cell order for arabic export RTL layout', () {
+    final quiz = QuizModel.empty('اختبار');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'نص السؤال',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: 'الخيار الأول'),
+            QuestionOption(id: 'o2', text: 'الخيار الثاني'),
+            QuestionOption(id: 'o3', text: 'الخيار الثالث'),
+            QuestionOption(id: 'o4', text: 'الخيار الرابع'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'ar',
+      optionLabelStyle: 'arabic',
+    );
+
+    expect(quizXml.indexOf('التاريخ:'), lessThan(quizXml.indexOf('الاختبار:')));
+    expect(quizXml.indexOf('د) الخيار الرابع'), lessThan(quizXml.indexOf('أ) الخيار الأول')));
   });
 
   test('adds teacher and school names to quiz header when provided', () {

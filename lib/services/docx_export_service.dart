@@ -193,7 +193,7 @@ class DocxExportService {
         '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
         '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
         '${exportInArabic ? 'التاريخ' : 'Date'}: ${variant.generatedAt.toIso8601String().split('T').first}',
-      ]),
+      ], rtl: isRtl),
     ];
     final normalizedTeacher = teacherName?.trim() ?? '';
     final normalizedSchool = schoolName?.trim() ?? '';
@@ -204,7 +204,7 @@ class DocxExportService {
           normalizedTeacher.isEmpty ? '' : '${exportInArabic ? 'المعلم' : 'Teacher'}: $normalizedTeacher',
           normalizedSchool.isEmpty ? '' : '${exportInArabic ? 'المدرسة' : 'School'}: $normalizedSchool',
           ...additionalEmptyCells,
-        ]),
+        ], rtl: isRtl),
       );
     }
 
@@ -218,7 +218,7 @@ class DocxExportService {
 
       rows.add(
         _row(
-          [
+          _maybeFlipCellsForRtl([
             _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
@@ -227,7 +227,7 @@ class DocxExportService {
               mathXml: _mathToOmml(question.math),
               imageRelationshipId: imageAsset?.relationshipId,
             ),
-          ],
+          ], isRtl),
         ),
       );
 
@@ -249,7 +249,7 @@ class DocxExportService {
         );
       });
 
-      rows.add(_row(optionCells));
+      rows.add(_row(_maybeFlipCellsForRtl(optionCells, isRtl)));
     }
 
     return _documentTemplate(
@@ -298,7 +298,7 @@ class DocxExportService {
         '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
         '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
         '',
-      ]),
+      ], rtl: isRtl),
     ];
 
     for (var i = 0; i < variant.questions.length; i++) {
@@ -310,16 +310,18 @@ class DocxExportService {
       }
 
       rows.add(
-        _row([
-          _cell('${i + 1}', align: 'center', rtl: isRtl),
-          _cell(
-            prompt.toString(),
-            colSpan: 3,
-            rtl: isRtl,
-            mathXml: _mathToOmml(question.math),
-            imageRelationshipId: imageAsset?.relationshipId,
-          ),
-        ]),
+        _row(
+          _maybeFlipCellsForRtl([
+            _cell('${i + 1}', align: 'center', rtl: isRtl),
+            _cell(
+              prompt.toString(),
+              colSpan: 3,
+              rtl: isRtl,
+              mathXml: _mathToOmml(question.math),
+              imageRelationshipId: imageAsset?.relationshipId,
+            ),
+          ], isRtl),
+        ),
       );
 
       final labels = _resolveOptionLabels(
@@ -344,7 +346,7 @@ class DocxExportService {
         );
       });
 
-      rows.add(_row(optionCells));
+      rows.add(_row(_maybeFlipCellsForRtl(optionCells, isRtl)));
     }
 
     return _documentTemplate(
@@ -398,7 +400,7 @@ class DocxExportService {
 </w:tbl>''';
   }
 
-  String _headerRow(List<String> values) {
+  String _headerRow(List<String> values, {required bool rtl}) {
     final cells = values
         .map(
           (value) => _cell(
@@ -409,7 +411,7 @@ class DocxExportService {
           ),
         )
         .toList();
-    return _row(cells);
+    return _row(_maybeFlipCellsForRtl(cells, rtl));
   }
 
   String _row(List<String> cells) => '<w:tr>${cells.join()}</w:tr>';
@@ -816,6 +818,10 @@ class DocxExportService {
 
   bool _isArabicLanguageCode(String? languageCode) {
     return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
+  }
+
+  List<String> _maybeFlipCellsForRtl(List<String> cells, bool rtl) {
+    return rtl ? cells.reversed.toList(growable: false) : cells;
   }
 
   List<String> _resolveOptionLabels({
