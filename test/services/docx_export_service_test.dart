@@ -34,6 +34,7 @@ void main() {
     final solutionsXml = service.buildSolutionsDocumentXmlForTest(quiz: quiz, variant: variant);
 
     expect(quizXml, contains('<w:tbl>'));
+    expect(quizXml, contains('Question Paper: Geometry'));
     expect(quizXml, contains('Variant: V1'));
     expect(quizXml, contains('Triangle angle'));
 
@@ -249,6 +250,7 @@ void main() {
     );
 
     expect(quizXml, contains('ورقة الأسئلة'));
+    expect(quizXml, contains('ورقة الأسئلة: Geometry'));
     expect(quizXml, contains('الاختبار: Geometry'));
     expect(quizXml, contains('المعلم: Ms. Jane'));
     expect(quizXml, contains('المدرسة: Sunrise School'));

@@ -253,7 +253,7 @@ class DocxExportService {
     }
 
     return _documentTemplate(
-      title: exportInArabic ? 'ورقة الأسئلة' : 'Question Paper',
+      title: exportInArabic ? 'ورقة الأسئلة: ${quiz.title}' : 'Question Paper: ${quiz.title}',
       body: _table(rows.join()),
       rtl: isRtl,
     );
