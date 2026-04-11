@@ -228,6 +228,7 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     GeneratedVariant variant, {
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
   }) async {
     final quiz = state.selectedQuiz;
     if (quiz == null) {
@@ -239,8 +240,13 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
       variant: variant,
       teacherName: teacherName,
       schoolName: schoolName,
+      exportLanguageCode: exportLanguageCode,
     );
-    final solutionDocPath = await _docxExportService.exportSolutions(quiz: quiz, variant: variant);
+    final solutionDocPath = await _docxExportService.exportSolutions(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: exportLanguageCode,
+    );
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));
   }

@@ -38,6 +38,7 @@ class QuizEditorScreen extends StatefulWidget {
     GeneratedVariant variant, {
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
   }) onExportVariant;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
@@ -319,6 +320,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       variant,
       teacherName: exportDetails.nullableTeacherName,
       schoolName: exportDetails.nullableSchoolName,
+      exportLanguageCode: exportDetails.exportLanguageCode,
     );
   }
 
@@ -406,10 +408,12 @@ class _DocxExportDetails {
   const _DocxExportDetails({
     required this.teacherName,
     required this.schoolName,
+    required this.exportLanguageCode,
   });
 
   final String teacherName;
   final String schoolName;
+  final String exportLanguageCode;
 
   String? get nullableTeacherName => teacherName.isEmpty ? null : teacherName;
   String? get nullableSchoolName => schoolName.isEmpty ? null : schoolName;
@@ -425,6 +429,13 @@ class _DocxExportDetailsDialog extends StatefulWidget {
 class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
   final _teacherController = TextEditingController();
   final _schoolController = TextEditingController();
+  late String _exportLanguageCode;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _exportLanguageCode = AppStrings.isArabic(context) ? 'ar' : 'en';
+  }
 
   @override
   void dispose() {
@@ -453,6 +464,31 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
               labelText: AppStrings.tr(context, 'schoolName'),
             ),
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _exportLanguageCode,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'exportLanguage'),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'en',
+                child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+              ),
+              DropdownMenuItem(
+                value: 'ar',
+                child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _exportLanguageCode = value;
+              });
+            },
+          ),
         ],
       ),
       actions: [
@@ -465,6 +501,7 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
             _DocxExportDetails(
               teacherName: _teacherController.text.trim(),
               schoolName: _schoolController.text.trim(),
+              exportLanguageCode: _exportLanguageCode,
             ),
           ),
           child: Text(AppStrings.tr(context, 'exportDocx')),

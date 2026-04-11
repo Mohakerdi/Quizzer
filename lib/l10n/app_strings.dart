@@ -62,6 +62,12 @@ class AppStrings {
         return ar ? 'اسم المعلم' : 'Teacher name';
       case 'schoolName':
         return ar ? 'اسم المدرسة' : 'School name';
+      case 'exportLanguage':
+        return ar ? 'لغة التصدير' : 'Export language';
+      case 'exportLanguageEnglish':
+        return ar ? 'الإنجليزية' : 'English';
+      case 'exportLanguageArabic':
+        return ar ? 'العربية' : 'Arabic';
       case 'exportGoogleForms':
         return ar ? 'تصدير Google Forms' : 'Export Google Forms';
       case 'quizSaved':

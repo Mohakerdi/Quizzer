@@ -17,6 +17,7 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildQuizDocumentXml(
@@ -24,6 +25,7 @@ class DocxExportService {
       variant: variant,
       teacherName: teacherName,
       schoolName: schoolName,
+      exportLanguageCode: exportLanguageCode,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -41,11 +43,13 @@ class DocxExportService {
   Future<String> exportSolutions({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
+      exportLanguageCode: exportLanguageCode,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -105,12 +109,14 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
   }) {
     return _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
       teacherName: teacherName,
       schoolName: schoolName,
+      exportLanguageCode: exportLanguageCode,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -153,10 +159,12 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
-    final isRtl = _containsArabic(
+    final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
+    final isRtl = exportInArabic || _containsArabic(
       [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
@@ -165,10 +173,10 @@ class DocxExportService {
     );
     final rows = <String>[
       _headerRow([
-        'Quiz: ${quiz.title}',
-        'Variant: ${variant.id}',
-        'Questions: ${variant.questions.length}',
-        'Date: ${variant.generatedAt.toIso8601String().split('T').first}',
+        '${exportInArabic ? 'الاختبار' : 'Quiz'}: ${quiz.title}',
+        '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
+        '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
+        '${exportInArabic ? 'التاريخ' : 'Date'}: ${variant.generatedAt.toIso8601String().split('T').first}',
       ]),
     ];
     final normalizedTeacher = teacherName?.trim() ?? '';
@@ -177,8 +185,8 @@ class DocxExportService {
       const additionalEmptyCells = ['', ''];
       rows.add(
         _headerRow([
-          normalizedTeacher.isEmpty ? '' : 'Teacher: $normalizedTeacher',
-          normalizedSchool.isEmpty ? '' : 'School: $normalizedSchool',
+          normalizedTeacher.isEmpty ? '' : '${exportInArabic ? 'المعلم' : 'Teacher'}: $normalizedTeacher',
+          normalizedSchool.isEmpty ? '' : '${exportInArabic ? 'المدرسة' : 'School'}: $normalizedSchool',
           ...additionalEmptyCells,
         ]),
       );
@@ -189,7 +197,7 @@ class DocxExportService {
       final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
-        prompt.write('\n[Image: ${question.imageRef.trim()}]');
+        prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
       }
 
       rows.add(
@@ -226,7 +234,7 @@ class DocxExportService {
     }
 
     return _documentTemplate(
-      title: 'Question Paper',
+      title: exportInArabic ? 'ورقة الأسئلة' : 'Question Paper',
       body: _table(rows.join()),
       rtl: isRtl,
     );
@@ -236,10 +244,12 @@ class DocxExportService {
   String buildSolutionsDocumentXmlForTest({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
   }) {
     return _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
+      exportLanguageCode: exportLanguageCode,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -248,10 +258,12 @@ class DocxExportService {
   String _buildSolutionsDocumentXml({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
-    final isRtl = _containsArabic(
+    final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
+    final isRtl = exportInArabic || _containsArabic(
       [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
@@ -260,9 +272,9 @@ class DocxExportService {
     );
     final rows = <String>[
       _headerRow([
-        'Solutions: ${quiz.title}',
-        'Variant: ${variant.id}',
-        'Questions: ${variant.questions.length}',
+        '${exportInArabic ? 'الحلول' : 'Solutions'}: ${quiz.title}',
+        '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
+        '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
         '',
       ]),
     ];
@@ -272,7 +284,7 @@ class DocxExportService {
       final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
-        prompt.write('\n[Image: ${question.imageRef.trim()}]');
+        prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
       }
 
       rows.add(
@@ -311,7 +323,7 @@ class DocxExportService {
     }
 
     return _documentTemplate(
-      title: 'Answer Key',
+      title: exportInArabic ? 'مفتاح الإجابة' : 'Answer Key',
       body: _table(rows.join()),
       rtl: isRtl,
     );
@@ -775,6 +787,10 @@ class DocxExportService {
   bool _containsArabic(String value) {
     final arabicRange = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
     return arabicRange.hasMatch(value);
+  }
+
+  bool _isArabicLanguageCode(String? languageCode) {
+    return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
   }
 }
 

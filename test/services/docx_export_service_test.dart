@@ -75,6 +75,49 @@ void main() {
     expect(quizXml, contains('School: Sunrise School'));
   });
 
+  test('renders arabic export headings when arabic export language is selected', () {
+    final quiz = QuizModel.empty('Geometry');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Triangle angle',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: '80'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      teacherName: 'Ms. Jane',
+      schoolName: 'Sunrise School',
+      exportLanguageCode: 'ar',
+    );
+    final solutionsXml = service.buildSolutionsDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'ar',
+    );
+
+    expect(quizXml, contains('ورقة الأسئلة'));
+    expect(quizXml, contains('الاختبار: Geometry'));
+    expect(quizXml, contains('المعلم: Ms. Jane'));
+    expect(quizXml, contains('المدرسة: Sunrise School'));
+    expect(solutionsXml, contains('مفتاح الإجابة'));
+    expect(solutionsXml, contains('الحلول: Geometry'));
+  });
+
   test('strips invalid xml control characters from generated document xml', () {
     final quiz = QuizModel.empty('Science\u0001Quiz');
     final variant = GeneratedVariant(
