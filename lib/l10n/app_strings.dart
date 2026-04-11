@@ -97,11 +97,11 @@ class AppStrings {
       case 'questionContent':
         return ar ? 'محتوى السؤال' : 'Question content';
       case 'questionContentHint':
-        return ar ? 'اكتب نص السؤال والصيغ في مكان واحد' : 'Write question text and formulas in one place';
+        return ar ? 'اكتب نص السؤال في مكان واحد' : 'Write question text in one place';
       case 'optionContent':
         return ar ? 'محتوى الخيار' : 'Option content';
       case 'optionContentHint':
-        return ar ? 'اكتب النص أو الصيغة في مكان واحد' : 'Write text or formula in one place';
+        return ar ? 'اكتب نص الخيار في مكان واحد' : 'Write option text in one place';
       case 'addOption':
         return ar ? 'إضافة خيار' : 'Add option';
       case 'editOption':
