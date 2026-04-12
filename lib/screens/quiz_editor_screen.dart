@@ -26,6 +26,7 @@ class QuizEditorScreen extends StatefulWidget {
     required this.onPreviewVariant,
     required this.onExportVariant,
     required this.onExportGoogleForms,
+    required this.onAddQuestionToBank,
   });
 
   final QuizModel quiz;
@@ -42,6 +43,7 @@ class QuizEditorScreen extends StatefulWidget {
     String? optionLabelStyle,
   }) onExportVariant;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
+  final Future<void> Function(QuizQuestion question) onAddQuestionToBank;
 
   @override
   State<QuizEditorScreen> createState() => _QuizEditorScreenState();
@@ -385,6 +387,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       _editQuestion(existing: _quiz.questions[index], index: index);
                     },
                     onRemoveQuestion: _removeQuestion,
+                    onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
                   ),
                 ),
                 const SizedBox(width: 16),

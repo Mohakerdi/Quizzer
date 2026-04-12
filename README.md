@@ -7,21 +7,26 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 1. **Quiz List**
    - Create, rename, duplicate, and delete quizzes.
 2. **Create / Edit Quiz**
-   - Add/edit/remove/reorder questions.
-   - Add/edit/remove options.
-   - Mark the correct option by stable option ID.
-   - Unified single content field for question/option writing (text + formulas together).
-   - Select question images from gallery and crop before saving.
-3. **Math-friendly authoring**
+    - Add/edit/remove/reorder questions.
+    - Add/edit/remove options.
+    - Mark the correct option by stable option ID.
+    - Unified single content field for question/option writing (text + formulas together).
+    - Select question images from gallery and crop before saving.
+    - Add questions to a persistent Question Bank.
+3. **Question Bank**
+   - Question bank is stored independently from quizzes.
+   - Delete quizzes without losing bank questions.
+   - Delete bank questions; linked questions in quizzes created from the bank are removed automatically.
+4. **Math-friendly authoring**
    - GeoGebra-like math keyboard input (`math_keyboard` package).
    - Live LaTeX preview for math expressions.
    - Supports richer function/operator entry than simple symbol chips.
-4. **Generate Variants**
+5. **Generate Variants**
    - Generate multiple shuffled versions.
    - Question and option order are shuffled while preserving correct answers.
-5. **Preview**
+6. **Preview**
    - Preview generated variants before exporting.
-6. **Export DOCX**
+7. **Export DOCX**
     - Export question paper DOCX (table-based layout).
     - Export solutions DOCX using the same layout, with correct options highlighted.
     - Math text is exported in formula-style plain math output (not raw LaTeX markers).

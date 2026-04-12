@@ -58,12 +58,14 @@ class QuizQuestionsPanel extends StatelessWidget {
     required this.onMoveQuestion,
     required this.onEditQuestion,
     required this.onRemoveQuestion,
+    required this.onAddQuestionToBank,
   });
 
   final List<QuizQuestion> questions;
   final void Function(int index, int direction) onMoveQuestion;
   final void Function(int index) onEditQuestion;
   final void Function(int index) onRemoveQuestion;
+  final void Function(int index) onAddQuestionToBank;
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +117,11 @@ class QuizQuestionsPanel extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => onEditQuestion(index),
+                    ),
+                    IconButton(
+                      tooltip: AppStrings.tr(context, 'addToQuestionBank'),
+                      icon: const Icon(Icons.library_add),
+                      onPressed: () => onAddQuestionToBank(index),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),

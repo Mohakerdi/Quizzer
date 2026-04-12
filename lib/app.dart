@@ -154,20 +154,6 @@ class QuizMakerHome extends StatelessWidget {
     );
   }
 
-  List<BankQuestionEntry> _collectQuestionBankEntries(List<QuizModel> quizzes) {
-    return quizzes
-        .expand(
-          (quiz) => quiz.questions.map(
-            (question) => BankQuestionEntry(
-              quizId: quiz.id,
-              quizTitle: quiz.title,
-              question: question,
-            ),
-          ),
-        )
-        .toList();
-  }
-
   Future<void> _createQuizFromBankSelection(
     BuildContext context,
     List<QuizQuestion> selectedQuestions,
@@ -279,14 +265,19 @@ class QuizMakerHome extends StatelessWidget {
                                           exportLanguageCode: exportLanguageCode,
                                           optionLabelStyle: optionLabelStyle,
                                         ),
-                                    onExportGoogleForms: (variant) =>
-                                        context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
-                                  ),
-                            QuestionBankScreen(
-                              entries: _collectQuestionBankEntries(state.quizzes),
-                              onCreateQuizFromSelection: (questions) =>
-                                  _createQuizFromBankSelection(context, questions),
-                            ),
+                                     onExportGoogleForms: (variant) =>
+                                         context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                                    onAddQuestionToBank: (question) =>
+                                        context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
+                                   ),
+                             QuestionBankScreen(
+                               questions: state.questionBank,
+                               onCreateQuizFromSelection: (questions) =>
+                                   _createQuizFromBankSelection(context, questions),
+                               onDeleteQuestion: (question) => context
+                                   .read<QuizMakerCubit>()
+                                   .deleteQuestionFromQuestionBank(question.id),
+                             ),
                           ],
                         ),
                       ),

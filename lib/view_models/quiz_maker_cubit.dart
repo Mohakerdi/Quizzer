@@ -34,12 +34,14 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     emit(state.copyWith(isLoading: true, clearMessage: true));
 
     final quizzes = await _repository.loadQuizzes();
+    final questionBank = await _repository.loadQuestionBank();
     final selected = quizzes.isNotEmpty ? quizzes.first : null;
     final variants = selected == null ? <GeneratedVariant>[] : await _repository.loadVariantsForQuiz(selected.id);
 
     emit(
       state.copyWith(
         quizzes: quizzes,
+        questionBank: questionBank,
         selectedQuiz: selected,
         generatedVariants: variants,
         isLoading: false,
@@ -77,7 +79,9 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
       id: const Uuid().v4(),
       title: title.trim(),
       version: 1,
-      questions: questions.map(_cloneQuestionForNewQuiz).toList(),
+      questions: questions
+          .map((question) => _cloneQuestionForNewQuiz(question, sourceBankQuestionId: question.id))
+          .toList(),
       createdAt: now,
       updatedAt: now,
     );
@@ -92,7 +96,10 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
   }
 
-  QuizQuestion _cloneQuestionForNewQuiz(QuizQuestion question) {
+  QuizQuestion _cloneQuestionForNewQuiz(
+    QuizQuestion question, {
+    required String sourceBankQuestionId,
+  }) {
     final optionIdMap = <String, String>{
       for (final option in question.options) option.id: const Uuid().v4(),
     };
@@ -115,6 +122,36 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
       gradeLevel: question.gradeLevel,
       unitOfStudy: question.unitOfStudy,
       curriculum: question.curriculum,
+      sourceBankQuestionId: sourceBankQuestionId,
+      options: clonedOptions,
+      correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
+    );
+  }
+
+  QuizQuestion _cloneQuestionForBank(QuizQuestion question) {
+    final optionIdMap = <String, String>{
+      for (final option in question.options) option.id: const Uuid().v4(),
+    };
+    final clonedOptions = question.options
+        .map(
+          (option) => QuestionOption(
+            id: optionIdMap[option.id] ?? const Uuid().v4(),
+            text: option.text,
+            math: option.math,
+          ),
+        )
+        .toList();
+    return QuizQuestion(
+      id: const Uuid().v4(),
+      text: question.text,
+      math: question.math,
+      imageRef: question.imageRef,
+      topic: question.topic,
+      difficulty: question.difficulty,
+      gradeLevel: question.gradeLevel,
+      unitOfStudy: question.unitOfStudy,
+      curriculum: question.curriculum,
+      sourceBankQuestionId: '',
       options: clonedOptions,
       correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
     );
@@ -162,6 +199,46 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
         selectedQuiz: selected,
         generatedVariants: variants,
         message: 'Quiz deleted.',
+      ),
+    );
+  }
+
+  Future<void> addQuestionToQuestionBank(QuizQuestion question) async {
+    final bankQuestion = _cloneQuestionForBank(question);
+    final saved = await _repository.upsertQuestionBankQuestion(bankQuestion);
+    emit(
+      state.copyWith(
+        questionBank: [...state.questionBank, saved],
+        message: _isArabic ? 'تمت إضافة السؤال إلى بنك الأسئلة.' : 'Question added to question bank.',
+      ),
+    );
+  }
+
+  Future<void> deleteQuestionFromQuestionBank(String bankQuestionId) async {
+    await _repository.deleteQuestionBankQuestion(bankQuestionId);
+    final quizzes = await _repository.loadQuizzes();
+    final questionBank = await _repository.loadQuestionBank();
+
+    QuizModel? selected;
+    final selectedQuizId = state.selectedQuiz?.id;
+    if (selectedQuizId != null) {
+      for (final quiz in quizzes) {
+        if (quiz.id == selectedQuizId) {
+          selected = quiz;
+          break;
+        }
+      }
+    }
+    selected ??= quizzes.isNotEmpty ? quizzes.first : null;
+
+    final variants = selected == null ? <GeneratedVariant>[] : await _repository.loadVariantsForQuiz(selected.id);
+    emit(
+      state.copyWith(
+        quizzes: quizzes,
+        questionBank: questionBank,
+        selectedQuiz: selected,
+        generatedVariants: variants,
+        message: _isArabic ? 'تم حذف السؤال من بنك الأسئلة.' : 'Question deleted from question bank.',
       ),
     );
   }

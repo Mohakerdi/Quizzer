@@ -168,6 +168,10 @@ class AppStrings {
         return ar ? 'عنوان الاختبار الجديد' : 'New quiz title';
       case 'bankQuestionSource':
         return ar ? 'المصدر' : 'Source';
+      case 'addToQuestionBank':
+        return ar ? 'إضافة إلى بنك الأسئلة' : 'Add to question bank';
+      case 'deleteQuestionFromBank':
+        return ar ? 'حذف من بنك الأسئلة' : 'Delete from question bank';
       default:
         return key;
     }
