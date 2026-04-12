@@ -29,12 +29,13 @@ class QuizMakerApp extends StatelessWidget {
         docxExportService: const DocxExportService(),
         googleFormsExportService: const GoogleFormsExportService(),
       )..loadData(),
-      child: BlocBuilder<QuizMakerCubit, QuizMakerState>(
-        builder: (context, state) {
+      child: BlocSelector<QuizMakerCubit, QuizMakerState, ({Locale locale, ThemeMode themeMode})>(
+        selector: (state) => (locale: state.locale, themeMode: state.themeMode),
+        builder: (context, appConfig) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Quizzer Maker',
-            locale: state.locale,
+            locale: appConfig.locale,
             supportedLocales: const [Locale('en'), Locale('ar')],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
@@ -53,7 +54,7 @@ class QuizMakerApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
             ),
-            themeMode: state.themeMode,
+            themeMode: appConfig.themeMode,
             home: const QuizMakerHome(),
           );
         },
@@ -177,6 +178,14 @@ class QuizMakerHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<QuizMakerCubit, QuizMakerState>(
       listenWhen: (previous, current) => previous.message != current.message,
+      buildWhen: (previous, current) =>
+          previous.isLoading != current.isLoading ||
+          previous.quizzes != current.quizzes ||
+          previous.selectedQuiz != current.selectedQuiz ||
+          previous.generatedVariants != current.generatedVariants ||
+          previous.questionBank != current.questionBank ||
+          previous.locale != current.locale ||
+          previous.themeMode != current.themeMode,
       listener: (context, state) {
         final message = state.message;
         if (message == null || message.isEmpty) {
@@ -200,92 +209,20 @@ class QuizMakerHome extends StatelessWidget {
           appBar: AppBar(
             title: Text(AppStrings.tr(context, 'appTitle')),
             actions: [
-              IconButton(
-                icon: Icon(state.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-                tooltip: state.themeMode == ThemeMode.dark
-                    ? AppStrings.tr(context, 'themeLight')
-                    : AppStrings.tr(context, 'themeDark'),
-                onPressed: () => context.read<QuizMakerCubit>().toggleThemeMode(),
-              ),
-              PopupMenuButton<Locale>(
-                icon: const Icon(Icons.language),
-                onSelected: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: Locale('en'), child: Text('English')),
-                  PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
-                ],
+              _AppBarActions(
+                themeMode: state.themeMode,
+                onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
+                onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
               ),
             ],
           ),
-          body: Row(
-            children: [
-              SizedBox(
-                width: 340,
-                child: QuizListScreen(
-                  quizzes: state.quizzes,
-                  selectedQuizId: state.selectedQuiz?.id,
-                  onCreateQuiz: () => _createQuiz(context),
-                  onSelectQuiz: (quiz) => context.read<QuizMakerCubit>().selectQuiz(quiz),
-                  onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
-                  onDuplicateQuiz: (quiz) => context.read<QuizMakerCubit>().duplicateQuiz(quiz),
-                  onDeleteQuiz: (quiz) => context.read<QuizMakerCubit>().deleteQuiz(quiz),
-                ),
-              ),
-              const VerticalDivider(width: 1),
-              Expanded(
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      TabBar(
-                        tabs: [
-                          Tab(text: AppStrings.tr(context, 'quizEditorTab')),
-                          Tab(text: AppStrings.tr(context, 'questionBankTab')),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            state.selectedQuiz == null
-                                ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
-                                : QuizEditorScreen(
-                                    quiz: state.selectedQuiz!,
-                                    generatedVariants: state.generatedVariants,
-                                    onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
-                                    onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
-                                    onGenerateVariants: (quiz) => _generateVariants(context, quiz),
-                                    onPreviewVariant: (variant) => _previewVariant(context, variant),
-                                    onExportVariant:
-                                        (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
-                                        .read<QuizMakerCubit>()
-                                        .exportVariant(
-                                          variant,
-                                          teacherName: teacherName,
-                                          schoolName: schoolName,
-                                          exportLanguageCode: exportLanguageCode,
-                                          optionLabelStyle: optionLabelStyle,
-                                        ),
-                                     onExportGoogleForms: (variant) =>
-                                         context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
-                                    onAddQuestionToBank: (question) =>
-                                        context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
-                                   ),
-                             QuestionBankScreen(
-                               questions: state.questionBank,
-                               onCreateQuizFromSelection: (questions) =>
-                                   _createQuizFromBankSelection(context, questions),
-                               onDeleteQuestion: (question) => context
-                                   .read<QuizMakerCubit>()
-                                   .deleteQuestionFromQuestionBank(question.id),
-                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          body: _HomeWorkspace(
+            state: state,
+            onCreateQuiz: () => _createQuiz(context),
+            onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
+            onGenerateVariants: (quiz) => _generateVariants(context, quiz),
+            onPreviewVariant: (variant) => _previewVariant(context, variant),
+            onCreateQuizFromBankSelection: (questions) => _createQuizFromBankSelection(context, questions),
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _createQuiz(context),
@@ -294,6 +231,131 @@ class QuizMakerHome extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _AppBarActions extends StatelessWidget {
+  const _AppBarActions({
+    required this.themeMode,
+    required this.onToggleTheme,
+    required this.onSetLocale,
+  });
+
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
+  final ValueChanged<Locale> onSetLocale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
+          tooltip: themeMode == ThemeMode.dark
+              ? AppStrings.tr(context, 'themeLight')
+              : AppStrings.tr(context, 'themeDark'),
+          onPressed: onToggleTheme,
+        ),
+        PopupMenuButton<Locale>(
+          icon: const Icon(Icons.language),
+          onSelected: onSetLocale,
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: Locale('en'), child: Text('English')),
+            PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeWorkspace extends StatelessWidget {
+  const _HomeWorkspace({
+    required this.state,
+    required this.onCreateQuiz,
+    required this.onRenameQuiz,
+    required this.onGenerateVariants,
+    required this.onPreviewVariant,
+    required this.onCreateQuizFromBankSelection,
+  });
+
+  final QuizMakerState state;
+  final Future<void> Function() onCreateQuiz;
+  final Future<void> Function(QuizModel quiz) onRenameQuiz;
+  final Future<void> Function(QuizModel quiz) onGenerateVariants;
+  final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
+  final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromBankSelection;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 340,
+          child: QuizListScreen(
+            quizzes: state.quizzes,
+            selectedQuizId: state.selectedQuiz?.id,
+            onCreateQuiz: onCreateQuiz,
+            onSelectQuiz: (quiz) => context.read<QuizMakerCubit>().selectQuiz(quiz),
+            onRenameQuiz: onRenameQuiz,
+            onDuplicateQuiz: (quiz) => context.read<QuizMakerCubit>().duplicateQuiz(quiz),
+            onDeleteQuiz: (quiz) => context.read<QuizMakerCubit>().deleteQuiz(quiz),
+          ),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                TabBar(
+                  tabs: [
+                    Tab(text: AppStrings.tr(context, 'quizEditorTab')),
+                    Tab(text: AppStrings.tr(context, 'questionBankTab')),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      state.selectedQuiz == null
+                          ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
+                          : QuizEditorScreen(
+                              quiz: state.selectedQuiz!,
+                              generatedVariants: state.generatedVariants,
+                              onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
+                              onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
+                              onGenerateVariants: onGenerateVariants,
+                              onPreviewVariant: onPreviewVariant,
+                              onExportVariant:
+                                  (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
+                                  .read<QuizMakerCubit>()
+                                  .exportVariant(
+                                    variant,
+                                    teacherName: teacherName,
+                                    schoolName: schoolName,
+                                    exportLanguageCode: exportLanguageCode,
+                                    optionLabelStyle: optionLabelStyle,
+                                  ),
+                              onExportGoogleForms:
+                                  (variant) => context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                              onAddQuestionToBank:
+                                  (question) => context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
+                            ),
+                      QuestionBankScreen(
+                        questions: state.questionBank,
+                        onCreateQuizFromSelection: onCreateQuizFromBankSelection,
+                        onDeleteQuestion: (question) =>
+                            context.read<QuizMakerCubit>().deleteQuestionFromQuestionBank(question.id),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

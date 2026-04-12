@@ -34,6 +34,20 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 ## Persistence
 
 - Quizzes and generated variants are persisted locally via `shared_preferences`.
+- Question Bank is persisted independently from quizzes via `shared_preferences`.
+- Questions copied from Question Bank into a quiz keep a source-link so deleting a bank question removes linked quiz questions.
+
+## Architecture notes
+
+- The app follows an MVVM-style structure:
+  - **View**: `lib/screens/*`, `lib/widgets/*`, and `lib/app.dart`
+  - **ViewModel**: `lib/view_models/quiz_maker_cubit.dart`, `lib/view_models/quiz_maker_state.dart`
+  - **Model**: `lib/models/*`
+  - **Data/Services**: `lib/services/*`
+- Recent refactor highlights:
+  - Extracted home UI sections into focused widgets for cleaner View composition.
+  - Reduced unnecessary root rebuilds by selecting only locale/theme for `MaterialApp`.
+  - Added selective rebuild rules in the home state consumer to avoid rebuilds on message-only updates.
 
 ## Notes / MVP limitations
 
