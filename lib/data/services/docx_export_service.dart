@@ -192,8 +192,9 @@ class DocxExportService {
     required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
-    final isRtl = exportInArabic || _containsArabic(
-      [
+    final isRtl = _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
         ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
@@ -319,8 +320,9 @@ class DocxExportService {
     required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
-    final isRtl = exportInArabic || _containsArabic(
-      [
+    final isRtl = _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
         ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
@@ -959,6 +961,20 @@ class DocxExportService {
   bool _containsArabic(String value) {
     final arabicRange = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
     return arabicRange.hasMatch(value);
+  }
+
+  bool _isRtlLayout({
+    required String? exportLanguageCode,
+    required String fallbackContent,
+  }) {
+    final normalizedLanguageCode = (exportLanguageCode ?? '').trim().toLowerCase();
+    if (normalizedLanguageCode.startsWith('ar')) {
+      return true;
+    }
+    if (normalizedLanguageCode.startsWith('en')) {
+      return false;
+    }
+    return _containsArabic(fallbackContent);
   }
 
   bool _isArabicLanguageCode(String? languageCode) {

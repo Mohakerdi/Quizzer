@@ -181,6 +181,43 @@ void main() {
     );
   });
 
+  test('keeps english export table ordering LTR even with arabic content', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V1',
+      quizId: quiz.id,
+      seed: 1,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'نص السؤال',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: 'الخيار الأول'),
+            QuestionOption(id: 'o2', text: 'الخيار الثاني'),
+            QuestionOption(id: 'o3', text: 'الخيار الثالث'),
+            QuestionOption(id: 'o4', text: 'الخيار الرابع'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: 'en',
+      optionLabelStyle: 'latin',
+    );
+
+    expect(quizXml, contains('<w:pPr><w:jc w:val="left"/></w:pPr>'));
+    expect(quizXml.indexOf('Q1'), lessThan(quizXml.indexOf('نص السؤال')));
+    expect(quizXml.indexOf('A) الخيار الأول'), lessThan(quizXml.indexOf('D) الخيار الرابع')));
+  });
+
   test('adds teacher and school names to quiz header when provided', () {
     final quiz = QuizModel.empty('Geometry');
     final variant = GeneratedVariant(
