@@ -148,8 +148,7 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
-                       final entry = filtered[index];
-                       final question = entry;
+                       final question = filtered[index];
                        return Card(
                          child: ListTile(
                            leading: Checkbox(
