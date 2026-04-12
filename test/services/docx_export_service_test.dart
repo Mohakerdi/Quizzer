@@ -1,7 +1,7 @@
-import 'package:adv_basics/models/generated_variant.dart';
-import 'package:adv_basics/models/question_option.dart';
-import 'package:adv_basics/models/quiz_model.dart';
-import 'package:adv_basics/services/docx_export_service.dart';
+import 'package:adv_basics/data/models/generated_variant.dart';
+import 'package:adv_basics/data/models/question_option.dart';
+import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/data/services/docx_export_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

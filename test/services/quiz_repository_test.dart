@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:adv_basics/models/question_option.dart';
-import 'package:adv_basics/models/quiz_model.dart';
-import 'package:adv_basics/models/quiz_question.dart';
-import 'package:adv_basics/services/quiz_repository.dart';
+import 'package:adv_basics/data/models/question_option.dart';
+import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/data/models/quiz_question.dart';
+import 'package:adv_basics/data/repositories/quiz_repository.dart';
 
 void main() {
   group('QuizRepository question bank behavior', () {

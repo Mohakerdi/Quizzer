@@ -3,148 +3,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import 'package:adv_basics/l10n/app_strings.dart';
-import 'package:adv_basics/models/generated_variant.dart';
-import 'package:adv_basics/models/quiz_model.dart';
-import 'package:adv_basics/models/quiz_question.dart';
-import 'package:adv_basics/screens/question_bank_screen.dart';
-import 'package:adv_basics/screens/quiz_editor_screen.dart';
-import 'package:adv_basics/screens/quiz_list_screen.dart';
-import 'package:adv_basics/screens/variant_preview_screen.dart';
-import 'package:adv_basics/services/docx_export_service.dart';
-import 'package:adv_basics/services/google_forms_export_service.dart';
-import 'package:adv_basics/services/quiz_repository.dart';
-import 'package:adv_basics/services/variant_generator.dart';
-import 'package:adv_basics/view_models/quiz_maker_cubit.dart';
-import 'package:adv_basics/view_models/quiz_maker_state.dart';
-
-const _brandBlue = Color(0xFF1D57C8);
-const _brandSky = Color(0xFF62CEF7);
-const _brandGold = Color(0xFFFEC62F);
-const _brandInk = Color(0xFF123A8B);
-
-ThemeData _buildLightTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: _brandBlue,
-    brightness: Brightness.light,
-  ).copyWith(
-    primary: _brandBlue,
-    secondary: _brandGold,
-    tertiary: _brandSky,
-    surface: const Color(0xFFF7FAFF),
-  );
-
-  final base = ThemeData(
-    useMaterial3: true,
-    colorScheme: scheme,
-    scaffoldBackgroundColor: const Color(0xFFEFF5FF),
-  );
-
-  return base.copyWith(
-    appBarTheme: AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: Colors.transparent,
-      foregroundColor: _brandInk,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: base.textTheme.titleLarge?.copyWith(
-        color: _brandInk,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-    cardTheme: const CardThemeData(
-      elevation: 1,
-      margin: EdgeInsets.zero,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(18)),
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: _brandBlue,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: _brandGold,
-      foregroundColor: _brandInk,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-    ),
-    tabBarTheme: const TabBarThemeData(
-      dividerColor: Colors.transparent,
-      indicatorColor: _brandBlue,
-      labelColor: _brandBlue,
-      unselectedLabelColor: Color(0xFF5573A6),
-    ),
-  );
-}
-
-ThemeData _buildDarkTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: _brandBlue,
-    brightness: Brightness.dark,
-  ).copyWith(
-    primary: const Color(0xFF7AA9FF),
-    secondary: _brandGold,
-    tertiary: const Color(0xFF7FDFFF),
-    surface: const Color(0xFF111C34),
-  );
-
-  final base = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: scheme,
-    scaffoldBackgroundColor: const Color(0xFF0A1328),
-  );
-
-  return base.copyWith(
-    appBarTheme: AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: Colors.transparent,
-      foregroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: base.textTheme.titleLarge?.copyWith(
-        color: Colors.white,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-    cardTheme: const CardThemeData(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      color: Color(0xFF132241),
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(18)),
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF3E78ED),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: _brandGold,
-      foregroundColor: _brandInk,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-    ),
-    tabBarTheme: const TabBarThemeData(
-      dividerColor: Colors.transparent,
-      indicatorColor: Color(0xFF7AA9FF),
-      labelColor: Color(0xFF9BC0FF),
-      unselectedLabelColor: Color(0xFF8CA3CF),
-    ),
-  );
-}
+import 'package:adv_basics/core/l10n/app_strings.dart';
+import 'package:adv_basics/core/theme/app_theme.dart';
+import 'package:adv_basics/data/models/generated_variant.dart';
+import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/data/models/quiz_question.dart';
+import 'package:adv_basics/features/question_bank/presentation/screens/question_bank_screen.dart';
+import 'package:adv_basics/features/quiz_maker/presentation/screens/quiz_editor_screen.dart';
+import 'package:adv_basics/features/quiz_list/presentation/screens/quiz_list_screen.dart';
+import 'package:adv_basics/features/variant_preview/presentation/screens/variant_preview_screen.dart';
+import 'package:adv_basics/data/services/docx_export_service.dart';
+import 'package:adv_basics/data/services/google_forms_export_service.dart';
+import 'package:adv_basics/data/repositories/quiz_repository.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
+import 'package:adv_basics/features/quiz_maker/application/quiz_maker_cubit.dart';
+import 'package:adv_basics/features/quiz_maker/application/quiz_maker_state.dart';
 
 class QuizMakerApp extends StatelessWidget {
   const QuizMakerApp({super.key});
@@ -171,8 +46,8 @@ class QuizMakerApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            theme: _buildLightTheme(),
-            darkTheme: _buildDarkTheme(),
+            theme: buildLightTheme(),
+            darkTheme: buildDarkTheme(),
             themeMode: appConfig.themeMode,
             home: const QuizMakerHome(),
           );
@@ -191,6 +66,9 @@ class QuizMakerHome extends StatefulWidget {
 
 class _QuizMakerHomeState extends State<QuizMakerHome> {
   static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
+  static const _githubUrl = 'https://github.com/Mohakerdi';
+  static const _linkedinUrl = 'https://www.linkedin.com/in/mohammad-kerdi-733126364';
+  static const _telegramUrl = 'https://t.me/MOHA_KRDI';
   final GlobalKey _languageButtonKey = GlobalKey();
   final GlobalKey _newQuizFabKey = GlobalKey();
   final GlobalKey _questionBankTabKey = GlobalKey();
@@ -397,6 +275,55 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
         );
   }
 
+  Future<void> _openExternalUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (launched || !context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'openLinkError'))));
+  }
+
+  Future<void> _showInfoDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'aboutTitle')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppStrings.tr(context, 'aboutTeacherMessage')),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _githubUrl),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(AppStrings.tr(context, 'githubProfile')),
+            ),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _linkedinUrl),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(AppStrings.tr(context, 'linkedinProfile')),
+            ),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _telegramUrl),
+              icon: const Icon(Icons.telegram, size: 18),
+              label: Text(AppStrings.tr(context, 'telegramProfile')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppStrings.tr(context, 'close')),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<QuizMakerCubit, QuizMakerState>(
@@ -464,6 +391,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
                 themeMode: state.themeMode,
                 onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
                 onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                onShowInfo: () => _showInfoDialog(context),
                 languageButtonKey: _languageButtonKey,
               ),
             ],
@@ -494,12 +422,14 @@ class _AppBarActions extends StatelessWidget {
     required this.themeMode,
     required this.onToggleTheme,
     required this.onSetLocale,
+    required this.onShowInfo,
     required this.languageButtonKey,
   });
 
   final ThemeMode themeMode;
   final VoidCallback onToggleTheme;
   final ValueChanged<Locale> onSetLocale;
+  final VoidCallback onShowInfo;
   final GlobalKey languageButtonKey;
 
   @override
@@ -521,6 +451,11 @@ class _AppBarActions extends StatelessWidget {
             PopupMenuItem(value: Locale('en'), child: Text('English')),
             PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
           ],
+        ),
+        IconButton(
+          icon: const Icon(Icons.info_outline),
+          tooltip: AppStrings.tr(context, 'aboutInfo'),
+          onPressed: onShowInfo,
         ),
       ],
     );
