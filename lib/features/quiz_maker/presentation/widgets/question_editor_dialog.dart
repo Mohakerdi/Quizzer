@@ -8,6 +8,7 @@ import 'package:adv_basics/core/l10n/app_strings.dart';
 import 'package:adv_basics/data/models/question_option.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/core/widgets/math_or_text.dart';
+import 'package:adv_basics/features/quiz_maker/presentation/widgets/math_input_field.dart';
 
 typedef PickAndCropImage =
     Future<String?> Function({
@@ -384,7 +385,7 @@ String _mergeLegacyTextAndMath(String text, String math) {
   return '$normalizedText\n$normalizedMath';
 }
 
-class _FriendlyMathInput extends StatelessWidget {
+class _FriendlyMathInput extends StatefulWidget {
   const _FriendlyMathInput({
     required this.controller,
     required this.labelText,
@@ -400,26 +401,85 @@ class _FriendlyMathInput extends StatelessWidget {
   final int maxLines;
 
   @override
+  State<_FriendlyMathInput> createState() => _FriendlyMathInputState();
+}
+
+class _FriendlyMathInputState extends State<_FriendlyMathInput> {
+  Future<void> _insertEquation() async {
+    String currentEquation = '';
+    final latex = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'equationEditorTitle')),
+        content: SizedBox(
+          width: 620,
+          child: MathInputField(
+            label: AppStrings.tr(context, 'equationFieldLabel'),
+            hint: AppStrings.tr(context, 'equationFieldHint'),
+            initialValue: '',
+            onChanged: (value) => currentEquation = value,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppStrings.tr(context, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(currentEquation.trim()),
+            child: Text(AppStrings.tr(context, 'insertEquation')),
+          ),
+        ],
+      ),
+    );
+    final normalized = (latex ?? '').trim();
+    if (normalized.isEmpty) {
+      return;
+    }
+    final controller = widget.controller;
+    final selection = controller.selection;
+    final text = controller.text;
+    final start = selection.start < 0 ? text.length : selection.start;
+    final end = selection.end < 0 ? text.length : selection.end;
+    final snippet = '\$\$$normalized\$\$';
+    final updated = text.replaceRange(start, end, snippet);
+    controller.value = TextEditingValue(
+      text: updated,
+      selection: TextSelection.collapsed(offset: start + snippet.length),
+    );
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          labelText,
+          widget.labelText,
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        if (hintText.trim().isNotEmpty) ...[
+        if (widget.hintText.trim().isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
-            hintText,
+            widget.hintText,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
         const SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            onPressed: _insertEquation,
+            icon: const Icon(Icons.functions),
+            label: Text(AppStrings.tr(context, 'insertEquation')),
+          ),
+        ),
+        const SizedBox(height: 8),
         TextFormField(
-          controller: controller,
-          minLines: minLines,
-          maxLines: maxLines,
+          controller: widget.controller,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             border: const OutlineInputBorder(),
