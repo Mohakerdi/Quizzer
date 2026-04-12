@@ -223,12 +223,15 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
+      final promptSource = renderEquationsAsWordMath
+          ? _composeRawForWordMath(text: question.text, math: question.math)
+          : _composeForExport(text: question.text, math: question.math);
       final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
-              question.text,
+              promptSource,
               keyPrefix: 'q_${i}_prompt',
             )
-          : _normalizeTextForExport(question.text);
+          : promptSource;
       final prompt = StringBuffer(
         renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
@@ -260,8 +263,10 @@ class DocxExportService {
           return _cell('', rtl: isRtl);
         }
         final option = question.options[index];
-        final optionText = _normalizeTextForExport(option.text);
-        final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
+        final optionBody = renderEquationsAsWordMath
+            ? _composeRawForWordMath(text: option.text, math: option.math)
+            : _composeForExport(text: option.text, math: option.math);
+        final optionContent = optionBody.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionBody';
         final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'q_${i}_option_$index')
             : optionContent;
@@ -333,12 +338,15 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
+      final promptSource = renderEquationsAsWordMath
+          ? _composeRawForWordMath(text: question.text, math: question.math)
+          : _composeForExport(text: question.text, math: question.math);
       final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
-              question.text,
+              promptSource,
               keyPrefix: 'a_${i}_prompt',
             )
-          : _normalizeTextForExport(question.text);
+          : promptSource;
       final prompt = StringBuffer(
         renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
@@ -372,8 +380,10 @@ class DocxExportService {
 
         final option = question.options[index];
         final isCorrect = option.id == question.correctOptionId;
-        final optionText = _normalizeTextForExport(option.text);
-        final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
+        final optionBody = renderEquationsAsWordMath
+            ? _composeRawForWordMath(text: option.text, math: option.math)
+            : _composeForExport(text: option.text, math: option.math);
+        final optionContent = optionBody.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionBody';
         final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'a_${i}_option_$index')
             : optionContent;
@@ -924,6 +934,22 @@ class DocxExportService {
       return normalizedMath;
     }
     return '$normalizedText  ($normalizedMath)';
+  }
+
+  String _composeRawForWordMath({
+    required String text,
+    required String math,
+  }) {
+    final normalizedText = text.trim();
+    final normalizedMath = math.trim();
+    if (normalizedMath.isEmpty) {
+      return normalizedText;
+    }
+    final inlineMath = '\$\$$normalizedMath\$\$';
+    if (normalizedText.isEmpty) {
+      return inlineMath;
+    }
+    return '$normalizedText  ($inlineMath)';
   }
 
   String _normalizeTextForExport(String text) {

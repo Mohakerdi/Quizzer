@@ -311,10 +311,51 @@ void main() {
 
     final service = const DocxExportService();
     final quizXml = service.buildQuizDocumentXmlForTest(quiz: quiz, variant: variant);
+    final solutionsXml = service.buildSolutionsDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+    );
 
     expect(quizXml, isNot(contains('<m:oMath>')));
+    expect(solutionsXml, isNot(contains('<m:oMath>')));
     expect(quizXml, contains('(1)/(2)'));
     expect(quizXml, contains('√(4)'));
+    expect(solutionsXml, contains('(1)/(2)'));
+    expect(solutionsXml, contains('√(4)'));
+  });
+
+  test('renders legacy answer math fields as Word equations when enabled', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V7',
+      quizId: quiz.id,
+      seed: 8,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Compute',
+          math: r'\frac{1}{2}',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: 'Answer', math: r'x^2 + \pi'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final solutionsXml = service.buildSolutionsDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      renderEquationsAsWordMath: true,
+    );
+
+    expect('<m:oMath>'.allMatches(solutionsXml).length, equals(2));
+    expect(solutionsXml, contains('<m:f><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>'));
+    expect(solutionsXml, contains('<m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>'));
+    expect(solutionsXml, contains('<m:r><m:t>π</m:t></m:r>'));
   });
 
   test('exports inline $$math$$ in text as normalized plain text', () {
