@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
@@ -63,8 +65,112 @@ class QuizMakerApp extends StatelessWidget {
   }
 }
 
-class QuizMakerHome extends StatelessWidget {
+class QuizMakerHome extends StatefulWidget {
   const QuizMakerHome({super.key});
+
+  @override
+  State<QuizMakerHome> createState() => _QuizMakerHomeState();
+}
+
+class _QuizMakerHomeState extends State<QuizMakerHome> {
+  static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
+  final GlobalKey _languageButtonKey = GlobalKey();
+  final GlobalKey _newQuizFabKey = GlobalKey();
+  final GlobalKey _questionBankTabKey = GlobalKey();
+  bool _checkedTutorial = false;
+
+  Future<void> _maybeShowArabicTutorial() async {
+    if (_checkedTutorial) {
+      return;
+    }
+    _checkedTutorial = true;
+    final prefs = await SharedPreferences.getInstance();
+    final alreadySeen = prefs.getBool(_tutorialSeenKey) ?? false;
+    if (alreadySeen || !mounted) {
+      return;
+    }
+
+    await prefs.setBool(_tutorialSeenKey, true);
+    if (!mounted) {
+      return;
+    }
+
+    final targets = <TargetFocus>[
+      TargetFocus(
+        keyTarget: _languageButtonKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'تغيير اللغة',
+            description: 'من هنا يمكنك التبديل بين العربية والإنجليزية.',
+          ),
+        ],
+      ),
+      TargetFocus(
+        keyTarget: _newQuizFabKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'اختبار جديد',
+            description: 'ابدأ بإنشاء اختبار جديد من هذا الزر.',
+          ),
+        ],
+      ),
+      TargetFocus(
+        keyTarget: _questionBankTabKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'بنك الأسئلة',
+            description: 'استخدم بنك الأسئلة لإعادة استخدام الأسئلة بسرعة.',
+          ),
+        ],
+      ),
+    ];
+
+    TutorialCoachMark(
+      targets: targets,
+      textSkip: 'تخطي',
+      colorShadow: Colors.black,
+      opacityShadow: 0.85,
+      onSkip: () => true,
+    ).show(context: context);
+  }
+
+  ContentTarget _buildArabicTargetContent({
+    required String title,
+    required String description,
+  }) {
+    return ContentTarget(
+      align: ContentAlign.bottom,
+      child: (context, controller) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<String?> _promptText(
     BuildContext context,
@@ -204,6 +310,9 @@ class QuizMakerHome extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _maybeShowArabicTutorial();
+        });
 
         return Scaffold(
           appBar: AppBar(
@@ -213,6 +322,7 @@ class QuizMakerHome extends StatelessWidget {
                 themeMode: state.themeMode,
                 onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
                 onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                languageButtonKey: _languageButtonKey,
               ),
             ],
           ),
@@ -223,8 +333,10 @@ class QuizMakerHome extends StatelessWidget {
             onGenerateVariants: (quiz) => _generateVariants(context, quiz),
             onPreviewVariant: (variant) => _previewVariant(context, variant),
             onCreateQuizFromBankSelection: (questions) => _createQuizFromBankSelection(context, questions),
+            questionBankTabKey: _questionBankTabKey,
           ),
           floatingActionButton: FloatingActionButton.extended(
+            key: _newQuizFabKey,
             onPressed: () => _createQuiz(context),
             icon: const Icon(Icons.add),
             label: Text(AppStrings.tr(context, 'newQuiz')),
@@ -240,11 +352,13 @@ class _AppBarActions extends StatelessWidget {
     required this.themeMode,
     required this.onToggleTheme,
     required this.onSetLocale,
+    required this.languageButtonKey,
   });
 
   final ThemeMode themeMode;
   final VoidCallback onToggleTheme;
   final ValueChanged<Locale> onSetLocale;
+  final GlobalKey languageButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -258,6 +372,7 @@ class _AppBarActions extends StatelessWidget {
           onPressed: onToggleTheme,
         ),
         PopupMenuButton<Locale>(
+          key: languageButtonKey,
           icon: const Icon(Icons.language),
           onSelected: onSetLocale,
           itemBuilder: (context) => const [
@@ -278,6 +393,7 @@ class _HomeWorkspace extends StatelessWidget {
     required this.onGenerateVariants,
     required this.onPreviewVariant,
     required this.onCreateQuizFromBankSelection,
+    required this.questionBankTabKey,
   });
 
   final QuizMakerState state;
@@ -286,6 +402,7 @@ class _HomeWorkspace extends StatelessWidget {
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromBankSelection;
+  final GlobalKey questionBankTabKey;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +429,7 @@ class _HomeWorkspace extends StatelessWidget {
                 TabBar(
                   tabs: [
                     Tab(text: AppStrings.tr(context, 'quizEditorTab')),
-                    Tab(text: AppStrings.tr(context, 'questionBankTab')),
+                    Tab(key: questionBankTabKey, text: AppStrings.tr(context, 'questionBankTab')),
                   ],
                 ),
                 Expanded(

@@ -18,24 +18,27 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
    - Delete quizzes without losing bank questions.
    - Delete bank questions without changing already copied quiz questions.
 4. **Math-friendly authoring**
-   - GeoGebra-like math keyboard input (`math_keyboard` package).
-   - Live LaTeX preview for math expressions.
-   - Supports richer function/operator entry than simple symbol chips.
-5. **Generate Variants**
-   - Generate multiple shuffled versions.
-   - Question and option order are shuffled while preserving correct answers.
-6. **Preview**
-   - Preview generated variants before exporting.
-7. **Export DOCX**
-    - Export question paper DOCX (table-based layout).
-    - Export solutions DOCX using the same layout, with correct options highlighted.
-    - Math text is exported in formula-style plain math output (not raw LaTeX markers).
+    - GeoGebra-like math keyboard input (`math_keyboard` package).
+    - Live LaTeX preview for math expressions.
+    - Supports richer function/operator entry than simple symbol chips.
+5. **First launch Arabic tutorial**
+   - A one-time in-app coach-mark walkthrough appears on first app open with Arabic guidance.
+6. **Generate Variants**
+    - Generate multiple shuffled versions.
+    - Question and option order are shuffled while preserving correct answers.
+7. **Preview**
+    - Preview generated variants before exporting.
+8. **Export DOCX**
+     - Export question paper DOCX (table-based layout).
+     - Export solutions DOCX using the same layout, with correct options highlighted.
+     - Math text is exported in formula-style plain math output (not raw LaTeX markers).
 
 ## Persistence
 
 - Quizzes and generated variants are persisted locally via `shared_preferences`.
 - Question Bank is persisted independently from quizzes via `shared_preferences`.
 - Deleting a question from Question Bank does not remove existing copied questions from quizzes.
+- Picked/cropped images are compressed before storage to reduce payload size and improve performance.
 
 ## Architecture notes
 

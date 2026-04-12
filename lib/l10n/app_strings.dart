@@ -172,6 +172,24 @@ class AppStrings {
         return ar ? 'إضافة إلى بنك الأسئلة' : 'Add to question bank';
       case 'deleteQuestionFromBank':
         return ar ? 'حذف من بنك الأسئلة' : 'Delete from question bank';
+      case 'tutorialSkip':
+        return ar ? 'تخطي' : 'Skip';
+      case 'tutorialWelcomeTitle':
+        return ar ? 'مرحبًا بك في Quizzer' : 'Welcome to Quizzer';
+      case 'tutorialWelcomeBody':
+        return ar ? 'هذه جولة سريعة للتعرّف على أهم الأدوات.' : 'A quick tour of the most important tools.';
+      case 'tutorialLanguageTitle':
+        return ar ? 'تغيير اللغة' : 'Change language';
+      case 'tutorialLanguageBody':
+        return ar ? 'من هنا يمكنك التبديل بين العربية والإنجليزية.' : 'Switch between Arabic and English from here.';
+      case 'tutorialNewQuizTitle':
+        return ar ? 'اختبار جديد' : 'New quiz';
+      case 'tutorialNewQuizBody':
+        return ar ? 'ابدأ بإنشاء اختبار جديد من هذا الزر.' : 'Start by creating a new quiz from this button.';
+      case 'tutorialQuestionBankTitle':
+        return ar ? 'بنك الأسئلة' : 'Question bank';
+      case 'tutorialQuestionBankBody':
+        return ar ? 'استخدم بنك الأسئلة لإعادة استخدام الأسئلة بسرعة.' : 'Use the question bank to quickly reuse questions.';
       default:
         return key;
     }

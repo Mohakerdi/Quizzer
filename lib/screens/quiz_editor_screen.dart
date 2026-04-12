@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
@@ -150,10 +151,27 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       if (currentImagePath?.trim().isNotEmpty == true) {
         return currentImagePath;
       }
-      return _toDataImageUri(sourceBytes, extension: extension);
+      final compressedOriginal = await _compressImageBytes(sourceBytes, extension: extension);
+      return _toDataImageUri(compressedOriginal, extension: extension);
     }
 
-    return _toDataImageUri(croppedBytes, extension: extension);
+    final compressedCropped = await _compressImageBytes(croppedBytes, extension: extension);
+    return _toDataImageUri(compressedCropped, extension: extension);
+  }
+
+  Future<Uint8List> _compressImageBytes(Uint8List bytes, {required String extension}) async {
+    final normalized = extension.toLowerCase();
+    final format = normalized == '.png' ? CompressFormat.png : CompressFormat.jpeg;
+    try {
+      final compressed = await FlutterImageCompress.compressWithList(
+        bytes,
+        format: format,
+        quality: 80,
+      );
+      return compressed.isEmpty ? bytes : compressed;
+    } catch (_) {
+      return bytes;
+    }
   }
 
   Future<Uint8List?> _openCropDialog({
