@@ -15,6 +15,7 @@ void main() {
       gradeLevel: '11th',
       unitOfStudy: 'Unit 2',
       curriculum: 'Algebra',
+      sourceBankQuestionId: 'bank-source-1',
       options: const [
         QuestionOption(id: 'o1', text: 'A'),
       ],
@@ -26,5 +27,6 @@ void main() {
     expect(decoded.gradeLevel, '11th');
     expect(decoded.unitOfStudy, 'Unit 2');
     expect(decoded.curriculum, 'Algebra');
+    expect(decoded.sourceBankQuestionId, 'bank-source-1');
   });
 }

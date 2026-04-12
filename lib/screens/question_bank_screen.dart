@@ -4,29 +4,17 @@ import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/quiz_question.dart';
 import 'package:adv_basics/widgets/math_or_text.dart';
 
-class BankQuestionEntry {
-  const BankQuestionEntry({
-    required this.quizId,
-    required this.quizTitle,
-    required this.question,
-  });
-
-  final String quizId;
-  final String quizTitle;
-  final QuizQuestion question;
-
-  String get selectionKey => '$quizId:${question.id}';
-}
-
 class QuestionBankScreen extends StatefulWidget {
   const QuestionBankScreen({
     super.key,
-    required this.entries,
+    required this.questions,
     required this.onCreateQuizFromSelection,
+    required this.onDeleteQuestion,
   });
 
-  final List<BankQuestionEntry> entries;
+  final List<QuizQuestion> questions;
   final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromSelection;
+  final Future<void> Function(QuizQuestion question) onDeleteQuestion;
 
   @override
   State<QuestionBankScreen> createState() => _QuestionBankScreenState();
@@ -54,17 +42,17 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
     return source.toLowerCase().contains(normalizedFilter);
   }
 
-  List<BankQuestionEntry> _filteredEntries() {
-    return widget.entries.where((entry) {
-      return _matchesFilter(entry.question.gradeLevel, _gradeController.text) &&
-          _matchesFilter(entry.question.unitOfStudy, _unitController.text) &&
-          _matchesFilter(entry.question.curriculum, _curriculumController.text);
+  List<QuizQuestion> _filteredQuestions() {
+    return widget.questions.where((question) {
+      return _matchesFilter(question.gradeLevel, _gradeController.text) &&
+          _matchesFilter(question.unitOfStudy, _unitController.text) &&
+          _matchesFilter(question.curriculum, _curriculumController.text);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredEntries();
+    final filtered = _filteredQuestions();
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -122,7 +110,7 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                     ? null
                     : () {
                         setState(() {
-                          _selectedQuestionIds.addAll(filtered.map((entry) => entry.selectionKey));
+                          _selectedQuestionIds.addAll(filtered.map((question) => question.id));
                         });
                       },
                 icon: const Icon(Icons.select_all),
@@ -143,9 +131,8 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                 onPressed: _selectedQuestionIds.isEmpty
                     ? null
                     : () async {
-                        final selectedQuestions = widget.entries
-                            .where((entry) => _selectedQuestionIds.contains(entry.selectionKey))
-                            .map((entry) => entry.question)
+                        final selectedQuestions = widget.questions
+                            .where((question) => _selectedQuestionIds.contains(question.id))
                             .toList();
                         await widget.onCreateQuizFromSelection(selectedQuestions);
                       },
@@ -161,32 +148,44 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                 : ListView.builder(
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
-                      final entry = filtered[index];
-                      final question = entry.question;
-                      return Card(
-                        child: CheckboxListTile(
-                          value: _selectedQuestionIds.contains(entry.selectionKey),
-                          onChanged: (checked) {
-                            setState(() {
-                              if (checked == true) {
-                                _selectedQuestionIds.add(entry.selectionKey);
-                              } else {
-                                _selectedQuestionIds.remove(entry.selectionKey);
-                              }
-                            });
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: MathOrText(question.composedPrompt),
-                          subtitle: Text(
-                            '${AppStrings.tr(context, 'gradeLevel')}: ${question.gradeLevel.isEmpty ? '-' : question.gradeLevel}\n'
-                            '${AppStrings.tr(context, 'unitOfStudy')}: ${question.unitOfStudy.isEmpty ? '-' : question.unitOfStudy}\n'
-                            '${AppStrings.tr(context, 'curriculum')}: ${question.curriculum.isEmpty ? '-' : question.curriculum}\n'
-                            '${AppStrings.tr(context, 'bankQuestionSource')}: ${entry.quizTitle}',
-                          ),
-                          isThreeLine: true,
-                        ),
-                      );
-                    },
+                       final question = filtered[index];
+                       return Card(
+                         child: ListTile(
+                           leading: Checkbox(
+                             value: _selectedQuestionIds.contains(question.id),
+                             onChanged: (checked) {
+                               setState(() {
+                                 if (checked == true) {
+                                   _selectedQuestionIds.add(question.id);
+                                 } else {
+                                   _selectedQuestionIds.remove(question.id);
+                                 }
+                               });
+                             },
+                           ),
+                           title: MathOrText(question.composedPrompt),
+                           subtitle: Text(
+                             '${AppStrings.tr(context, 'gradeLevel')}: ${question.gradeLevel.isEmpty ? '-' : question.gradeLevel}\n'
+                             '${AppStrings.tr(context, 'unitOfStudy')}: ${question.unitOfStudy.isEmpty ? '-' : question.unitOfStudy}\n'
+                             '${AppStrings.tr(context, 'curriculum')}: ${question.curriculum.isEmpty ? '-' : question.curriculum}',
+                           ),
+                           isThreeLine: true,
+                           trailing: IconButton(
+                             tooltip: AppStrings.tr(context, 'deleteQuestionFromBank'),
+                             icon: const Icon(Icons.delete_outline),
+                             onPressed: () async {
+                               await widget.onDeleteQuestion(question);
+                               if (!mounted) {
+                                 return;
+                               }
+                               setState(() {
+                                 _selectedQuestionIds.remove(question.id);
+                               });
+                             },
+                           ),
+                         ),
+                       );
+                     },
                   ),
           ),
         ],

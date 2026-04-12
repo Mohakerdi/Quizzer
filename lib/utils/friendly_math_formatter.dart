@@ -26,6 +26,18 @@ class FriendlyMathFormatter {
     text = text.replaceAllMapped(RegExp(r'sqrt\s*\(([^()]*)\)', caseSensitive: false), (m) {
       return '√(${m.group(1)})';
     });
+    text = text.replaceAllMapped(
+      RegExp(r'\\?sqrt\s*\[([^\[\]]+)\]\{([^{}]*)\}', caseSensitive: false),
+      (m) {
+        final index = (m.group(1) ?? '').trim();
+        final radicand = (m.group(2) ?? '').trim();
+        final superscript = _toSuperscript(index);
+        if (superscript.startsWith('^')) {
+          return '√[$index]($radicand)';
+        }
+        return '$superscript√($radicand)';
+      },
+    );
     text = text.replaceAllMapped(RegExp(r'\\sqrt\{([^{}]*)\}'), (m) {
       return '√(${m.group(1)})';
     });

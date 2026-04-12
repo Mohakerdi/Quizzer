@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/question_option.dart';
@@ -385,7 +384,7 @@ String _mergeLegacyTextAndMath(String text, String math) {
   return '$normalizedText\n$normalizedMath';
 }
 
-class _FriendlyMathInput extends StatefulWidget {
+class _FriendlyMathInput extends StatelessWidget {
   const _FriendlyMathInput({
     required this.controller,
     required this.labelText,
@@ -401,219 +400,33 @@ class _FriendlyMathInput extends StatefulWidget {
   final int maxLines;
 
   @override
-  State<_FriendlyMathInput> createState() => _FriendlyMathInputState();
-}
-
-class _FriendlyMathInputState extends State<_FriendlyMathInput> {
-  static const List<_MathInsertAction> _mathActions = [
-    _MathInsertAction(label: '√', symbol: r'$$\sqrt{}$$', cursorOffset: 3),
-    _MathInsertAction(label: 'Fraction', symbol: r'$$\frac{}{}$$', cursorOffset: 5),
-    _MathInsertAction(label: '≤', symbol: r'$$\leq$$'),
-    _MathInsertAction(label: '≥', symbol: r'$$\geq$$'),
-    _MathInsertAction(label: '≠', symbol: r'$$\neq$$'),
-    _MathInsertAction(label: 'π', symbol: r'$$\pi$$'),
-    _MathInsertAction(label: 'θ', symbol: r'$$\theta$$'),
-    _MathInsertAction(label: '×', symbol: r'$$\times$$'),
-    _MathInsertAction(label: '÷', symbol: r'$$\div$$'),
-    _MathInsertAction(label: 'x²', symbol: r'$$^2$$'),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void didUpdateWidget(covariant _FriendlyMathInput oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.removeListener(_onTextChanged);
-      widget.controller.addListener(_onTextChanged);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onTextChanged);
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  void _insertMathSymbol(String symbol, {int cursorOffset = 0}) {
-    final text = widget.controller.text;
-    final selection = widget.controller.selection;
-
-    if (!selection.isValid) {
-      final appended = '$text$symbol';
-      widget.controller.value = widget.controller.value.copyWith(
-        text: appended,
-        selection: TextSelection.collapsed(offset: appended.length),
-        composing: TextRange.empty,
-      );
-      return;
-    }
-
-    final start = selection.start;
-    final end = selection.end;
-    final newText = text.replaceRange(start, end, symbol);
-    final safeCursorOffset = cursorOffset.clamp(0, symbol.length);
-    final targetOffset = start + symbol.length - safeCursorOffset;
-    final newCursor = targetOffset.clamp(0, newText.length).toInt();
-
-    widget.controller.value = widget.controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newCursor),
-      composing: TextRange.empty,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final text = widget.controller.text;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.labelText,
+          labelText,
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        if (widget.hintText.trim().isNotEmpty) ...[
+        if (hintText.trim().isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
-            widget.hintText,
+            hintText,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
         const SizedBox(height: 8),
         TextFormField(
-          controller: widget.controller,
-          minLines: widget.minLines,
-          maxLines: widget.maxLines,
+          controller: controller,
+          minLines: minLines,
+          maxLines: maxLines,
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             border: const OutlineInputBorder(),
             isDense: true,
           ),
         ),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: _mathActions
-              .map(
-                (action) => _MathActionChip(
-                  label: action.label,
-                  onTap: () => _insertMathSymbol(
-                    action.symbol,
-                    cursorOffset: action.cursorOffset,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        if (text.trim().isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _MixedMathPreview(text: text),
-          ),
-        ],
       ],
     );
   }
-}
-
-class _MixedMathPreview extends StatelessWidget {
-  const _MixedMathPreview({
-    required this.text,
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseStyle = Theme.of(context).textTheme.bodyLarge ?? const TextStyle();
-    final errorColor = Theme.of(context).colorScheme.error;
-    final formulaMatcher = RegExp(r'\$\$(.+?)\$\$', dotAll: true);
-    final spans = <InlineSpan>[];
-    var cursor = 0;
-
-    for (final match in formulaMatcher.allMatches(text)) {
-      if (match.start > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, match.start), style: baseStyle));
-      }
-
-      final expression = (match.group(1) ?? '').trim();
-      if (expression.isEmpty) {
-        spans.add(TextSpan(text: text.substring(match.start, match.end), style: baseStyle));
-      } else {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Math.tex(
-              expression,
-              textStyle: baseStyle,
-              onErrorFallback: (_) => Text(
-                text.substring(match.start, match.end),
-                style: baseStyle.copyWith(color: errorColor),
-              ),
-            ),
-          ),
-        );
-      }
-      cursor = match.end;
-    }
-
-    if (cursor < text.length) {
-      spans.add(TextSpan(text: text.substring(cursor), style: baseStyle));
-    }
-
-    if (spans.isEmpty) {
-      spans.add(TextSpan(text: text, style: baseStyle));
-    }
-
-    return RichText(
-      text: TextSpan(style: baseStyle, children: spans),
-    );
-  }
-}
-
-class _MathActionChip extends StatelessWidget {
-  const _MathActionChip({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      label: Text(label),
-      onPressed: onTap,
-    );
-  }
-}
-
-class _MathInsertAction {
-  const _MathInsertAction({
-    required this.label,
-    required this.symbol,
-    this.cursorOffset = 0,
-  });
-
-  final String label;
-  final String symbol;
-  final int cursorOffset;
 }

@@ -28,6 +28,8 @@ class AppStrings {
         return ar ? 'موافق' : 'OK';
       case 'selectQuiz':
         return ar ? 'أنشئ أو اختر اختبارًا للبدء.' : 'Create or select a quiz to start.';
+      case 'selectedQuiz':
+        return ar ? 'المحدد حاليًا' : 'Currently selected';
       case 'invalidVariantsCount':
         return ar ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.';
       case 'quizzes':
@@ -62,6 +64,18 @@ class AppStrings {
         return ar ? 'اسم المعلم' : 'Teacher name';
       case 'schoolName':
         return ar ? 'اسم المدرسة' : 'School name';
+      case 'exportLanguage':
+        return ar ? 'لغة التصدير' : 'Export language';
+      case 'exportLanguageEnglish':
+        return ar ? 'الإنجليزية' : 'English';
+      case 'exportLanguageArabic':
+        return ar ? 'العربية' : 'Arabic';
+      case 'optionLabelStyle':
+        return ar ? 'تنسيق ترقيم الخيارات' : 'Choice label style';
+      case 'optionLabelStyleLatin':
+        return ar ? 'A / B / C / D' : 'A / B / C / D';
+      case 'optionLabelStyleArabic':
+        return ar ? 'أ / ب / ج / د' : 'أ / ب / ج / د';
       case 'exportGoogleForms':
         return ar ? 'تصدير Google Forms' : 'Export Google Forms';
       case 'quizSaved':
@@ -83,11 +97,11 @@ class AppStrings {
       case 'questionContent':
         return ar ? 'محتوى السؤال' : 'Question content';
       case 'questionContentHint':
-        return ar ? 'اكتب نص السؤال والصيغ في مكان واحد' : 'Write question text and formulas in one place';
+        return ar ? 'اكتب نص السؤال في مكان واحد' : 'Write question text in one place';
       case 'optionContent':
         return ar ? 'محتوى الخيار' : 'Option content';
       case 'optionContentHint':
-        return ar ? 'اكتب النص أو الصيغة في مكان واحد' : 'Write text or formula in one place';
+        return ar ? 'اكتب نص الخيار في مكان واحد' : 'Write option text in one place';
       case 'addOption':
         return ar ? 'إضافة خيار' : 'Add option';
       case 'editOption':
@@ -116,6 +130,14 @@ class AppStrings {
         return ar ? 'لوحة مفاتيح رياضية شبيهة بـ GeoGebra مفعلة' : 'GeoGebra-like math keyboard enabled';
       case 'invalidMathExpression':
         return ar ? 'تعبير رياضي غير صالح' : 'Invalid math expression';
+      case 'insertEquation':
+        return ar ? 'إدراج معادلة' : 'Insert equation';
+      case 'equationEditorTitle':
+        return ar ? 'محرر المعادلة' : 'Equation editor';
+      case 'equationFieldLabel':
+        return ar ? 'المعادلة' : 'Equation';
+      case 'equationFieldHint':
+        return ar ? 'اكتب الصيغة الرياضية' : 'Type the math expression';
       case 'themeDark':
         return ar ? 'الوضع الداكن' : 'Dark mode';
       case 'themeLight':
@@ -146,6 +168,28 @@ class AppStrings {
         return ar ? 'عنوان الاختبار الجديد' : 'New quiz title';
       case 'bankQuestionSource':
         return ar ? 'المصدر' : 'Source';
+      case 'addToQuestionBank':
+        return ar ? 'إضافة إلى بنك الأسئلة' : 'Add to question bank';
+      case 'deleteQuestionFromBank':
+        return ar ? 'حذف من بنك الأسئلة' : 'Delete from question bank';
+      case 'tutorialSkip':
+        return ar ? 'تخطي' : 'Skip';
+      case 'tutorialWelcomeTitle':
+        return ar ? 'مرحبًا بك في Quizzer' : 'Welcome to Quizzer';
+      case 'tutorialWelcomeBody':
+        return ar ? 'هذه جولة سريعة للتعرّف على أهم الأدوات.' : 'A quick tour of the most important tools.';
+      case 'tutorialLanguageTitle':
+        return ar ? 'تغيير اللغة' : 'Change language';
+      case 'tutorialLanguageBody':
+        return ar ? 'من هنا يمكنك التبديل بين العربية والإنجليزية.' : 'Switch between Arabic and English from here.';
+      case 'tutorialNewQuizTitle':
+        return ar ? 'اختبار جديد' : 'New quiz';
+      case 'tutorialNewQuizBody':
+        return ar ? 'ابدأ بإنشاء اختبار جديد من هذا الزر.' : 'Start by creating a new quiz from this button.';
+      case 'tutorialQuestionBankTitle':
+        return ar ? 'بنك الأسئلة' : 'Question bank';
+      case 'tutorialQuestionBankBody':
+        return ar ? 'استخدم بنك الأسئلة لإعادة استخدام الأسئلة بسرعة.' : 'Use the question bank to quickly reuse questions.';
       default:
         return key;
     }

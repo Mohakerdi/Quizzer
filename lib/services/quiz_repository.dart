@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
+import 'package:adv_basics/models/quiz_question.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QuizRepository {
   static const _quizzesKey = 'quizzer_quizzes_v1';
   static const _variantsKey = 'quizzer_variants_v1';
+  static const _questionBankKey = 'quizzer_question_bank_v1';
 
   Future<List<QuizModel>> loadQuizzes() async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,6 +48,43 @@ class QuizRepository {
     final kept = all.where((q) => q.id != quizId).toList();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_quizzesKey, jsonEncode(kept.map((q) => q.toJson()).toList()));
+  }
+
+  Future<List<QuizQuestion>> loadQuestionBank() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_questionBankKey);
+    if (raw == null || raw.isEmpty) {
+      return [];
+    }
+
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    return decoded.map((item) => QuizQuestion.fromJson(item as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveQuestionBank(List<QuizQuestion> questions) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _questionBankKey,
+      jsonEncode(questions.map((q) => q.toJson()).toList()),
+    );
+  }
+
+  Future<QuizQuestion> upsertQuestionBankQuestion(QuizQuestion question) async {
+    final all = await loadQuestionBank();
+    final existingIndex = all.indexWhere((q) => q.id == question.id);
+    if (existingIndex >= 0) {
+      all[existingIndex] = question;
+    } else {
+      all.add(question);
+    }
+    await saveQuestionBank(all);
+    return question;
+  }
+
+  Future<void> deleteQuestionBankQuestion(String bankQuestionId) async {
+    final questionBank = await loadQuestionBank();
+    final keptBank = questionBank.where((q) => q.id != bankQuestionId).toList();
+    await saveQuestionBank(keptBank);
   }
 
   Future<Map<String, List<GeneratedVariant>>> _loadAllVariants() async {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
 import 'package:adv_basics/models/generated_variant.dart';
@@ -17,6 +19,133 @@ import 'package:adv_basics/services/variant_generator.dart';
 import 'package:adv_basics/view_models/quiz_maker_cubit.dart';
 import 'package:adv_basics/view_models/quiz_maker_state.dart';
 
+const _brandBlue = Color(0xFF1D57C8);
+const _brandSky = Color(0xFF62CEF7);
+const _brandGold = Color(0xFFFEC62F);
+const _brandInk = Color(0xFF123A8B);
+
+ThemeData _buildLightTheme() {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: _brandBlue,
+    brightness: Brightness.light,
+  ).copyWith(
+    primary: _brandBlue,
+    secondary: _brandGold,
+    tertiary: _brandSky,
+    surface: const Color(0xFFF7FAFF),
+  );
+
+  final base = ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: const Color(0xFFEFF5FF),
+  );
+
+  return base.copyWith(
+    appBarTheme: AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Colors.transparent,
+      foregroundColor: _brandInk,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: base.textTheme.titleLarge?.copyWith(
+        color: _brandInk,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 1,
+      margin: EdgeInsets.zero,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(18)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: _brandBlue,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: _brandGold,
+      foregroundColor: _brandInk,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+      ),
+    ),
+    tabBarTheme: const TabBarThemeData(
+      dividerColor: Colors.transparent,
+      indicatorColor: _brandBlue,
+      labelColor: _brandBlue,
+      unselectedLabelColor: Color(0xFF5573A6),
+    ),
+  );
+}
+
+ThemeData _buildDarkTheme() {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: _brandBlue,
+    brightness: Brightness.dark,
+  ).copyWith(
+    primary: const Color(0xFF7AA9FF),
+    secondary: _brandGold,
+    tertiary: const Color(0xFF7FDFFF),
+    surface: const Color(0xFF111C34),
+  );
+
+  final base = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: const Color(0xFF0A1328),
+  );
+
+  return base.copyWith(
+    appBarTheme: AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: base.textTheme.titleLarge?.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: Color(0xFF132241),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(18)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF3E78ED),
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: _brandGold,
+      foregroundColor: _brandInk,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+      ),
+    ),
+    tabBarTheme: const TabBarThemeData(
+      dividerColor: Colors.transparent,
+      indicatorColor: Color(0xFF7AA9FF),
+      labelColor: Color(0xFF9BC0FF),
+      unselectedLabelColor: Color(0xFF8CA3CF),
+    ),
+  );
+}
+
 class QuizMakerApp extends StatelessWidget {
   const QuizMakerApp({super.key});
 
@@ -29,31 +158,22 @@ class QuizMakerApp extends StatelessWidget {
         docxExportService: const DocxExportService(),
         googleFormsExportService: const GoogleFormsExportService(),
       )..loadData(),
-      child: BlocBuilder<QuizMakerCubit, QuizMakerState>(
-        builder: (context, state) {
+      child: BlocSelector<QuizMakerCubit, QuizMakerState, ({Locale locale, ThemeMode themeMode})>(
+        selector: (state) => (locale: state.locale, themeMode: state.themeMode),
+        builder: (context, appConfig) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Quizzer Maker',
-            locale: state.locale,
+            locale: appConfig.locale,
             supportedLocales: const [Locale('en'), Locale('ar')],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5D3FD3)),
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              brightness: Brightness.dark,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF5D3FD3),
-                brightness: Brightness.dark,
-              ),
-            ),
-            themeMode: state.themeMode,
+            theme: _buildLightTheme(),
+            darkTheme: _buildDarkTheme(),
+            themeMode: appConfig.themeMode,
             home: const QuizMakerHome(),
           );
         },
@@ -62,8 +182,112 @@ class QuizMakerApp extends StatelessWidget {
   }
 }
 
-class QuizMakerHome extends StatelessWidget {
+class QuizMakerHome extends StatefulWidget {
   const QuizMakerHome({super.key});
+
+  @override
+  State<QuizMakerHome> createState() => _QuizMakerHomeState();
+}
+
+class _QuizMakerHomeState extends State<QuizMakerHome> {
+  static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
+  final GlobalKey _languageButtonKey = GlobalKey();
+  final GlobalKey _newQuizFabKey = GlobalKey();
+  final GlobalKey _questionBankTabKey = GlobalKey();
+  bool _checkedTutorial = false;
+
+  Future<void> _maybeShowArabicTutorial() async {
+    if (_checkedTutorial) {
+      return;
+    }
+    _checkedTutorial = true;
+    final prefs = await SharedPreferences.getInstance();
+    final alreadySeen = prefs.getBool(_tutorialSeenKey) ?? false;
+    if (alreadySeen || !mounted) {
+      return;
+    }
+
+    await prefs.setBool(_tutorialSeenKey, true);
+    if (!mounted) {
+      return;
+    }
+
+    final targets = <TargetFocus>[
+      TargetFocus(
+        keyTarget: _languageButtonKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'تغيير اللغة',
+            description: 'من هنا يمكنك التبديل بين العربية والإنجليزية.',
+          ),
+        ],
+      ),
+      TargetFocus(
+        keyTarget: _newQuizFabKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'اختبار جديد',
+            description: 'ابدأ بإنشاء اختبار جديد من هذا الزر.',
+          ),
+        ],
+      ),
+      TargetFocus(
+        keyTarget: _questionBankTabKey,
+        contents: [
+          _buildArabicTargetContent(
+            title: 'بنك الأسئلة',
+            description: 'استخدم بنك الأسئلة لإعادة استخدام الأسئلة بسرعة.',
+          ),
+        ],
+      ),
+    ];
+
+    TutorialCoachMark(
+      targets: targets,
+      textSkip: 'تخطي',
+      colorShadow: Colors.black,
+      opacityShadow: 0.85,
+      onSkip: () => true,
+    ).show(context: context);
+  }
+
+  ContentTarget _buildArabicTargetContent({
+    required String title,
+    required String description,
+  }) {
+    return ContentTarget(
+      align: ContentAlign.bottom,
+      child: (context, controller) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<String?> _promptText(
     BuildContext context,
@@ -154,20 +378,6 @@ class QuizMakerHome extends StatelessWidget {
     );
   }
 
-  List<BankQuestionEntry> _collectQuestionBankEntries(List<QuizModel> quizzes) {
-    return quizzes
-        .expand(
-          (quiz) => quiz.questions.map(
-            (question) => BankQuestionEntry(
-              quizId: quiz.id,
-              quizTitle: quiz.title,
-              question: question,
-            ),
-          ),
-        )
-        .toList();
-  }
-
   Future<void> _createQuizFromBankSelection(
     BuildContext context,
     List<QuizQuestion> selectedQuestions,
@@ -191,6 +401,14 @@ class QuizMakerHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<QuizMakerCubit, QuizMakerState>(
       listenWhen: (previous, current) => previous.message != current.message,
+      buildWhen: (previous, current) =>
+          previous.isLoading != current.isLoading ||
+          previous.quizzes != current.quizzes ||
+          previous.selectedQuiz != current.selectedQuiz ||
+          previous.generatedVariants != current.generatedVariants ||
+          previous.questionBank != current.questionBank ||
+          previous.locale != current.locale ||
+          previous.themeMode != current.themeMode,
       listener: (context, state) {
         final message = state.message;
         if (message == null || message.isEmpty) {
@@ -209,97 +427,194 @@ class QuizMakerHome extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _maybeShowArabicTutorial();
+        });
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(AppStrings.tr(context, 'appTitle')),
-            actions: [
-              IconButton(
-                icon: Icon(state.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-                tooltip: state.themeMode == ThemeMode.dark
-                    ? AppStrings.tr(context, 'themeLight')
-                    : AppStrings.tr(context, 'themeDark'),
-                onPressed: () => context.read<QuizMakerCubit>().toggleThemeMode(),
-              ),
-              PopupMenuButton<Locale>(
-                icon: const Icon(Icons.language),
-                onSelected: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: Locale('en'), child: Text('English')),
-                  PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
-                ],
-              ),
-            ],
-          ),
-          body: Row(
-            children: [
-              SizedBox(
-                width: 340,
-                child: QuizListScreen(
-                  quizzes: state.quizzes,
-                  selectedQuizId: state.selectedQuiz?.id,
-                  onCreateQuiz: () => _createQuiz(context),
-                  onSelectQuiz: (quiz) => context.read<QuizMakerCubit>().selectQuiz(quiz),
-                  onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
-                  onDuplicateQuiz: (quiz) => context.read<QuizMakerCubit>().duplicateQuiz(quiz),
-                  onDeleteQuiz: (quiz) => context.read<QuizMakerCubit>().deleteQuiz(quiz),
-                ),
-              ),
-              const VerticalDivider(width: 1),
-              Expanded(
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      TabBar(
-                        tabs: [
-                          Tab(text: AppStrings.tr(context, 'quizEditorTab')),
-                          Tab(text: AppStrings.tr(context, 'questionBankTab')),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            state.selectedQuiz == null
-                                ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
-                                : QuizEditorScreen(
-                                    quiz: state.selectedQuiz!,
-                                    generatedVariants: state.generatedVariants,
-                                    onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
-                                    onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
-                                    onGenerateVariants: (quiz) => _generateVariants(context, quiz),
-                                    onPreviewVariant: (variant) => _previewVariant(context, variant),
-                                    onExportVariant: (variant, {teacherName, schoolName}) => context
-                                        .read<QuizMakerCubit>()
-                                        .exportVariant(
-                                          variant,
-                                          teacherName: teacherName,
-                                          schoolName: schoolName,
-                                        ),
-                                    onExportGoogleForms: (variant) =>
-                                        context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
-                                  ),
-                            QuestionBankScreen(
-                              entries: _collectQuestionBankEntries(state.quizzes),
-                              onCreateQuizFromSelection: (questions) =>
-                                  _createQuizFromBankSelection(context, questions),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            title: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/images/quiz-logo.png',
+                    width: 30,
+                    height: 30,
+                    fit: BoxFit.cover,
                   ),
                 ),
+                const SizedBox(width: 10),
+                Text(AppStrings.tr(context, 'appTitle')),
+              ],
+            ),
+            flexibleSpace: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: Theme.of(context).brightness == Brightness.dark
+                      ? const [Color(0x6620396D), Color(0x333F85F5)]
+                      : const [Color(0x55AEE9FF), Color(0x4499B7FF)],
+                ),
+              ),
+            ),
+            actions: [
+              _AppBarActions(
+                themeMode: state.themeMode,
+                onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
+                onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                languageButtonKey: _languageButtonKey,
               ),
             ],
           ),
+          body: _HomeWorkspace(
+            state: state,
+            onCreateQuiz: () => _createQuiz(context),
+            onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
+            onGenerateVariants: (quiz) => _generateVariants(context, quiz),
+            onPreviewVariant: (variant) => _previewVariant(context, variant),
+            onCreateQuizFromBankSelection: (questions) => _createQuizFromBankSelection(context, questions),
+            questionBankTabKey: _questionBankTabKey,
+          ),
           floatingActionButton: FloatingActionButton.extended(
+            key: _newQuizFabKey,
             onPressed: () => _createQuiz(context),
             icon: const Icon(Icons.add),
             label: Text(AppStrings.tr(context, 'newQuiz')),
           ),
         );
       },
+    );
+  }
+}
+
+class _AppBarActions extends StatelessWidget {
+  const _AppBarActions({
+    required this.themeMode,
+    required this.onToggleTheme,
+    required this.onSetLocale,
+    required this.languageButtonKey,
+  });
+
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
+  final ValueChanged<Locale> onSetLocale;
+  final GlobalKey languageButtonKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
+          tooltip: themeMode == ThemeMode.dark
+              ? AppStrings.tr(context, 'themeLight')
+              : AppStrings.tr(context, 'themeDark'),
+          onPressed: onToggleTheme,
+        ),
+        PopupMenuButton<Locale>(
+          key: languageButtonKey,
+          icon: const Icon(Icons.language),
+          onSelected: onSetLocale,
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: Locale('en'), child: Text('English')),
+            PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeWorkspace extends StatelessWidget {
+  const _HomeWorkspace({
+    required this.state,
+    required this.onCreateQuiz,
+    required this.onRenameQuiz,
+    required this.onGenerateVariants,
+    required this.onPreviewVariant,
+    required this.onCreateQuizFromBankSelection,
+    required this.questionBankTabKey,
+  });
+
+  final QuizMakerState state;
+  final Future<void> Function() onCreateQuiz;
+  final Future<void> Function(QuizModel quiz) onRenameQuiz;
+  final Future<void> Function(QuizModel quiz) onGenerateVariants;
+  final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
+  final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromBankSelection;
+  final GlobalKey questionBankTabKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 340,
+          child: QuizListScreen(
+            quizzes: state.quizzes,
+            selectedQuizId: state.selectedQuiz?.id,
+            onCreateQuiz: onCreateQuiz,
+            onSelectQuiz: (quiz) => context.read<QuizMakerCubit>().selectQuiz(quiz),
+            onRenameQuiz: onRenameQuiz,
+            onDuplicateQuiz: (quiz) => context.read<QuizMakerCubit>().duplicateQuiz(quiz),
+            onDeleteQuiz: (quiz) => context.read<QuizMakerCubit>().deleteQuiz(quiz),
+          ),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                TabBar(
+                  tabs: [
+                    Tab(text: AppStrings.tr(context, 'quizEditorTab')),
+                    Tab(key: questionBankTabKey, text: AppStrings.tr(context, 'questionBankTab')),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      state.selectedQuiz == null
+                          ? Center(child: Text(AppStrings.tr(context, 'selectQuiz')))
+                          : QuizEditorScreen(
+                              quiz: state.selectedQuiz!,
+                              generatedVariants: state.generatedVariants,
+                              onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
+                              onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
+                              onGenerateVariants: onGenerateVariants,
+                              onPreviewVariant: onPreviewVariant,
+                              onExportVariant:
+                                  (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
+                                  .read<QuizMakerCubit>()
+                                  .exportVariant(
+                                    variant,
+                                    teacherName: teacherName,
+                                    schoolName: schoolName,
+                                    exportLanguageCode: exportLanguageCode,
+                                    optionLabelStyle: optionLabelStyle,
+                                  ),
+                              onExportGoogleForms:
+                                  (variant) => context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                              onAddQuestionToBank:
+                                  (question) => context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
+                            ),
+                      QuestionBankScreen(
+                        questions: state.questionBank,
+                        onCreateQuizFromSelection: onCreateQuizFromBankSelection,
+                        onDeleteQuestion: (question) =>
+                            context.read<QuizMakerCubit>().deleteQuestionFromQuestionBank(question.id),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

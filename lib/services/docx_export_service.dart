@@ -11,12 +11,23 @@ import 'package:path_provider/path_provider.dart';
 
 class DocxExportService {
   const DocxExportService();
+  static const int _pageWidthTwips = 11906;
+  static const int _pageHeightTwips = 16838;
+  static const int _pageMarginTwips = 600;
+  static const int _tableTotalWidthTwips = _pageWidthTwips - (_pageMarginTwips * 2); // 10706
+  static const int _firstColumnWidthTwips = 1200;
+  static const int _secondColumnWidthTwips = 3168;
+  static const int _thirdColumnWidthTwips = 3168;
+  // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
+  static const int _fourthColumnWidthTwips = 3170;
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildQuizDocumentXml(
@@ -24,6 +35,8 @@ class DocxExportService {
       variant: variant,
       teacherName: teacherName,
       schoolName: schoolName,
+      exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -41,11 +54,15 @@ class DocxExportService {
   Future<String> exportSolutions({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final content = _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
+      exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
     );
@@ -105,12 +122,16 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
   }) {
     return _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
       teacherName: teacherName,
       schoolName: schoolName,
+      exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -153,10 +174,13 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
-    final isRtl = _containsArabic(
+    final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
+    final isRtl = exportInArabic || _containsArabic(
       [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
@@ -165,11 +189,11 @@ class DocxExportService {
     );
     final rows = <String>[
       _headerRow([
-        'Quiz: ${quiz.title}',
-        'Variant: ${variant.id}',
-        'Questions: ${variant.questions.length}',
-        'Date: ${variant.generatedAt.toIso8601String().split('T').first}',
-      ]),
+        '${exportInArabic ? 'الاختبار' : 'Quiz'}: ${quiz.title}',
+        '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
+        '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
+        '${exportInArabic ? 'التاريخ' : 'Date'}: ${variant.generatedAt.toIso8601String().split('T').first}',
+      ], rtl: isRtl),
     ];
     final normalizedTeacher = teacherName?.trim() ?? '';
     final normalizedSchool = schoolName?.trim() ?? '';
@@ -177,10 +201,10 @@ class DocxExportService {
       const additionalEmptyCells = ['', ''];
       rows.add(
         _headerRow([
-          normalizedTeacher.isEmpty ? '' : 'Teacher: $normalizedTeacher',
-          normalizedSchool.isEmpty ? '' : 'School: $normalizedSchool',
+          normalizedTeacher.isEmpty ? '' : '${exportInArabic ? 'المعلم' : 'Teacher'}: $normalizedTeacher',
+          normalizedSchool.isEmpty ? '' : '${exportInArabic ? 'المدرسة' : 'School'}: $normalizedSchool',
           ...additionalEmptyCells,
-        ]),
+        ], rtl: isRtl),
       );
     }
 
@@ -189,25 +213,27 @@ class DocxExportService {
       final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
-        prompt.write('\n[Image: ${question.imageRef.trim()}]');
+        prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
       }
 
       rows.add(
         _row(
-          [
+          _maybeFlipCellsForRtl([
             _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
               colSpan: 3,
               rtl: isRtl,
-              mathXml: _mathToOmml(question.math),
               imageRelationshipId: imageAsset?.relationshipId,
             ),
-          ],
+          ], isRtl),
         ),
       );
 
-      final labels = ['A', 'B', 'C', 'D'];
+      final labels = _resolveOptionLabels(
+        optionLabelStyle: optionLabelStyle,
+        exportInArabic: exportInArabic,
+      );
       final optionCells = List.generate(4, (index) {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
@@ -218,15 +244,14 @@ class DocxExportService {
         return _cell(
           text,
           rtl: isRtl,
-          mathXml: _mathToOmml(option.math),
         );
       });
 
-      rows.add(_row(optionCells));
+      rows.add(_row(_maybeFlipCellsForRtl(optionCells, isRtl)));
     }
 
     return _documentTemplate(
-      title: 'Question Paper',
+      title: exportInArabic ? 'ورقة الأسئلة: ${quiz.title}' : 'Question Paper: ${quiz.title}',
       body: _table(rows.join()),
       rtl: isRtl,
     );
@@ -236,10 +261,14 @@ class DocxExportService {
   String buildSolutionsDocumentXmlForTest({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
   }) {
     return _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
+      exportLanguageCode: exportLanguageCode,
+      optionLabelStyle: optionLabelStyle,
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
     );
@@ -248,10 +277,13 @@ class DocxExportService {
   String _buildSolutionsDocumentXml({
     required QuizModel quiz,
     required GeneratedVariant variant,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
   }) {
-    final isRtl = _containsArabic(
+    final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
+    final isRtl = exportInArabic || _containsArabic(
       [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
@@ -260,11 +292,11 @@ class DocxExportService {
     );
     final rows = <String>[
       _headerRow([
-        'Solutions: ${quiz.title}',
-        'Variant: ${variant.id}',
-        'Questions: ${variant.questions.length}',
+        '${exportInArabic ? 'الحلول' : 'Solutions'}: ${quiz.title}',
+        '${exportInArabic ? 'النموذج' : 'Variant'}: ${variant.id}',
+        '${exportInArabic ? 'الأسئلة' : 'Questions'}: ${variant.questions.length}',
         '',
-      ]),
+      ], rtl: isRtl),
     ];
 
     for (var i = 0; i < variant.questions.length; i++) {
@@ -272,23 +304,27 @@ class DocxExportService {
       final imageAsset = imageAssetsByQuestion[i];
       final prompt = StringBuffer(_normalizeTextForExport(question.text));
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
-        prompt.write('\n[Image: ${question.imageRef.trim()}]');
+        prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
       }
 
       rows.add(
-        _row([
-          _cell('${i + 1}', align: 'center', rtl: isRtl),
-          _cell(
-            prompt.toString(),
-            colSpan: 3,
-            rtl: isRtl,
-            mathXml: _mathToOmml(question.math),
-            imageRelationshipId: imageAsset?.relationshipId,
-          ),
-        ]),
+        _row(
+          _maybeFlipCellsForRtl([
+            _cell('${i + 1}', align: 'center', rtl: isRtl),
+            _cell(
+              prompt.toString(),
+              colSpan: 3,
+              rtl: isRtl,
+              imageRelationshipId: imageAsset?.relationshipId,
+            ),
+          ], isRtl),
+        ),
       );
 
-      final labels = ['A', 'B', 'C', 'D'];
+      final labels = _resolveOptionLabels(
+        optionLabelStyle: optionLabelStyle,
+        exportInArabic: exportInArabic,
+      );
       final optionCells = List.generate(4, (index) {
         if (index >= question.options.length) {
           return _cell('', rtl: isRtl);
@@ -303,15 +339,14 @@ class DocxExportService {
           rtl: isRtl,
           bold: isCorrect,
           fillColor: isCorrect ? 'C6EFCE' : null,
-          mathXml: _mathToOmml(option.math),
         );
       });
 
-      rows.add(_row(optionCells));
+      rows.add(_row(_maybeFlipCellsForRtl(optionCells, isRtl)));
     }
 
     return _documentTemplate(
-      title: 'Answer Key',
+      title: exportInArabic ? 'مفتاح الإجابة' : 'Answer Key',
       body: _table(rows.join()),
       rtl: isRtl,
     );
@@ -320,6 +355,7 @@ class DocxExportService {
   String _documentTemplate({required String title, required String body, required bool rtl}) {
     final bidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
+    final spacerJc = rtl ? 'right' : 'left';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
   <w:body>
@@ -327,11 +363,11 @@ class DocxExportService {
       <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
       <w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${_escape(title)}</w:t></w:r>
     </w:p>
-    <w:p><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
+    <w:p><w:pPr>$bidi<w:jc w:val="$spacerJc"/></w:pPr><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>
     $body
     <w:sectPr>
-      <w:pgSz w:w="11906" w:h="16838"/>
-      <w:pgMar w:top="600" w:right="600" w:bottom="600" w:left="600"/>
+      <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
+      <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
     </w:sectPr>
   </w:body>
 </w:document>''';
@@ -340,7 +376,7 @@ class DocxExportService {
   String _table(String rows) {
     return '''<w:tbl>
   <w:tblPr>
-    <w:tblW w:w="0" w:type="auto"/>
+    <w:tblW w:w="$_tableTotalWidthTwips" w:type="dxa"/>
     <w:tblLayout w:type="fixed"/>
     <w:tblBorders>
       <w:top w:val="single" w:sz="12"/>
@@ -352,16 +388,16 @@ class DocxExportService {
     </w:tblBorders>
   </w:tblPr>
   <w:tblGrid>
-    <w:gridCol w:w="1400"/>
-    <w:gridCol w:w="3300"/>
-    <w:gridCol w:w="3300"/>
-    <w:gridCol w:w="3300"/>
+    <w:gridCol w:w="$_firstColumnWidthTwips"/>
+    <w:gridCol w:w="$_secondColumnWidthTwips"/>
+    <w:gridCol w:w="$_thirdColumnWidthTwips"/>
+    <w:gridCol w:w="$_fourthColumnWidthTwips"/>
   </w:tblGrid>
   $rows
 </w:tbl>''';
   }
 
-  String _headerRow(List<String> values) {
+  String _headerRow(List<String> values, {required bool rtl}) {
     final cells = values
         .map(
           (value) => _cell(
@@ -372,7 +408,7 @@ class DocxExportService {
           ),
         )
         .toList();
-    return _row(cells);
+    return _row(_maybeFlipCellsForRtl(cells, rtl));
   }
 
   String _row(List<String> cells) => '<w:tr>${cells.join()}</w:tr>';
@@ -384,7 +420,6 @@ class DocxExportService {
     String? fillColor,
     String align = 'left',
     bool rtl = false,
-    String? mathXml,
     String? imageRelationshipId,
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
@@ -392,16 +427,20 @@ class DocxExportService {
     final fallbackAlign = rtl ? 'right' : 'left';
     final effectiveAlign = align == 'left' ? fallbackAlign : align;
     final jc = effectiveAlign == 'center' ? 'center' : (effectiveAlign == 'right' ? 'right' : 'left');
-    final runs = _paragraphRuns(text, bold: bold);
-    final mathBlock = mathXml == null || mathXml.trim().isEmpty ? '' : '\n    $mathXml';
+    final paragraphContent = _buildParagraphContent(
+      text,
+      bold: bold,
+      rtl: rtl,
+    );
     final bidi = rtl ? '<w:bidi/>' : '';
+    final imageParagraphJc = rtl ? 'right' : 'center';
     final imageParagraph = imageRelationshipId == null
         ? ''
         : '''
   <w:p>
-    <w:pPr>$bidi<w:jc w:val="center"/></w:pPr>
+    <w:pPr>$bidi<w:jc w:val="$imageParagraphJc"/></w:pPr>
     <w:r>
-      ${_inlineImageDrawingXml(imageRelationshipId)}
+      ${_anchoredImageDrawingXml(imageRelationshipId)}
     </w:r>
   </w:p>''';
 
@@ -420,20 +459,41 @@ class DocxExportService {
   </w:tcPr>
   <w:p>
     <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
-    $runs$mathBlock
+    $paragraphContent
   </w:p>
   $imageParagraph
 </w:tc>''';
   }
 
-  String _inlineImageDrawingXml(String relationshipId) {
+  String _buildParagraphContent(
+    String text, {
+    required bool bold,
+    required bool rtl,
+  }) {
+    return _paragraphRuns(text, bold: bold, rtl: rtl);
+  }
+
+  @visibleForTesting
+  String buildImageDrawingXmlForTest(String relationshipId) {
+    return _anchoredImageDrawingXml(relationshipId);
+  }
+
+  String _anchoredImageDrawingXml(String relationshipId) {
     const cx = 3600000;
     const cy = 2160000;
     final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
     return '''<w:drawing>
-  <wp:inline distT="0" distB="0" distL="0" distR="0">
+  <wp:anchor distT="0" distB="0" distL="114300" distR="114300" simplePos="0" relativeHeight="251658240" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">
+    <wp:simplePos x="0" y="0"/>
+    <wp:positionH relativeFrom="column">
+      <wp:posOffset>0</wp:posOffset>
+    </wp:positionH>
+    <wp:positionV relativeFrom="paragraph">
+      <wp:posOffset>0</wp:posOffset>
+    </wp:positionV>
     <wp:extent cx="$cx" cy="$cy"/>
     <wp:effectExtent l="0" t="0" r="0" b="0"/>
+    <wp:wrapSquare wrapText="bothSides"/>
     <wp:docPr id="$imageId" name="QuestionImage$imageId"/>
     <wp:cNvGraphicFramePr>
       <a:graphicFrameLocks noChangeAspect="1"/>
@@ -463,18 +523,25 @@ class DocxExportService {
         </pic:pic>
       </a:graphicData>
     </a:graphic>
-  </wp:inline>
+  </wp:anchor>
 </w:drawing>''';
   }
 
-  String _paragraphRuns(String text, {required bool bold}) {
+  String _paragraphRuns(String text, {required bool bold, required bool rtl}) {
     final escapedLines = _escape(text).split('\n');
     final buffer = StringBuffer();
     for (var i = 0; i < escapedLines.length; i++) {
       final line = escapedLines[i];
       buffer.write('<w:r>');
-      if (bold) {
-        buffer.write('<w:rPr><w:b/></w:rPr>');
+      if (bold || rtl) {
+        final runProperties = StringBuffer();
+        if (bold) {
+          runProperties.write('<w:b/>');
+        }
+        if (rtl) {
+          runProperties.write('<w:rtl/>');
+        }
+        buffer.write('<w:rPr>$runProperties</w:rPr>');
       }
       buffer.write('<w:t xml:space="preserve">${line.isEmpty ? ' ' : line}</w:t>');
       buffer.write('</w:r>');
@@ -762,19 +829,26 @@ class DocxExportService {
     return FriendlyMathFormatter.format(text);
   }
 
-  String? _mathToOmml(String math) {
-    final normalized = FriendlyMathFormatter.format(math).trim();
-    if (normalized.isEmpty) {
-      return null;
-    }
-
-    final sanitized = normalized.replaceAll('\n', ' ');
-    return '<m:oMath><m:r><m:t>${_escape(sanitized)}</m:t></m:r></m:oMath>';
-  }
-
   bool _containsArabic(String value) {
     final arabicRange = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
     return arabicRange.hasMatch(value);
+  }
+
+  bool _isArabicLanguageCode(String? languageCode) {
+    return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
+  }
+
+  List<String> _maybeFlipCellsForRtl(List<String> cells, bool rtl) {
+    return rtl ? cells.reversed.toList(growable: false) : cells;
+  }
+
+  List<String> _resolveOptionLabels({
+    required String? optionLabelStyle,
+    required bool exportInArabic,
+  }) {
+    final normalized = (optionLabelStyle ?? '').trim().toLowerCase();
+    final useArabic = normalized == 'arabic' || (normalized.isEmpty && exportInArabic);
+    return useArabic ? const ['أ', 'ب', 'ج', 'د'] : const ['A', 'B', 'C', 'D'];
   }
 }
 

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:adv_basics/l10n/app_strings.dart';
@@ -26,6 +27,7 @@ class QuizEditorScreen extends StatefulWidget {
     required this.onPreviewVariant,
     required this.onExportVariant,
     required this.onExportGoogleForms,
+    required this.onAddQuestionToBank,
   });
 
   final QuizModel quiz;
@@ -38,8 +40,11 @@ class QuizEditorScreen extends StatefulWidget {
     GeneratedVariant variant, {
     String? teacherName,
     String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
   }) onExportVariant;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
+  final Future<void> Function(QuizQuestion question) onAddQuestionToBank;
 
   @override
   State<QuizEditorScreen> createState() => _QuizEditorScreenState();
@@ -146,10 +151,27 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       if (currentImagePath?.trim().isNotEmpty == true) {
         return currentImagePath;
       }
-      return _toDataImageUri(sourceBytes, extension: extension);
+      final compressedOriginal = await _compressImageBytes(sourceBytes, extension: extension);
+      return _toDataImageUri(compressedOriginal, extension: extension);
     }
 
-    return _toDataImageUri(croppedBytes, extension: extension);
+    final compressedCropped = await _compressImageBytes(croppedBytes, extension: extension);
+    return _toDataImageUri(compressedCropped, extension: extension);
+  }
+
+  Future<Uint8List> _compressImageBytes(Uint8List bytes, {required String extension}) async {
+    final normalized = extension.toLowerCase();
+    final format = normalized == '.png' ? CompressFormat.png : CompressFormat.jpeg;
+    try {
+      final compressed = await FlutterImageCompress.compressWithList(
+        bytes,
+        format: format,
+        quality: 80,
+      );
+      return compressed.isEmpty ? bytes : compressed;
+    } catch (_) {
+      return bytes;
+    }
   }
 
   Future<Uint8List?> _openCropDialog({
@@ -319,6 +341,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       variant,
       teacherName: exportDetails.nullableTeacherName,
       schoolName: exportDetails.nullableSchoolName,
+      exportLanguageCode: exportDetails.exportLanguageCode,
+      optionLabelStyle: exportDetails.optionLabelStyle,
     );
   }
 
@@ -381,6 +405,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       _editQuestion(existing: _quiz.questions[index], index: index);
                     },
                     onRemoveQuestion: _removeQuestion,
+                    onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -406,10 +431,14 @@ class _DocxExportDetails {
   const _DocxExportDetails({
     required this.teacherName,
     required this.schoolName,
+    required this.exportLanguageCode,
+    required this.optionLabelStyle,
   });
 
   final String teacherName;
   final String schoolName;
+  final String exportLanguageCode;
+  final String optionLabelStyle;
 
   String? get nullableTeacherName => teacherName.isEmpty ? null : teacherName;
   String? get nullableSchoolName => schoolName.isEmpty ? null : schoolName;
@@ -425,6 +454,20 @@ class _DocxExportDetailsDialog extends StatefulWidget {
 class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
   final _teacherController = TextEditingController();
   final _schoolController = TextEditingController();
+  bool _defaultsInitialized = false;
+  late String _exportLanguageCode;
+  late String _optionLabelStyle;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_defaultsInitialized) {
+      return;
+    }
+    _exportLanguageCode = AppStrings.isArabic(context) ? 'ar' : 'en';
+    _optionLabelStyle = AppStrings.isArabic(context) ? 'arabic' : 'latin';
+    _defaultsInitialized = true;
+  }
 
   @override
   void dispose() {
@@ -453,6 +496,56 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
               labelText: AppStrings.tr(context, 'schoolName'),
             ),
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _exportLanguageCode,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'exportLanguage'),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'en',
+                child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+              ),
+              DropdownMenuItem(
+                value: 'ar',
+                child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _exportLanguageCode = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _optionLabelStyle,
+            decoration: InputDecoration(
+              labelText: AppStrings.tr(context, 'optionLabelStyle'),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: 'latin',
+                child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
+              ),
+              DropdownMenuItem(
+                value: 'arabic',
+                child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _optionLabelStyle = value;
+              });
+            },
+          ),
         ],
       ),
       actions: [
@@ -465,6 +558,8 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
             _DocxExportDetails(
               teacherName: _teacherController.text.trim(),
               schoolName: _schoolController.text.trim(),
+              exportLanguageCode: _exportLanguageCode,
+              optionLabelStyle: _optionLabelStyle,
             ),
           ),
           child: Text(AppStrings.tr(context, 'exportDocx')),

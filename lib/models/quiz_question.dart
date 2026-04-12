@@ -15,6 +15,7 @@ class QuizQuestion {
     this.gradeLevel = '',
     this.unitOfStudy = '',
     this.curriculum = '',
+    this.sourceBankQuestionId = '',
   });
 
   final String id;
@@ -26,6 +27,7 @@ class QuizQuestion {
   final String gradeLevel;
   final String unitOfStudy;
   final String curriculum;
+  final String sourceBankQuestionId;
   final List<QuestionOption> options;
   final String correctOptionId;
 
@@ -51,6 +53,7 @@ class QuizQuestion {
     String? gradeLevel,
     String? unitOfStudy,
     String? curriculum,
+    String? sourceBankQuestionId,
     List<QuestionOption>? options,
     String? correctOptionId,
   }) {
@@ -64,6 +67,7 @@ class QuizQuestion {
       gradeLevel: gradeLevel ?? this.gradeLevel,
       unitOfStudy: unitOfStudy ?? this.unitOfStudy,
       curriculum: curriculum ?? this.curriculum,
+      sourceBankQuestionId: sourceBankQuestionId ?? this.sourceBankQuestionId,
       options: options ?? this.options,
       correctOptionId: correctOptionId ?? this.correctOptionId,
     );
@@ -80,6 +84,7 @@ class QuizQuestion {
       'gradeLevel': gradeLevel,
       'unitOfStudy': unitOfStudy,
       'curriculum': curriculum,
+      'sourceBankQuestionId': sourceBankQuestionId,
       'options': options.map((o) => o.toJson()).toList(),
       'correctOptionId': correctOptionId,
     };
@@ -102,6 +107,7 @@ class QuizQuestion {
       gradeLevel: json['gradeLevel'] as String? ?? '',
       unitOfStudy: json['unitOfStudy'] as String? ?? '',
       curriculum: json['curriculum'] as String? ?? '',
+      sourceBankQuestionId: json['sourceBankQuestionId'] as String? ?? '',
       options: options,
       correctOptionId: json['correctOptionId'] as String? ?? fallbackCorrectId,
     );

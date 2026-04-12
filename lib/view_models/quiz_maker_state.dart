@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 
 import 'package:adv_basics/models/generated_variant.dart';
 import 'package:adv_basics/models/quiz_model.dart';
+import 'package:adv_basics/models/quiz_question.dart';
 
 class QuizMakerState extends Equatable {
   const QuizMakerState({
     required this.quizzes,
     required this.selectedQuiz,
     required this.generatedVariants,
+    required this.questionBank,
     required this.isLoading,
     required this.locale,
     required this.themeMode,
@@ -18,6 +20,7 @@ class QuizMakerState extends Equatable {
   final List<QuizModel> quizzes;
   final QuizModel? selectedQuiz;
   final List<GeneratedVariant> generatedVariants;
+  final List<QuizQuestion> questionBank;
   final bool isLoading;
   final Locale locale;
   final ThemeMode themeMode;
@@ -27,6 +30,7 @@ class QuizMakerState extends Equatable {
       : quizzes = const [],
         selectedQuiz = null,
         generatedVariants = const [],
+        questionBank = const [],
         isLoading = true,
         locale = const Locale('en'),
         themeMode = ThemeMode.light,
@@ -37,6 +41,7 @@ class QuizMakerState extends Equatable {
     QuizModel? selectedQuiz,
     bool clearSelectedQuiz = false,
     List<GeneratedVariant>? generatedVariants,
+    List<QuizQuestion>? questionBank,
     bool? isLoading,
     Locale? locale,
     ThemeMode? themeMode,
@@ -47,6 +52,7 @@ class QuizMakerState extends Equatable {
       quizzes: quizzes ?? this.quizzes,
       selectedQuiz: clearSelectedQuiz ? null : (selectedQuiz ?? this.selectedQuiz),
       generatedVariants: generatedVariants ?? this.generatedVariants,
+      questionBank: questionBank ?? this.questionBank,
       isLoading: isLoading ?? this.isLoading,
       locale: locale ?? this.locale,
       themeMode: themeMode ?? this.themeMode,
@@ -55,5 +61,5 @@ class QuizMakerState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, isLoading, locale, themeMode, message];
+  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, questionBank, isLoading, locale, themeMode, message];
 }
