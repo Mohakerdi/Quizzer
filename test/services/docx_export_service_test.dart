@@ -440,11 +440,46 @@ void main() {
     );
 
     expect('<m:oMath>'.allMatches(quizXml).length, equals(4));
-    expect(quizXml, contains(r'<m:t>\frac{1}{2}</m:t>'));
-    expect(quizXml, contains(r'<m:t>\sqrt{9}</m:t>'));
-    expect(quizXml, contains(r'<m:t>x^2</m:t>'));
-    expect(quizXml, contains(r'<m:t>\pi</m:t>'));
+    expect(quizXml, contains('<m:f><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>'));
+    expect(quizXml, contains('<m:rad><m:radPr><m:degHide m:val="1"/></m:radPr><m:e><m:r><m:t>9</m:t></m:r></m:e></m:rad>'));
+    expect(quizXml, contains('<m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>'));
+    expect(quizXml, contains('<m:r><m:t>π</m:t></m:r>'));
     expect(quizXml, isNot(contains('{{EQ:')));
+  });
+
+  test('renders matrix and n-ary equations as structured OMML when enabled', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V6',
+      quizId: quiz.id,
+      seed: 7,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Compute $$\begin{matrix}a & b\\c & d\end{matrix}$$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'$$\sum_{i=1}^{n}{x_i}$$'),
+            QuestionOption(id: 'o2', text: r'$$\int_{0}^{1}{x}$$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      renderEquationsAsWordMath: true,
+    );
+
+    expect(quizXml, contains('<m:m><m:mPr/>'));
+    expect('<m:mr>'.allMatches(quizXml).length, equals(2));
+    expect(quizXml, contains('<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>'));
+    expect(quizXml, contains('<m:nary><m:naryPr><m:chr m:val="∫"/></m:naryPr>'));
   });
 
   test('normalizes indexed roots in inline equations for export', () {

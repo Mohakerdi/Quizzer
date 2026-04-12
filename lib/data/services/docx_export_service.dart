@@ -639,7 +639,15 @@ class DocxExportService {
   }
 
   String _inlineWordEquationXml(String value) {
-    return '<m:oMath><m:r><m:t>${_escape(value)}</m:t></m:r></m:oMath>';
+    final normalized = _stripInvalidXmlChars(value).trim();
+    if (normalized.isEmpty) {
+      return '<m:oMath><m:r><m:t xml:space="preserve"> </m:t></m:r></m:oMath>';
+    }
+    final content = _LatexToOmmlConverter(
+      normalized,
+      escape: _escape,
+    ).convert();
+    return '<m:oMath>$content</m:oMath>';
   }
 
   String _escape(String value) {
@@ -1034,4 +1042,410 @@ class _EquationAssetRegistry {
     return buffer.toString();
   }
 
+}
+
+class _LatexToOmmlConverter {
+  _LatexToOmmlConverter(this._input, {required this.escape});
+
+  final String _input;
+  final String Function(String value) escape;
+  int _index = 0;
+
+  static const Map<String, String> _symbolMap = {
+    'pi': 'π',
+    'alpha': 'α',
+    'beta': 'β',
+    'gamma': 'γ',
+    'delta': 'δ',
+    'theta': 'θ',
+    'lambda': 'λ',
+    'mu': 'μ',
+    'sigma': 'σ',
+    'phi': 'φ',
+    'omega': 'ω',
+    'times': '×',
+    'cdot': '·',
+    'leq': '≤',
+    'geq': '≥',
+    'neq': '≠',
+    'pm': '±',
+    'to': '→',
+    'infty': '∞',
+  };
+
+  String convert() {
+    final nodes = _parseExpression();
+    final xml = nodes.map(_toOmml).join();
+    if (xml.isEmpty) {
+      return '<m:r><m:t>${escape(_input)}</m:t></m:r>';
+    }
+    return xml;
+  }
+
+  List<_MathNode> _parseExpression({Set<String> stopChars = const {}}) {
+    final nodes = <_MathNode>[];
+    while (_index < _input.length) {
+      final c = _input[_index];
+      if (c == '}') {
+        break;
+      }
+      if (stopChars.contains(c)) {
+        break;
+      }
+      if (_match(r'\end{matrix}')) {
+        break;
+      }
+      if (_isWhitespace(c)) {
+        _index++;
+        continue;
+      }
+
+      final atom = _parseAtom();
+      if (atom == null) {
+        _index++;
+        continue;
+      }
+      nodes.add(_parseScripts(atom));
+    }
+    return nodes;
+  }
+
+  _MathNode? _parseAtom() {
+    if (_index >= _input.length) {
+      return null;
+    }
+    final c = _input[_index];
+    if (c == '{') {
+      _index++;
+      final children = _parseExpression();
+      if (_index < _input.length && _input[_index] == '}') {
+        _index++;
+      }
+      return _GroupNode(children);
+    }
+    if (c == '\\') {
+      return _parseCommand();
+    }
+    return _TextNode(_readPlainText());
+  }
+
+  _MathNode _parseScripts(_MathNode base) {
+    _MathNode? sub;
+    _MathNode? sup;
+    while (_index < _input.length) {
+      final c = _input[_index];
+      if (c != '^' && c != '_') {
+        break;
+      }
+      _index++;
+      final arg = _parseScriptArgument();
+      if (c == '^') {
+        sup = arg;
+      } else {
+        sub = arg;
+      }
+    }
+    if (sub == null && sup == null) {
+      return base;
+    }
+    return _ScriptNode(base: base, sub: sub, sup: sup);
+  }
+
+  _MathNode _parseScriptArgument() {
+    _skipWhitespace();
+    if (_index >= _input.length) {
+      return const _TextNode('');
+    }
+    final atom = _parseAtom();
+    if (atom == null) {
+      return const _TextNode('');
+    }
+    return _parseScripts(atom);
+  }
+
+  _MathNode _parseCommand() {
+    _index++;
+    if (_index >= _input.length) {
+      return const _TextNode('\\');
+    }
+    final start = _index;
+    while (_index < _input.length && _isAlpha(_input[_index])) {
+      _index++;
+    }
+    if (start == _index) {
+      final c = _input[_index++];
+      if (c == '\\') {
+        return const _TextNode('\\');
+      }
+      return _TextNode(c);
+    }
+    final command = _input.substring(start, _index);
+    switch (command) {
+      case 'frac':
+        return _parseFraction();
+      case 'sqrt':
+        return _parseRoot();
+      case 'sum':
+        return _parseNary('∑');
+      case 'int':
+        return _parseNary('∫');
+      case 'begin':
+        return _parseBeginEnvironment();
+      case 'left':
+      case 'right':
+        return _parseAtom() ?? const _TextNode('');
+      default:
+        return _TextNode(_symbolMap[command] ?? '\\$command');
+    }
+  }
+
+  _MathNode _parseFraction() {
+    final numerator = _parseRequiredGroupOrAtom();
+    final denominator = _parseRequiredGroupOrAtom();
+    return _FractionNode(numerator: numerator, denominator: denominator);
+  }
+
+  _MathNode _parseRoot() {
+    _skipWhitespace();
+    _MathNode? degree;
+    if (_index < _input.length && _input[_index] == '[') {
+      _index++;
+      final content = _parseExpression(stopChars: {']'});
+      if (_index < _input.length && _input[_index] == ']') {
+        _index++;
+      }
+      degree = _GroupNode(content);
+    }
+    final radicand = _parseRequiredGroupOrAtom();
+    return _RootNode(radicand: radicand, degree: degree);
+  }
+
+  _MathNode _parseNary(String chr) {
+    _skipWhitespace();
+    _MathNode? sub;
+    _MathNode? sup;
+    while (_index < _input.length) {
+      final c = _input[_index];
+      if (c != '_' && c != '^') {
+        break;
+      }
+      _index++;
+      final arg = _parseScriptArgument();
+      if (c == '_') {
+        sub = arg;
+      } else {
+        sup = arg;
+      }
+      _skipWhitespace();
+    }
+    _skipWhitespace();
+    final body = _index < _input.length ? _parseRequiredGroupOrAtom() : const _TextNode('');
+    return _NaryNode(chr: chr, sub: sub, sup: sup, body: body);
+  }
+
+  _MathNode _parseBeginEnvironment() {
+    _skipWhitespace();
+    if (_index >= _input.length || _input[_index] != '{') {
+      return const _TextNode(r'\begin');
+    }
+    final environmentName = _parseRawGroupText();
+    if (environmentName != 'matrix') {
+      return _TextNode('\\begin{$environmentName}');
+    }
+
+    final endToken = r'\end{matrix}';
+    final endIndex = _input.indexOf(endToken, _index);
+    if (endIndex < 0) {
+      return const _TextNode(r'\begin{matrix}');
+    }
+
+    final matrixBody = _input.substring(_index, endIndex);
+    _index = endIndex + endToken.length;
+
+    final rows = matrixBody
+        .split(RegExp(r'\\\\'))
+        .map(
+          (row) => row
+              .split('&')
+              .map((cell) => _GroupNode(_LatexToOmmlConverter(cell.trim(), escape: escape)._parseExpression()))
+              .toList(growable: false),
+        )
+        .toList(growable: false);
+    return _MatrixNode(rows: rows);
+  }
+
+  _MathNode _parseRequiredGroupOrAtom() {
+    _skipWhitespace();
+    if (_index >= _input.length) {
+      return const _TextNode('');
+    }
+    final atom = _parseAtom();
+    if (atom == null) {
+      return const _TextNode('');
+    }
+    return _parseScripts(atom);
+  }
+
+  String _parseRawGroupText() {
+    if (_index >= _input.length || _input[_index] != '{') {
+      return '';
+    }
+    _index++;
+    final start = _index;
+    while (_index < _input.length && _input[_index] != '}') {
+      _index++;
+    }
+    final value = _input.substring(start, _index);
+    if (_index < _input.length && _input[_index] == '}') {
+      _index++;
+    }
+    return value.trim();
+  }
+
+  String _readPlainText() {
+    final start = _index;
+    while (_index < _input.length) {
+      final c = _input[_index];
+      if (c == '\\' || c == '{' || c == '}' || c == '^' || c == '_' || _isWhitespace(c)) {
+        break;
+      }
+      _index++;
+    }
+    return _input.substring(start, _index);
+  }
+
+  bool _isWhitespace(String c) => c.trim().isEmpty;
+
+  bool _isAlpha(String c) {
+    final code = c.codeUnitAt(0);
+    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+  }
+
+  bool _match(String value) => _input.startsWith(value, _index);
+
+  void _skipWhitespace() {
+    while (_index < _input.length && _isWhitespace(_input[_index])) {
+      _index++;
+    }
+  }
+
+  String _toOmml(_MathNode node) {
+    if (node is _TextNode) {
+      final text = node.value;
+      if (text.isEmpty) {
+        return '';
+      }
+      return '<m:r><m:t>${escape(text)}</m:t></m:r>';
+    }
+    if (node is _GroupNode) {
+      return node.children.map(_toOmml).join();
+    }
+    if (node is _FractionNode) {
+      return '<m:f><m:num>${_asArg(node.numerator)}</m:num><m:den>${_asArg(node.denominator)}</m:den></m:f>';
+    }
+    if (node is _RootNode) {
+      if (node.degree == null) {
+        return '<m:rad><m:radPr><m:degHide m:val="1"/></m:radPr><m:e>${_asArg(node.radicand)}</m:e></m:rad>';
+      }
+      return '<m:rad><m:deg>${_asArg(node.degree!)}</m:deg><m:e>${_asArg(node.radicand)}</m:e></m:rad>';
+    }
+    if (node is _ScriptNode) {
+      final base = _asArg(node.base);
+      final sub = node.sub == null ? '' : _asArg(node.sub!);
+      final sup = node.sup == null ? '' : _asArg(node.sup!);
+      if (node.sub != null && node.sup != null) {
+        return '<m:sSubSup><m:e>$base</m:e><m:sub>$sub</m:sub><m:sup>$sup</m:sup></m:sSubSup>';
+      }
+      if (node.sub != null) {
+        return '<m:sSub><m:e>$base</m:e><m:sub>$sub</m:sub></m:sSub>';
+      }
+      return '<m:sSup><m:e>$base</m:e><m:sup>$sup</m:sup></m:sSup>';
+    }
+    if (node is _NaryNode) {
+      final sub = node.sub == null ? '<m:sub><m:r><m:t></m:t></m:r></m:sub>' : '<m:sub>${_asArg(node.sub!)}</m:sub>';
+      final sup = node.sup == null ? '<m:sup><m:r><m:t></m:t></m:r></m:sup>' : '<m:sup>${_asArg(node.sup!)}</m:sup>';
+      return '<m:nary><m:naryPr><m:chr m:val="${escape(node.chr)}"/></m:naryPr>$sub$sup<m:e>${_asArg(node.body)}</m:e></m:nary>';
+    }
+    if (node is _MatrixNode) {
+      final rowsXml = node.rows
+          .map(
+            (row) =>
+                '<m:mr>${row.map((cell) => '<m:e>${_asArg(cell)}</m:e>').join()}</m:mr>',
+          )
+          .join();
+      return '<m:m><m:mPr/>$rowsXml</m:m>';
+    }
+    return '<m:r><m:t>${escape(_input)}</m:t></m:r>';
+  }
+
+  String _asArg(_MathNode node) {
+    final xml = _toOmml(node);
+    if (xml.isEmpty) {
+      return '<m:r><m:t xml:space="preserve"> </m:t></m:r>';
+    }
+    return xml;
+  }
+}
+
+sealed class _MathNode {
+  const _MathNode();
+}
+
+class _TextNode extends _MathNode {
+  const _TextNode(this.value);
+  final String value;
+}
+
+class _GroupNode extends _MathNode {
+  const _GroupNode(this.children);
+  final List<_MathNode> children;
+}
+
+class _FractionNode extends _MathNode {
+  const _FractionNode({
+    required this.numerator,
+    required this.denominator,
+  });
+  final _MathNode numerator;
+  final _MathNode denominator;
+}
+
+class _RootNode extends _MathNode {
+  const _RootNode({
+    required this.radicand,
+    this.degree,
+  });
+  final _MathNode radicand;
+  final _MathNode? degree;
+}
+
+class _ScriptNode extends _MathNode {
+  const _ScriptNode({
+    required this.base,
+    this.sub,
+    this.sup,
+  });
+  final _MathNode base;
+  final _MathNode? sub;
+  final _MathNode? sup;
+}
+
+class _NaryNode extends _MathNode {
+  const _NaryNode({
+    required this.chr,
+    this.sub,
+    this.sup,
+    required this.body,
+  });
+  final String chr;
+  final _MathNode? sub;
+  final _MathNode? sup;
+  final _MathNode body;
+}
+
+class _MatrixNode extends _MathNode {
+  const _MatrixNode({
+    required this.rows,
+  });
+  final List<List<_MathNode>> rows;
 }
