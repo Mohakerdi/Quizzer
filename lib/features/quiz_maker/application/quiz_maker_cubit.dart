@@ -225,6 +225,17 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
   }
 
+  Future<void> duplicateQuestionInQuestionBank(QuizQuestion question) async {
+    final duplicated = _cloneQuestionForBank(question);
+    final saved = await _repository.upsertQuestionBankQuestion(duplicated);
+    emit(
+      state.copyWith(
+        questionBank: [...state.questionBank, saved],
+        message: _isArabic ? 'تم نسخ السؤال في بنك الأسئلة.' : 'Question duplicated in question bank.',
+      ),
+    );
+  }
+
   Future<void> selectQuiz(QuizModel quiz) async {
     final variants = await _repository.loadVariantsForQuiz(quiz.id);
     emit(
@@ -311,6 +322,64 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));
+  }
+
+  Future<void> exportAllVariants({
+    String? teacherName,
+    String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
+  }) async {
+    final quiz = state.selectedQuiz;
+    if (quiz == null) {
+      return;
+    }
+    if (state.generatedVariants.isEmpty) {
+      emit(
+        state.copyWith(
+          message: _isArabic ? 'لا توجد نماذج للتصدير.' : 'No variants to export.',
+        ),
+      );
+      return;
+    }
+
+    final exportedPaths = <String>[];
+    for (final variant in state.generatedVariants) {
+      final quizDocPath = await _docxExportService.exportQuizPaper(
+        quiz: quiz,
+        variant: variant,
+        teacherName: teacherName,
+        schoolName: schoolName,
+        exportLanguageCode: exportLanguageCode,
+        optionLabelStyle: optionLabelStyle,
+      );
+      final solutionDocPath = await _docxExportService.exportSolutions(
+        quiz: quiz,
+        variant: variant,
+        exportLanguageCode: exportLanguageCode,
+        optionLabelStyle: optionLabelStyle,
+      );
+      exportedPaths
+        ..add(quizDocPath)
+        ..add(solutionDocPath);
+    }
+
+    const previewLimit = 6;
+    final shownPaths = exportedPaths.take(previewLimit).join('\n');
+    final hiddenCount = exportedPaths.length - previewLimit;
+    // Simplified Arabic singular/plural handling for compact snackbar text.
+    final arabicHiddenLabel = hiddenCount == 1 ? 'ملف إضافي' : 'ملفات إضافية';
+    final hiddenSuffix = hiddenCount > 0
+        ? (_isArabic ? '\n... و$hiddenCount $arabicHiddenLabel.' : '\n... and $hiddenCount more file(s).')
+        : '';
+
+    emit(
+      state.copyWith(
+        message: _isArabic
+            ? 'تم تصدير جميع النماذج (${state.generatedVariants.length}) بعدد ملفات ${exportedPaths.length}:\n$shownPaths$hiddenSuffix'
+            : 'Exported all variants (${state.generatedVariants.length}) with ${exportedPaths.length} files:\n$shownPaths$hiddenSuffix',
+      ),
+    );
   }
 
   Future<void> exportVariantToGoogleForms(GeneratedVariant variant) async {
