@@ -154,6 +154,8 @@ class AppStrings {
         return ar ? 'صفحتي على GitHub' : 'My GitHub page';
       case 'linkedinProfile':
         return ar ? 'حسابي على LinkedIn' : 'My LinkedIn profile';
+      case 'telegramProfile':
+        return ar ? 'حسابي على Telegram' : 'My Telegram account';
       case 'openLinkError':
         return ar ? 'تعذر فتح الرابط الآن.' : 'Unable to open the link right now.';
       case 'quizEditorTab':

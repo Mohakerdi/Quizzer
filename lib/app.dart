@@ -67,7 +67,8 @@ class QuizMakerHome extends StatefulWidget {
 class _QuizMakerHomeState extends State<QuizMakerHome> {
   static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
   static const _githubUrl = 'https://github.com/Mohakerdi';
-  static const _linkedinUrl = 'https://www.linkedin.com/in/mohakerdi/';
+  static const _linkedinUrl = 'https://www.linkedin.com/in/mohammad-kerdi-733126364';
+  static const _telegramUrl = 'https://t.me/MOHA_KRDI';
   final GlobalKey _languageButtonKey = GlobalKey();
   final GlobalKey _newQuizFabKey = GlobalKey();
   final GlobalKey _questionBankTabKey = GlobalKey();
@@ -305,6 +306,11 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
               onPressed: () => _openExternalUrl(context, _linkedinUrl),
               icon: const Icon(Icons.open_in_new, size: 18),
               label: Text(AppStrings.tr(context, 'linkedinProfile')),
+            ),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _telegramUrl),
+              icon: const Icon(Icons.telegram, size: 18),
+              label: Text(AppStrings.tr(context, 'telegramProfile')),
             ),
           ],
         ),
