@@ -35,7 +35,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 
 - Quizzes and generated variants are persisted locally via `shared_preferences`.
 - Question Bank is persisted independently from quizzes via `shared_preferences`.
-- Questions copied from Question Bank into a quiz keep a source-link so deleting a bank question removes linked quiz questions.
+- Deleting a question from Question Bank does not remove existing copied questions from quizzes.
 
 ## Architecture notes
 

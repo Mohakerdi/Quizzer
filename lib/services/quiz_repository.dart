@@ -85,34 +85,6 @@ class QuizRepository {
     final questionBank = await loadQuestionBank();
     final keptBank = questionBank.where((q) => q.id != bankQuestionId).toList();
     await saveQuestionBank(keptBank);
-
-    final quizzes = await loadQuizzes();
-    var hasQuizChanges = false;
-    final now = DateTime.now();
-    final updatedQuizzes = quizzes.map((quiz) {
-      final keptQuestions = quiz.questions
-          .where((question) => question.sourceBankQuestionId != bankQuestionId)
-          .toList();
-      if (keptQuestions.length == quiz.questions.length) {
-        return quiz;
-      }
-      hasQuizChanges = true;
-      return quiz.copyWith(
-        questions: keptQuestions,
-        version: quiz.version + 1,
-        updatedAt: now,
-      );
-    }).toList();
-
-    if (!hasQuizChanges) {
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _quizzesKey,
-      jsonEncode(updatedQuizzes.map((q) => q.toJson()).toList()),
-    );
   }
 
   Future<Map<String, List<GeneratedVariant>>> _loadAllVariants() async {

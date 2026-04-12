@@ -216,28 +216,10 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
 
   Future<void> deleteQuestionFromQuestionBank(String bankQuestionId) async {
     await _repository.deleteQuestionBankQuestion(bankQuestionId);
-    final quizzes = await _repository.loadQuizzes();
     final questionBank = await _repository.loadQuestionBank();
-
-    QuizModel? selected;
-    final selectedQuizId = state.selectedQuiz?.id;
-    if (selectedQuizId != null) {
-      for (final quiz in quizzes) {
-        if (quiz.id == selectedQuizId) {
-          selected = quiz;
-          break;
-        }
-      }
-    }
-    selected ??= quizzes.isNotEmpty ? quizzes.first : null;
-
-    final variants = selected == null ? <GeneratedVariant>[] : await _repository.loadVariantsForQuiz(selected.id);
     emit(
       state.copyWith(
-        quizzes: quizzes,
         questionBank: questionBank,
-        selectedQuiz: selected,
-        generatedVariants: variants,
         message: _isArabic ? 'تم حذف السؤال من بنك الأسئلة.' : 'Question deleted from question bank.',
       ),
     );

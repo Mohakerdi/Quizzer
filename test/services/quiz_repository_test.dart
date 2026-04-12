@@ -39,7 +39,7 @@ void main() {
       expect(remainingBank.map((q) => q.id), contains('bank-q1'));
     });
 
-    test('deleting a bank question removes linked questions from quizzes', () async {
+    test('deleting a bank question does not remove linked questions from quizzes', () async {
       SharedPreferences.setMockInitialValues({});
       final repository = QuizRepository();
       final now = DateTime.now();
@@ -89,7 +89,7 @@ void main() {
       final quizzes = await repository.loadQuizzes();
       final updatedQuiz = quizzes.singleWhere((quiz) => quiz.id == 'quiz-1');
       final questionIds = updatedQuiz.questions.map((q) => q.id).toList();
-      expect(questionIds, isNot(contains('quiz-q1')));
+      expect(questionIds, contains('quiz-q1'));
       expect(questionIds, contains('quiz-q2'));
     });
   });
