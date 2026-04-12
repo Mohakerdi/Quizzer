@@ -372,20 +372,21 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   QuizQuestion _cloneQuestionWithNewIds(QuizQuestion source) {
+    const uuid = Uuid();
     final optionIdMap = <String, String>{
-      for (final option in source.options) option.id: const Uuid().v4(),
+      for (final option in source.options) option.id: uuid.v4(),
     };
     final clonedOptions = source.options
         .map(
           (option) => QuestionOption(
-            id: optionIdMap[option.id] ?? const Uuid().v4(),
+            id: optionIdMap[option.id]!,
             text: option.text,
             math: option.math,
           ),
         )
         .toList();
     return source.copyWith(
-      id: const Uuid().v4(),
+      id: uuid.v4(),
       options: clonedOptions,
       correctOptionId: optionIdMap[source.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
     );
