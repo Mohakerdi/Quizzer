@@ -373,6 +373,15 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
 
   QuizQuestion _cloneQuestionWithNewIds(QuizQuestion source) {
     const uuid = Uuid();
+    if (source.options.isEmpty) {
+      final fallbackOption = QuestionOption(id: uuid.v4(), text: '');
+      return source.copyWith(
+        id: uuid.v4(),
+        options: [fallbackOption],
+        correctOptionId: fallbackOption.id,
+      );
+    }
+
     final optionIdMap = <String, String>{
       for (final option in source.options) option.id: uuid.v4(),
     };

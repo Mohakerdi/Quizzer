@@ -364,11 +364,18 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
         ..add(solutionDocPath);
     }
 
+    const previewLimit = 6;
+    final shownPaths = exportedPaths.take(previewLimit).join('\n');
+    final hiddenCount = exportedPaths.length - previewLimit;
+    final hiddenSuffix = hiddenCount > 0
+        ? (_isArabic ? '\n... و$hiddenCount ملف إضافي.' : '\n... and $hiddenCount more file(s).')
+        : '';
+
     emit(
       state.copyWith(
         message: _isArabic
-            ? 'تم تصدير جميع النماذج (${state.generatedVariants.length}):\n${exportedPaths.join('\n')}'
-            : 'Exported all variants (${state.generatedVariants.length}):\n${exportedPaths.join('\n')}',
+            ? 'تم تصدير جميع النماذج (${state.generatedVariants.length}) بعدد ملفات ${exportedPaths.length}:\n$shownPaths$hiddenSuffix'
+            : 'Exported all variants (${state.generatedVariants.length}) with ${exportedPaths.length} files:\n$shownPaths$hiddenSuffix',
       ),
     );
   }
