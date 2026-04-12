@@ -16,7 +16,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 3. **Question Bank**
    - Question bank is stored independently from quizzes.
    - Delete quizzes without losing bank questions.
-   - Delete bank questions; linked questions in quizzes created from the bank are removed automatically.
+   - Delete bank questions without changing already copied quiz questions.
 4. **Math-friendly authoring**
    - GeoGebra-like math keyboard input (`math_keyboard` package).
    - Live LaTeX preview for math expressions.

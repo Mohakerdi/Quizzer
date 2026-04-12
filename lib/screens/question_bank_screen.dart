@@ -131,11 +131,11 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                 onPressed: _selectedQuestionIds.isEmpty
                     ? null
                     : () async {
-                         final selectedQuestions = widget.questions
-                             .where((question) => _selectedQuestionIds.contains(question.id))
-                             .toList();
-                         await widget.onCreateQuizFromSelection(selectedQuestions);
-                       },
+                        final selectedQuestions = widget.questions
+                            .where((question) => _selectedQuestionIds.contains(question.id))
+                            .toList();
+                        await widget.onCreateQuizFromSelection(selectedQuestions);
+                      },
                 icon: const Icon(Icons.auto_awesome),
                 label: Text(AppStrings.tr(context, 'createQuizFromSelection')),
               ),
