@@ -411,6 +411,42 @@ void main() {
     expect(quizXml, isNot(contains(r'$$')));
   });
 
+  test('renders inline $$math$$ as Word equation objects when enabled', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V5',
+      quizId: quiz.id,
+      seed: 6,
+      generatedAt: DateTime(2026),
+      questions: [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: r'Compute $$\frac{1}{2}$$ then $$\sqrt{9}$$',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: const [
+            QuestionOption(id: 'o1', text: r'$$x^2$$ and $$\pi$$'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final quizXml = service.buildQuizDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      renderEquationsAsWordMath: true,
+    );
+
+    expect('<m:oMath>'.allMatches(quizXml).length, equals(4));
+    expect(quizXml, contains(r'<m:t>\frac{1}{2}</m:t>'));
+    expect(quizXml, contains(r'<m:t>\sqrt{9}</m:t>'));
+    expect(quizXml, contains(r'<m:t>x^2</m:t>'));
+    expect(quizXml, contains(r'<m:t>\pi</m:t>'));
+    expect(quizXml, isNot(contains('{{EQ:')));
+  });
+
   test('normalizes indexed roots in inline equations for export', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(

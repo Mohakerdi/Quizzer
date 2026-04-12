@@ -31,7 +31,8 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 8. **Export DOCX**
      - Export question paper DOCX (table-based layout).
      - Export solutions DOCX using the same layout, with correct options highlighted.
-     - Math text is exported in formula-style plain math output (not raw LaTeX markers).
+     - Inline `$$...$$` math is exported as Word equation objects in DOCX.
+     - Non-delimited math text is exported as normalized plain math text.
 
 ## Persistence
 

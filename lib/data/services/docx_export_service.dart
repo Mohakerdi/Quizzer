@@ -20,14 +20,6 @@ class DocxExportService {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
-  static const int _inlineEquationWidthEmu = 2600000;
-  static const int _inlineEquationHeightEmu = 700000;
-  static const String _emptyEquationPlaceholder = '?';
-  static const int _equationSvgWidth = 1200;
-  static const int _equationSvgHeight = 80;
-  static const int _equationSvgTextX = 8;
-  static const int _equationSvgTextY = 52;
-  static const int _equationSvgFontSize = 34;
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
@@ -38,7 +30,7 @@ class DocxExportService {
     String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
-    final equationRegistry = _EquationAssetRegistry(startIndex: imageAssetsByQuestion.length + 1);
+    final equationRegistry = _EquationAssetRegistry();
     final content = _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
@@ -49,7 +41,7 @@ class DocxExportService {
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
       equationRegistry: equationRegistry,
-      renderEquationsAsSvgFallback: true,
+      renderEquationsAsWordMath: true,
     );
     return _writeDocx(
       _buildExportFileName(
@@ -58,7 +50,7 @@ class DocxExportService {
         exportType: 'quiz',
       ),
       content,
-      imageAssets: [...imageAssetsByQuestion.values, ...equationRegistry.assets],
+      imageAssets: [...imageAssetsByQuestion.values],
     );
   }
 
@@ -69,7 +61,7 @@ class DocxExportService {
     String? optionLabelStyle,
   }) async {
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
-    final equationRegistry = _EquationAssetRegistry(startIndex: imageAssetsByQuestion.length + 1);
+    final equationRegistry = _EquationAssetRegistry();
     final content = _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
@@ -78,7 +70,7 @@ class DocxExportService {
       imageAssetsByQuestion: imageAssetsByQuestion,
       includeImagePathFallback: true,
       equationRegistry: equationRegistry,
-      renderEquationsAsSvgFallback: true,
+      renderEquationsAsWordMath: true,
     );
     return _writeDocx(
       _buildExportFileName(
@@ -87,7 +79,7 @@ class DocxExportService {
         exportType: 'answer',
       ),
       content,
-      imageAssets: [...imageAssetsByQuestion.values, ...equationRegistry.assets],
+      imageAssets: [...imageAssetsByQuestion.values],
     );
   }
 
@@ -138,8 +130,9 @@ class DocxExportService {
     String? schoolName,
     String? exportLanguageCode,
     String? optionLabelStyle,
+    bool renderEquationsAsWordMath = false,
   }) {
-    final equationRegistry = _EquationAssetRegistry(startIndex: 1);
+    final equationRegistry = _EquationAssetRegistry();
     return _buildQuizDocumentXml(
       quiz: quiz,
       variant: variant,
@@ -150,7 +143,7 @@ class DocxExportService {
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
       equationRegistry: equationRegistry,
-      renderEquationsAsSvgFallback: false,
+      renderEquationsAsWordMath: renderEquationsAsWordMath,
     );
   }
 
@@ -196,7 +189,7 @@ class DocxExportService {
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
     required _EquationAssetRegistry equationRegistry,
-    required bool renderEquationsAsSvgFallback,
+    required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
     final isRtl = exportInArabic || _containsArabic(
@@ -230,14 +223,14 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
-      final encodedPrompt = renderEquationsAsSvgFallback
+      final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
               question.text,
               keyPrefix: 'q_${i}_prompt',
             )
           : _normalizeTextForExport(question.text);
       final prompt = StringBuffer(
-        renderEquationsAsSvgFallback ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
+        renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
@@ -252,7 +245,7 @@ class DocxExportService {
               colSpan: 3,
               rtl: isRtl,
               imageRelationshipId: imageAsset?.relationshipId,
-              equationAssetsByToken: equationRegistry.assetsByToken,
+              equationTextByToken: equationRegistry.textByToken,
             ),
           ], isRtl),
         ),
@@ -269,13 +262,13 @@ class DocxExportService {
         final option = question.options[index];
         final optionText = _normalizeTextForExport(option.text);
         final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
-        final encodedOption = renderEquationsAsSvgFallback
+        final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'q_${i}_option_$index')
             : optionContent;
         return _cell(
-          renderEquationsAsSvgFallback ? _normalizeTextForExport(encodedOption) : encodedOption,
+          renderEquationsAsWordMath ? _normalizeTextForExport(encodedOption) : encodedOption,
           rtl: isRtl,
-          equationAssetsByToken: equationRegistry.assetsByToken,
+          equationTextByToken: equationRegistry.textByToken,
         );
       });
 
@@ -295,8 +288,9 @@ class DocxExportService {
     required GeneratedVariant variant,
     String? exportLanguageCode,
     String? optionLabelStyle,
+    bool renderEquationsAsWordMath = false,
   }) {
-    final equationRegistry = _EquationAssetRegistry(startIndex: 1);
+    final equationRegistry = _EquationAssetRegistry();
     return _buildSolutionsDocumentXml(
       quiz: quiz,
       variant: variant,
@@ -305,7 +299,7 @@ class DocxExportService {
       imageAssetsByQuestion: const {},
       includeImagePathFallback: true,
       equationRegistry: equationRegistry,
-      renderEquationsAsSvgFallback: false,
+      renderEquationsAsWordMath: renderEquationsAsWordMath,
     );
   }
 
@@ -317,7 +311,7 @@ class DocxExportService {
     required Map<int, _EmbeddedImageAsset> imageAssetsByQuestion,
     required bool includeImagePathFallback,
     required _EquationAssetRegistry equationRegistry,
-    required bool renderEquationsAsSvgFallback,
+    required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
     final isRtl = exportInArabic || _containsArabic(
@@ -339,14 +333,14 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
-      final encodedPrompt = renderEquationsAsSvgFallback
+      final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
               question.text,
               keyPrefix: 'a_${i}_prompt',
             )
           : _normalizeTextForExport(question.text);
       final prompt = StringBuffer(
-        renderEquationsAsSvgFallback ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
+        renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
       if (imageAsset == null && includeImagePathFallback && question.imageRef.trim().isNotEmpty) {
         prompt.write('\n[${exportInArabic ? 'صورة' : 'Image'}: ${question.imageRef.trim()}]');
@@ -361,7 +355,7 @@ class DocxExportService {
               colSpan: 3,
               rtl: isRtl,
               imageRelationshipId: imageAsset?.relationshipId,
-              equationAssetsByToken: equationRegistry.assetsByToken,
+              equationTextByToken: equationRegistry.textByToken,
             ),
           ], isRtl),
         ),
@@ -380,15 +374,15 @@ class DocxExportService {
         final isCorrect = option.id == question.correctOptionId;
         final optionText = _normalizeTextForExport(option.text);
         final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
-        final encodedOption = renderEquationsAsSvgFallback
+        final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'a_${i}_option_$index')
             : optionContent;
         return _cell(
-          renderEquationsAsSvgFallback ? _normalizeTextForExport(encodedOption) : encodedOption,
+          renderEquationsAsWordMath ? _normalizeTextForExport(encodedOption) : encodedOption,
           rtl: isRtl,
           bold: isCorrect,
           fillColor: isCorrect ? 'C6EFCE' : null,
-          equationAssetsByToken: equationRegistry.assetsByToken,
+          equationTextByToken: equationRegistry.textByToken,
         );
       });
 
@@ -471,7 +465,7 @@ class DocxExportService {
     String align = 'left',
     bool rtl = false,
     String? imageRelationshipId,
-    Map<String, _EmbeddedImageAsset> equationAssetsByToken = const {},
+    Map<String, String> equationTextByToken = const {},
   }) {
     final merged = colSpan > 1 ? '<w:gridSpan w:val="$colSpan"/>' : '';
     final shading = fillColor == null ? '' : '<w:shd w:val="clear" w:fill="$fillColor"/>';
@@ -482,7 +476,7 @@ class DocxExportService {
       text,
       bold: bold,
       rtl: rtl,
-      equationAssetsByToken: equationAssetsByToken,
+      equationTextByToken: equationTextByToken,
     );
     final bidi = rtl ? '<w:bidi/>' : '';
     final imageParagraphJc = rtl ? 'right' : 'center';
@@ -521,13 +515,13 @@ class DocxExportService {
     String text, {
     required bool bold,
     required bool rtl,
-    required Map<String, _EmbeddedImageAsset> equationAssetsByToken,
+    required Map<String, String> equationTextByToken,
   }) {
     return _paragraphRuns(
       text,
       bold: bold,
       rtl: rtl,
-      equationAssetsByToken: equationAssetsByToken,
+      equationTextByToken: equationTextByToken,
     );
   }
 
@@ -585,45 +579,11 @@ class DocxExportService {
 </w:drawing>''';
   }
 
-  String _inlineImageDrawingXml(String relationshipId) {
-    final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
-    return '''<w:drawing>
-  <wp:inline distT="0" distB="0" distL="0" distR="0">
-    <wp:extent cx="$_inlineEquationWidthEmu" cy="$_inlineEquationHeightEmu"/>
-    <wp:docPr id="$imageId" name="Equation$imageId"/>
-    <wp:cNvGraphicFramePr>
-      <a:graphicFrameLocks noChangeAspect="1"/>
-    </wp:cNvGraphicFramePr>
-    <a:graphic>
-      <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
-        <pic:pic>
-          <pic:nvPicPr>
-            <pic:cNvPr id="$imageId" name="Equation$imageId"/>
-            <pic:cNvPicPr/>
-          </pic:nvPicPr>
-          <pic:blipFill>
-            <a:blip r:embed="$relationshipId"/>
-            <a:stretch><a:fillRect/></a:stretch>
-          </pic:blipFill>
-          <pic:spPr>
-            <a:xfrm>
-              <a:off x="0" y="0"/>
-              <a:ext cx="$_inlineEquationWidthEmu" cy="$_inlineEquationHeightEmu"/>
-            </a:xfrm>
-            <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          </pic:spPr>
-        </pic:pic>
-      </a:graphicData>
-    </a:graphic>
-  </wp:inline>
-</w:drawing>''';
-  }
-
   String _paragraphRuns(
     String text, {
     required bool bold,
     required bool rtl,
-    required Map<String, _EmbeddedImageAsset> equationAssetsByToken,
+    required Map<String, String> equationTextByToken,
   }) {
     final escapedLines = _escape(text).split('\n');
     final equationMarker = RegExp(r'\{\{EQ:([a-zA-Z0-9_]+)\}\}');
@@ -649,9 +609,9 @@ class DocxExportService {
           buffer.write('</w:r>');
         }
         final token = marker.group(1) ?? '';
-        final equationAsset = equationAssetsByToken[token];
-        if (equationAsset != null) {
-          buffer.write('<w:r>${_inlineImageDrawingXml(equationAsset.relationshipId)}</w:r>');
+        final equationText = equationTextByToken[token];
+        if (equationText != null && equationText.trim().isNotEmpty) {
+          buffer.write(_inlineWordEquationXml(equationText));
         } else {
           buffer.write('<w:r><w:t xml:space="preserve">${line.substring(marker.start, marker.end)}</w:t></w:r>');
         }
@@ -676,6 +636,10 @@ class DocxExportService {
       }
     }
     return buffer.toString();
+  }
+
+  String _inlineWordEquationXml(String value) {
+    return '<m:oMath><m:r><m:t>${_escape(value)}</m:t></m:r></m:oMath>';
   }
 
   String _escape(String value) {
@@ -1033,15 +997,11 @@ class _ParsedDataImage {
 }
 
 class _EquationAssetRegistry {
-  _EquationAssetRegistry({
-    required int startIndex,
-  }) : _nextImageIndex = startIndex;
+  _EquationAssetRegistry();
   static final RegExp _equationPattern = RegExp(r'\$\$(.+?)\$\$', dotAll: true);
 
-  int _nextImageIndex;
   int _nextTokenIndex = 1;
-  final List<_EmbeddedImageAsset> assets = <_EmbeddedImageAsset>[];
-  final Map<String, _EmbeddedImageAsset> assetsByToken = <String, _EmbeddedImageAsset>{};
+  final Map<String, String> textByToken = <String, String>{};
 
   String encodeText(
     String value, {
@@ -1062,21 +1022,9 @@ class _EquationAssetRegistry {
         cursor = match.end;
         continue;
       }
-      final readableEquation = FriendlyMathFormatter.format(rawEquation);
       final token = '${keyPrefix}_eq_$_nextTokenIndex';
-      final relationshipId = 'rIdImage$_nextImageIndex';
-      final targetPath = 'media/image$_nextImageIndex.svg';
-      final svg = _buildEquationSvg(readableEquation);
-      final asset = _EmbeddedImageAsset(
-        relationshipId: relationshipId,
-        targetPath: targetPath,
-        extension: '.svg',
-        bytes: Uint8List.fromList(utf8.encode(svg)),
-      );
-      assets.add(asset);
-      assetsByToken[token] = asset;
+      textByToken[token] = rawEquation;
       buffer.write('{{EQ:$token}}');
-      _nextImageIndex++;
       _nextTokenIndex++;
       cursor = match.end;
     }
@@ -1086,23 +1034,4 @@ class _EquationAssetRegistry {
     return buffer.toString();
   }
 
-  String _buildEquationSvg(String equation) {
-    final escaped = _escapeForSvg(
-      equation.isEmpty ? DocxExportService._emptyEquationPlaceholder : equation,
-    );
-    return '''
-<svg xmlns="http://www.w3.org/2000/svg" width="${DocxExportService._equationSvgWidth}" height="${DocxExportService._equationSvgHeight}" viewBox="0 0 ${DocxExportService._equationSvgWidth} ${DocxExportService._equationSvgHeight}">
-  <rect width="${DocxExportService._equationSvgWidth}" height="${DocxExportService._equationSvgHeight}" fill="white"/>
-  <text x="${DocxExportService._equationSvgTextX}" y="${DocxExportService._equationSvgTextY}" font-family="Cambria Math, Cambria, Times New Roman, serif" font-size="${DocxExportService._equationSvgFontSize}" fill="black">$escaped</text>
-</svg>''';
-  }
-
-  String _escapeForSvg(String value) {
-    return value
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&apos;');
-  }
 }
