@@ -367,8 +367,9 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     const previewLimit = 6;
     final shownPaths = exportedPaths.take(previewLimit).join('\n');
     final hiddenCount = exportedPaths.length - previewLimit;
+    final arabicHiddenLabel = hiddenCount == 1 ? 'ملف إضافي' : 'ملفات إضافية';
     final hiddenSuffix = hiddenCount > 0
-        ? (_isArabic ? '\n... و$hiddenCount ملف إضافي.' : '\n... and $hiddenCount more file(s).')
+        ? (_isArabic ? '\n... و$hiddenCount $arabicHiddenLabel.' : '\n... and $hiddenCount more file(s).')
         : '';
 
     emit(

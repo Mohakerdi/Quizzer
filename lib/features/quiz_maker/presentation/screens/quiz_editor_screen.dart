@@ -394,10 +394,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           ),
         )
         .toList();
+    final duplicatedCorrectOptionId =
+        optionIdMap[source.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : '');
     return source.copyWith(
       id: uuid.v4(),
       options: clonedOptions,
-      correctOptionId: optionIdMap[source.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
+      correctOptionId: duplicatedCorrectOptionId,
     );
   }
 
