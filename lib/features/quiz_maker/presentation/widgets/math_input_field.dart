@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_tex/flutter_tex.dart';
@@ -79,6 +80,10 @@ class _MathInputFieldState extends State<MathInputField> {
   @override
   Widget build(BuildContext context) {
     final latex = _value.trim();
+    final supportsTeXWebView =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -134,12 +139,13 @@ class _MathInputFieldState extends State<MathInputField> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: 90,
-                  child: TeXView(
-                    child: TeXViewDocument('\$\$$latex\$\$'),
+                if (supportsTeXWebView)
+                  SizedBox(
+                    height: 90,
+                    child: TeXView(
+                      child: TeXViewDocument('\$\$$latex\$\$'),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
