@@ -192,8 +192,9 @@ class DocxExportService {
     required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
-    final isRtl = exportInArabic || _containsArabic(
-      [
+    final isRtl = _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
         ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
@@ -223,12 +224,15 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
+      final promptSource = renderEquationsAsWordMath
+          ? _composeRawForWordMath(text: question.text, math: question.math)
+          : _composeForExport(text: question.text, math: question.math);
       final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
-              question.text,
+              promptSource,
               keyPrefix: 'q_${i}_prompt',
             )
-          : _normalizeTextForExport(question.text);
+          : promptSource;
       final prompt = StringBuffer(
         renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
@@ -260,8 +264,10 @@ class DocxExportService {
           return _cell('', rtl: isRtl);
         }
         final option = question.options[index];
-        final optionText = _normalizeTextForExport(option.text);
-        final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
+        final optionBody = renderEquationsAsWordMath
+            ? _composeRawForWordMath(text: option.text, math: option.math)
+            : _composeForExport(text: option.text, math: option.math);
+        final optionContent = optionBody.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionBody';
         final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'q_${i}_option_$index')
             : optionContent;
@@ -314,8 +320,9 @@ class DocxExportService {
     required bool renderEquationsAsWordMath,
   }) {
     final exportInArabic = _isArabicLanguageCode(exportLanguageCode);
-    final isRtl = exportInArabic || _containsArabic(
-      [
+    final isRtl = _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
         quiz.title,
         ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
         ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
@@ -333,12 +340,15 @@ class DocxExportService {
     for (var i = 0; i < variant.questions.length; i++) {
       final question = variant.questions[i];
       final imageAsset = imageAssetsByQuestion[i];
+      final promptSource = renderEquationsAsWordMath
+          ? _composeRawForWordMath(text: question.text, math: question.math)
+          : _composeForExport(text: question.text, math: question.math);
       final encodedPrompt = renderEquationsAsWordMath
           ? equationRegistry.encodeText(
-              question.text,
+              promptSource,
               keyPrefix: 'a_${i}_prompt',
             )
-          : _normalizeTextForExport(question.text);
+          : promptSource;
       final prompt = StringBuffer(
         renderEquationsAsWordMath ? _normalizeTextForExport(encodedPrompt) : encodedPrompt,
       );
@@ -372,8 +382,10 @@ class DocxExportService {
 
         final option = question.options[index];
         final isCorrect = option.id == question.correctOptionId;
-        final optionText = _normalizeTextForExport(option.text);
-        final optionContent = optionText.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionText';
+        final optionBody = renderEquationsAsWordMath
+            ? _composeRawForWordMath(text: option.text, math: option.math)
+            : _composeForExport(text: option.text, math: option.math);
+        final optionContent = optionBody.isEmpty ? '${labels[index]})' : '${labels[index]}) $optionBody';
         final encodedOption = renderEquationsAsWordMath
             ? equationRegistry.encodeText(optionContent, keyPrefix: 'a_${i}_option_$index')
             : optionContent;
@@ -926,6 +938,22 @@ class DocxExportService {
     return '$normalizedText  ($normalizedMath)';
   }
 
+  String _composeRawForWordMath({
+    required String text,
+    required String math,
+  }) {
+    final normalizedText = text.trim();
+    final normalizedMath = math.trim();
+    if (normalizedMath.isEmpty) {
+      return normalizedText;
+    }
+    final inlineMath = '\$\$$normalizedMath\$\$';
+    if (normalizedText.isEmpty) {
+      return inlineMath;
+    }
+    return '$normalizedText  ($inlineMath)';
+  }
+
   String _normalizeTextForExport(String text) {
     return FriendlyMathFormatter.format(text);
   }
@@ -933,6 +961,20 @@ class DocxExportService {
   bool _containsArabic(String value) {
     final arabicRange = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]');
     return arabicRange.hasMatch(value);
+  }
+
+  bool _isRtlLayout({
+    required String? exportLanguageCode,
+    required String fallbackContent,
+  }) {
+    final normalizedLanguageCode = (exportLanguageCode ?? '').trim().toLowerCase();
+    if (normalizedLanguageCode.startsWith('ar')) {
+      return true;
+    }
+    if (normalizedLanguageCode.startsWith('en')) {
+      return false;
+    }
+    return _containsArabic(fallbackContent);
   }
 
   bool _isArabicLanguageCode(String? languageCode) {
