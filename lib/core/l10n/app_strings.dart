@@ -142,6 +142,20 @@ class AppStrings {
         return ar ? 'الوضع الداكن' : 'Dark mode';
       case 'themeLight':
         return ar ? 'الوضع الفاتح' : 'Light mode';
+      case 'aboutInfo':
+        return ar ? 'معلومات' : 'Info';
+      case 'aboutTitle':
+        return ar ? 'رسالة قصيرة للمعلمين' : 'A quick note for teachers';
+      case 'aboutTeacherMessage':
+        return ar
+            ? 'شكرًا لجهودكم اليومية في تعليم طلابنا. نتمنى أن يساعدكم Quizzer في إعداد اختباراتكم بسرعة وراحة.'
+            : 'Thank you for your daily dedication to your students. We hope Quizzer helps you build assessments faster and with ease.';
+      case 'githubProfile':
+        return ar ? 'صفحتي على GitHub' : 'My GitHub page';
+      case 'linkedinProfile':
+        return ar ? 'حسابي على LinkedIn' : 'My LinkedIn profile';
+      case 'openLinkError':
+        return ar ? 'تعذر فتح الرابط الآن.' : 'Unable to open the link right now.';
       case 'quizEditorTab':
         return ar ? 'محرر الاختبار' : 'Quiz Editor';
       case 'questionBankTab':

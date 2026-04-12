@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:adv_basics/core/l10n/app_strings.dart';
 import 'package:adv_basics/core/theme/app_theme.dart';
@@ -65,6 +66,8 @@ class QuizMakerHome extends StatefulWidget {
 
 class _QuizMakerHomeState extends State<QuizMakerHome> {
   static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
+  static const _githubUrl = 'https://github.com/Mohakerdi';
+  static const _linkedinUrl = 'https://www.linkedin.com/in/mohakerdi/';
   final GlobalKey _languageButtonKey = GlobalKey();
   final GlobalKey _newQuizFabKey = GlobalKey();
   final GlobalKey _questionBankTabKey = GlobalKey();
@@ -271,6 +274,50 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
         );
   }
 
+  Future<void> _openExternalUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (launched || !context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'openLinkError'))));
+  }
+
+  Future<void> _showInfoDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'aboutTitle')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppStrings.tr(context, 'aboutTeacherMessage')),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _githubUrl),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(AppStrings.tr(context, 'githubProfile')),
+            ),
+            TextButton.icon(
+              onPressed: () => _openExternalUrl(context, _linkedinUrl),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(AppStrings.tr(context, 'linkedinProfile')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppStrings.tr(context, 'close')),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<QuizMakerCubit, QuizMakerState>(
@@ -338,6 +385,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
                 themeMode: state.themeMode,
                 onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
                 onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                onShowInfo: () => _showInfoDialog(context),
                 languageButtonKey: _languageButtonKey,
               ),
             ],
@@ -368,12 +416,14 @@ class _AppBarActions extends StatelessWidget {
     required this.themeMode,
     required this.onToggleTheme,
     required this.onSetLocale,
+    required this.onShowInfo,
     required this.languageButtonKey,
   });
 
   final ThemeMode themeMode;
   final VoidCallback onToggleTheme;
   final ValueChanged<Locale> onSetLocale;
+  final VoidCallback onShowInfo;
   final GlobalKey languageButtonKey;
 
   @override
@@ -395,6 +445,11 @@ class _AppBarActions extends StatelessWidget {
             PopupMenuItem(value: Locale('en'), child: Text('English')),
             PopupMenuItem(value: Locale('ar'), child: Text('العربية')),
           ],
+        ),
+        IconButton(
+          icon: const Icon(Icons.info_outline),
+          tooltip: AppStrings.tr(context, 'aboutInfo'),
+          onPressed: onShowInfo,
         ),
       ],
     );
