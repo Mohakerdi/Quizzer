@@ -1,7 +1,7 @@
-import 'package:adv_basics/models/quiz_model.dart';
-import 'package:adv_basics/models/quiz_question.dart';
-import 'package:adv_basics/models/question_option.dart';
-import 'package:adv_basics/services/editor_validator.dart';
+import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/data/models/quiz_question.dart';
+import 'package:adv_basics/data/models/question_option.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/editor_validator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

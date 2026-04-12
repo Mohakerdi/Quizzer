@@ -1,4 +1,4 @@
-import 'package:adv_basics/widgets/math_or_text.dart';
+import 'package:adv_basics/core/widgets/math_or_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

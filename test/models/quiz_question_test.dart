@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:adv_basics/models/question_option.dart';
-import 'package:adv_basics/models/quiz_question.dart';
+import 'package:adv_basics/data/models/question_option.dart';
+import 'package:adv_basics/data/models/quiz_question.dart';
 
 void main() {
   test('serializes and deserializes question bank metadata fields', () {

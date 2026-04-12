@@ -42,11 +42,11 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
 
 ## Architecture notes
 
-- The app follows an MVVM-style structure:
-  - **View**: `lib/screens/*`, `lib/widgets/*`, and `lib/app.dart`
-  - **ViewModel**: `lib/view_models/quiz_maker_cubit.dart`, `lib/view_models/quiz_maker_state.dart`
-  - **Model**: `lib/models/*`
-  - **Data/Services**: `lib/services/*`
+- The app follows a cleaner MVVM-style structure with top-level layers:
+  - **Core**: `lib/core/*` (shared l10n, theme, utils, reusable widgets)
+  - **Data**: `lib/data/models/*`, `lib/data/repositories/*`, `lib/data/services/*`
+  - **Features**: `lib/features/*` (feature-focused application/domain/presentation files)
+  - **App shell**: `lib/main.dart`, `lib/app.dart`
 - Recent refactor highlights:
   - Extracted home UI sections into focused widgets for cleaner View composition.
   - Reduced unnecessary root rebuilds by selecting only locale/theme for `MaterialApp`.
