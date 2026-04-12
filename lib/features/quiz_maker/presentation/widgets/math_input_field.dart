@@ -67,6 +67,11 @@ class _MathInputFieldState extends State<MathInputField> {
     _onValueChanged(updated);
   }
 
+  bool get _supportsTeXWebView =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
   Widget _buildKeyboardButton({
     required String label,
     required String latex,
@@ -80,10 +85,6 @@ class _MathInputFieldState extends State<MathInputField> {
   @override
   Widget build(BuildContext context) {
     final latex = _value.trim();
-    final supportsTeXWebView =
-        !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -139,7 +140,7 @@ class _MathInputFieldState extends State<MathInputField> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (supportsTeXWebView)
+                if (_supportsTeXWebView)
                   SizedBox(
                     height: 90,
                     child: TeXView(
