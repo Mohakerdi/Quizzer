@@ -20,6 +20,14 @@ class DocxExportService {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
+  static const int _inlineEquationWidthEmu = 2600000;
+  static const int _inlineEquationHeightEmu = 700000;
+  static const String _emptyEquationPlaceholder = '?';
+  static const int _equationSvgWidth = 1200;
+  static const int _equationSvgHeight = 80;
+  static const int _equationSvgTextX = 8;
+  static const int _equationSvgTextY = 52;
+  static const int _equationSvgFontSize = 34;
 
   Future<String> exportQuizPaper({
     required QuizModel quiz,
@@ -578,12 +586,10 @@ class DocxExportService {
   }
 
   String _inlineImageDrawingXml(String relationshipId) {
-    const cx = 2600000;
-    const cy = 700000;
     final imageId = int.tryParse(relationshipId.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
     return '''<w:drawing>
   <wp:inline distT="0" distB="0" distL="0" distR="0">
-    <wp:extent cx="$cx" cy="$cy"/>
+    <wp:extent cx="$_inlineEquationWidthEmu" cy="$_inlineEquationHeightEmu"/>
     <wp:docPr id="$imageId" name="Equation$imageId"/>
     <wp:cNvGraphicFramePr>
       <a:graphicFrameLocks noChangeAspect="1"/>
@@ -602,7 +608,7 @@ class DocxExportService {
           <pic:spPr>
             <a:xfrm>
               <a:off x="0" y="0"/>
-              <a:ext cx="$cx" cy="$cy"/>
+              <a:ext cx="$_inlineEquationWidthEmu" cy="$_inlineEquationHeightEmu"/>
             </a:xfrm>
             <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
           </pic:spPr>
@@ -1081,11 +1087,13 @@ class _EquationAssetRegistry {
   }
 
   String _buildEquationSvg(String equation) {
-    final escaped = _escapeForSvg(equation.isEmpty ? '?' : equation);
+    final escaped = _escapeForSvg(
+      equation.isEmpty ? DocxExportService._emptyEquationPlaceholder : equation,
+    );
     return '''
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="80" viewBox="0 0 1200 80">
-  <rect width="1200" height="80" fill="white"/>
-  <text x="8" y="52" font-family="Cambria Math, Cambria, Times New Roman, serif" font-size="34" fill="black">$escaped</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="${DocxExportService._equationSvgWidth}" height="${DocxExportService._equationSvgHeight}" viewBox="0 0 ${DocxExportService._equationSvgWidth} ${DocxExportService._equationSvgHeight}">
+  <rect width="${DocxExportService._equationSvgWidth}" height="${DocxExportService._equationSvgHeight}" fill="white"/>
+  <text x="${DocxExportService._equationSvgTextX}" y="${DocxExportService._equationSvgTextY}" font-family="Cambria Math, Cambria, Times New Roman, serif" font-size="${DocxExportService._equationSvgFontSize}" fill="black">$escaped</text>
 </svg>''';
   }
 

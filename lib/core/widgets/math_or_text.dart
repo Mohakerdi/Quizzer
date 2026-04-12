@@ -22,8 +22,9 @@ class MathOrText extends StatelessWidget {
     if (raw.isEmpty) {
       return Text('', style: style, maxLines: maxLines, overflow: overflow);
     }
-    final equationPattern = RegExp(r'(?<!\\)\$\$(.+?)(?<!\\)\$\$', dotAll: true);
-    if (!equationPattern.hasMatch(raw)) {
+    final segments = _splitInlineEquations(raw);
+    final hasInlineEquations = segments.any((segment) => segment.isEquation);
+    if (!hasInlineEquations) {
       final text = FriendlyMathFormatter.format(raw).trim();
       final containsArabic = _containsArabic(text);
       return Text(
@@ -37,17 +38,12 @@ class MathOrText extends StatelessWidget {
     }
 
     final spans = <InlineSpan>[];
-    var cursor = 0;
-    for (final match in equationPattern.allMatches(raw)) {
-      if (match.start > cursor) {
-        final plainText = raw.substring(cursor, match.start).replaceAll(r'\$\$', r'$$');
-        final normalized = FriendlyMathFormatter.format(plainText);
-        if (normalized.isNotEmpty) {
-          spans.add(TextSpan(text: normalized, style: style));
+    for (final segment in segments) {
+      if (segment.isEquation) {
+        final latex = segment.value.trim();
+        if (latex.isEmpty) {
+          continue;
         }
-      }
-      final latex = (match.group(1) ?? '').trim();
-      if (latex.isNotEmpty) {
         spans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.middle,
@@ -58,12 +54,9 @@ class MathOrText extends StatelessWidget {
             ),
           ),
         );
+        continue;
       }
-      cursor = match.end;
-    }
-    if (cursor < raw.length) {
-      final tailText = raw.substring(cursor).replaceAll(r'\$\$', r'$$');
-      final normalized = FriendlyMathFormatter.format(tailText);
+      final normalized = FriendlyMathFormatter.format(segment.value.replaceAll(r'\$\$', r'$$'));
       if (normalized.isNotEmpty) {
         spans.add(TextSpan(text: normalized, style: style));
       }
@@ -84,4 +77,48 @@ class MathOrText extends StatelessWidget {
   bool _containsArabic(String value) {
     return RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]').hasMatch(value);
   }
+
+  List<_MathSegment> _splitInlineEquations(String source) {
+    final segments = <_MathSegment>[];
+    var cursor = 0;
+    while (cursor < source.length) {
+      final start = source.indexOf('$$', cursor);
+      if (start < 0) {
+        segments.add(_MathSegment(source.substring(cursor), isEquation: false));
+        break;
+      }
+      final escapedStart = start > 0 && source[start - 1] == '\\';
+      if (escapedStart) {
+        segments.add(_MathSegment(source.substring(cursor, start - 1), isEquation: false));
+        segments.add(const _MathSegment(r'$$', isEquation: false));
+        cursor = start + 2;
+        continue;
+      }
+      if (start > cursor) {
+        segments.add(_MathSegment(source.substring(cursor, start), isEquation: false));
+      }
+      final end = source.indexOf('$$', start + 2);
+      if (end < 0) {
+        segments.add(_MathSegment(source.substring(start), isEquation: false));
+        break;
+      }
+      final escapedEnd = end > 0 && source[end - 1] == '\\';
+      if (escapedEnd) {
+        segments.add(_MathSegment(source.substring(start, end - 1), isEquation: false));
+        segments.add(const _MathSegment(r'$$', isEquation: false));
+        cursor = end + 2;
+        continue;
+      }
+      segments.add(_MathSegment(source.substring(start + 2, end), isEquation: true));
+      cursor = end + 2;
+    }
+    return segments;
+  }
+}
+
+class _MathSegment {
+  const _MathSegment(this.value, {required this.isEquation});
+
+  final String value;
+  final bool isEquation;
 }

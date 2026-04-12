@@ -367,6 +367,7 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     const previewLimit = 6;
     final shownPaths = exportedPaths.take(previewLimit).join('\n');
     final hiddenCount = exportedPaths.length - previewLimit;
+    // Simplified Arabic singular/plural handling for compact snackbar text.
     final arabicHiddenLabel = hiddenCount == 1 ? 'ملف إضافي' : 'ملفات إضافية';
     final hiddenSuffix = hiddenCount > 0
         ? (_isArabic ? '\n... و$hiddenCount $arabicHiddenLabel.' : '\n... and $hiddenCount more file(s).')

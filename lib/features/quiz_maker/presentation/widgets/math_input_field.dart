@@ -99,7 +99,7 @@ class _MathInputFieldState extends State<MathInputField> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildKeyboardButton(label: r'\frac{}{}', latex: r'\frac{}{ }'),
+            _buildKeyboardButton(label: r'\frac{}{}', latex: r'\frac{}{}'),
             _buildKeyboardButton(label: r'\sqrt{}', latex: r'\sqrt{}'),
             _buildKeyboardButton(label: r'x^2', latex: r'^{ }'),
             _buildKeyboardButton(label: r'x_n', latex: r'_{ }'),

@@ -374,6 +374,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   QuizQuestion _cloneQuestionWithNewIds(QuizQuestion source) {
     const uuid = Uuid();
     if (source.options.isEmpty) {
+      // Defensive fallback so duplicated questions always remain valid/editable.
       final fallbackOption = QuestionOption(id: uuid.v4(), text: '');
       return source.copyWith(
         id: uuid.v4(),
