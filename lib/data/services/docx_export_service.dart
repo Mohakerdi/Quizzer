@@ -1036,6 +1036,7 @@ class _EquationAssetRegistry {
   _EquationAssetRegistry({
     required int startIndex,
   }) : _nextImageIndex = startIndex;
+  static final RegExp _equationPattern = RegExp(r'\$\$(.+?)\$\$', dotAll: true);
 
   int _nextImageIndex;
   int _nextTokenIndex = 1;
@@ -1046,14 +1047,13 @@ class _EquationAssetRegistry {
     String value, {
     required String keyPrefix,
   }) {
-    final pattern = RegExp(r'\$\$(.+?)\$\$', dotAll: true);
-    if (!pattern.hasMatch(value)) {
+    if (!_equationPattern.hasMatch(value)) {
       return value;
     }
 
     final buffer = StringBuffer();
     var cursor = 0;
-    for (final match in pattern.allMatches(value)) {
+    for (final match in _equationPattern.allMatches(value)) {
       if (match.start > cursor) {
         buffer.write(value.substring(cursor, match.start));
       }

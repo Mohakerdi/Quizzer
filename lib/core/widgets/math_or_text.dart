@@ -56,7 +56,8 @@ class MathOrText extends StatelessWidget {
         );
         continue;
       }
-      final normalized = FriendlyMathFormatter.format(segment.value.replaceAll(r'\$\$', r'$$'));
+      // Convert escaped delimiters back to literal "$$" for plain-text rendering.
+      final normalized = FriendlyMathFormatter.format(_unescapeEquationDelimiters(segment.value));
       if (normalized.isNotEmpty) {
         spans.add(TextSpan(text: normalized, style: style));
       }
@@ -113,6 +114,10 @@ class MathOrText extends StatelessWidget {
       cursor = end + 2;
     }
     return segments;
+  }
+
+  String _unescapeEquationDelimiters(String value) {
+    return value.replaceAll(r'\$\$', r'$$');
   }
 }
 

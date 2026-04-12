@@ -137,7 +137,7 @@ class _MathInputFieldState extends State<MathInputField> {
                 SizedBox(
                   height: 90,
                   child: TeXView(
-                    child: TeXViewDocument('$$$latex$$'),
+                    child: TeXViewDocument('\$\$$latex\$\$'),
                   ),
                 ),
               ],
