@@ -468,8 +468,8 @@ void main() {
       exportType: 'answers',
     );
 
-    expect(questionsName, 'algebra_final_exam_v7_v2_questions.docx');
-    expect(answersName, 'algebra_final_exam_v7_v2_answers.docx');
+    expect(questionsName, 'algebra_final_exam_v7_v2_quiz.docx');
+    expect(answersName, 'algebra_final_exam_v7_v2_answer.docx');
   });
 
   test('builds anchored square-wrapped image drawing XML for DOCX export', () {

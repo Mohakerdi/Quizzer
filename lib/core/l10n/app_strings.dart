@@ -58,6 +58,8 @@ class AppStrings {
         return ar ? 'معاينة' : 'Preview';
       case 'exportDocx':
         return ar ? 'تصدير DOCX' : 'Export DOCX';
+      case 'exportAllDocx':
+        return ar ? 'تصدير كل النماذج' : 'Export all DOCX';
       case 'docxExportDetails':
         return ar ? 'تفاصيل رأس مستند DOCX' : 'DOCX header details';
       case 'teacherName':
@@ -188,6 +190,8 @@ class AppStrings {
         return ar ? 'إضافة إلى بنك الأسئلة' : 'Add to question bank';
       case 'deleteQuestionFromBank':
         return ar ? 'حذف من بنك الأسئلة' : 'Delete from question bank';
+      case 'duplicateQuestion':
+        return ar ? 'نسخ السؤال' : 'Duplicate question';
       case 'tutorialSkip':
         return ar ? 'تخطي' : 'Skip';
       case 'tutorialWelcomeTitle':

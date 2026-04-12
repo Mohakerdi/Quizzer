@@ -9,11 +9,13 @@ class QuestionBankScreen extends StatefulWidget {
     super.key,
     required this.questions,
     required this.onCreateQuizFromSelection,
+    required this.onDuplicateQuestion,
     required this.onDeleteQuestion,
   });
 
   final List<QuizQuestion> questions;
   final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromSelection;
+  final Future<void> Function(QuizQuestion question) onDuplicateQuestion;
   final Future<void> Function(QuizQuestion question) onDeleteQuestion;
 
   @override
@@ -170,22 +172,34 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                              '${AppStrings.tr(context, 'curriculum')}: ${question.curriculum.isEmpty ? '-' : question.curriculum}',
                            ),
                            isThreeLine: true,
-                           trailing: IconButton(
-                             tooltip: AppStrings.tr(context, 'deleteQuestionFromBank'),
-                             icon: const Icon(Icons.delete_outline),
-                             onPressed: () async {
-                               await widget.onDeleteQuestion(question);
-                               if (!mounted) {
-                                 return;
-                               }
-                               setState(() {
-                                 _selectedQuestionIds.remove(question.id);
-                               });
-                             },
-                           ),
-                         ),
-                       );
-                     },
+                            trailing: Wrap(
+                              spacing: 4,
+                              children: [
+                                IconButton(
+                                  tooltip: AppStrings.tr(context, 'duplicateQuestion'),
+                                  icon: const Icon(Icons.copy),
+                                  onPressed: () async {
+                                    await widget.onDuplicateQuestion(question);
+                                  },
+                                ),
+                                IconButton(
+                                  tooltip: AppStrings.tr(context, 'deleteQuestionFromBank'),
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () async {
+                                    await widget.onDeleteQuestion(question);
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      _selectedQuestionIds.remove(question.id);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                   ),
           ),
         ],

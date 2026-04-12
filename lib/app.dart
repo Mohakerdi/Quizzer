@@ -521,27 +521,38 @@ class _HomeWorkspace extends StatelessWidget {
                               onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
                               onGenerateVariants: onGenerateVariants,
                               onPreviewVariant: onPreviewVariant,
-                              onExportVariant:
-                                  (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
-                                  .read<QuizMakerCubit>()
-                                  .exportVariant(
+                               onExportVariant:
+                                   (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
+                                   .read<QuizMakerCubit>()
+                                   .exportVariant(
                                     variant,
                                     teacherName: teacherName,
                                     schoolName: schoolName,
-                                    exportLanguageCode: exportLanguageCode,
-                                    optionLabelStyle: optionLabelStyle,
-                                  ),
-                              onExportGoogleForms:
-                                  (variant) => context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
-                              onAddQuestionToBank:
-                                  (question) => context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
-                            ),
-                      QuestionBankScreen(
-                        questions: state.questionBank,
-                        onCreateQuizFromSelection: onCreateQuizFromBankSelection,
-                        onDeleteQuestion: (question) =>
-                            context.read<QuizMakerCubit>().deleteQuestionFromQuestionBank(question.id),
-                      ),
+                                     exportLanguageCode: exportLanguageCode,
+                                     optionLabelStyle: optionLabelStyle,
+                                   ),
+                               onExportAllVariants:
+                                   ({teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
+                                   .read<QuizMakerCubit>()
+                                   .exportAllVariants(
+                                     teacherName: teacherName,
+                                     schoolName: schoolName,
+                                     exportLanguageCode: exportLanguageCode,
+                                     optionLabelStyle: optionLabelStyle,
+                                   ),
+                               onExportGoogleForms:
+                                   (variant) => context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
+                               onAddQuestionToBank:
+                                   (question) => context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
+                             ),
+                       QuestionBankScreen(
+                         questions: state.questionBank,
+                         onCreateQuizFromSelection: onCreateQuizFromBankSelection,
+                         onDuplicateQuestion:
+                             (question) => context.read<QuizMakerCubit>().duplicateQuestionInQuestionBank(question),
+                         onDeleteQuestion: (question) =>
+                             context.read<QuizMakerCubit>().deleteQuestionFromQuestionBank(question.id),
+                       ),
                     ],
                   ),
                 ),

@@ -44,7 +44,7 @@ class DocxExportService {
       _buildExportFileName(
         quiz: quiz,
         variant: variant,
-        exportType: 'questions',
+        exportType: 'quiz',
       ),
       content,
       imageAssets: imageAssetsByQuestion.values.toList(),
@@ -70,7 +70,7 @@ class DocxExportService {
       _buildExportFileName(
         quiz: quiz,
         variant: variant,
-        exportType: 'answers',
+        exportType: 'answer',
       ),
       content,
       imageAssets: imageAssetsByQuestion.values.toList(),

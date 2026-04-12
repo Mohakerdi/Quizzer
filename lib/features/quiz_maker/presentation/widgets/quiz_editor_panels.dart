@@ -59,6 +59,7 @@ class QuizQuestionsPanel extends StatelessWidget {
     required this.onEditQuestion,
     required this.onRemoveQuestion,
     required this.onAddQuestionToBank,
+    required this.onDuplicateQuestion,
   });
 
   final List<QuizQuestion> questions;
@@ -66,6 +67,7 @@ class QuizQuestionsPanel extends StatelessWidget {
   final void Function(int index) onEditQuestion;
   final void Function(int index) onRemoveQuestion;
   final void Function(int index) onAddQuestionToBank;
+  final void Function(int index) onDuplicateQuestion;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +121,11 @@ class QuizQuestionsPanel extends StatelessWidget {
                       onPressed: () => onEditQuestion(index),
                     ),
                     IconButton(
+                      tooltip: AppStrings.tr(context, 'duplicateQuestion'),
+                      icon: const Icon(Icons.copy),
+                      onPressed: () => onDuplicateQuestion(index),
+                    ),
+                    IconButton(
                       tooltip: AppStrings.tr(context, 'addToQuestionBank'),
                       icon: const Icon(Icons.library_add),
                       onPressed: () => onAddQuestionToBank(index),
@@ -144,12 +151,14 @@ class GeneratedVariantsPanel extends StatelessWidget {
     required this.generatedVariants,
     required this.onPreviewVariant,
     required this.onExportVariant,
+    required this.onExportAllVariants,
     required this.onExportGoogleForms,
   });
 
   final List<GeneratedVariant> generatedVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(GeneratedVariant variant) onExportVariant;
+  final Future<void> Function() onExportAllVariants;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
 
   @override
@@ -160,7 +169,21 @@ class GeneratedVariantsPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(AppStrings.tr(context, 'generatedVariantsTitle'), style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    AppStrings.tr(context, 'generatedVariantsTitle'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: generatedVariants.isEmpty ? null : onExportAllVariants,
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                  label: Text(AppStrings.tr(context, 'exportAllDocx')),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: generatedVariants.isEmpty

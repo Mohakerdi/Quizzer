@@ -225,6 +225,17 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
   }
 
+  Future<void> duplicateQuestionInQuestionBank(QuizQuestion question) async {
+    final duplicated = _cloneQuestionForBank(question);
+    final saved = await _repository.upsertQuestionBankQuestion(duplicated);
+    emit(
+      state.copyWith(
+        questionBank: [...state.questionBank, saved],
+        message: _isArabic ? 'تم نسخ السؤال في بنك الأسئلة.' : 'Question duplicated in question bank.',
+      ),
+    );
+  }
+
   Future<void> selectQuiz(QuizModel quiz) async {
     final variants = await _repository.loadVariantsForQuiz(quiz.id);
     emit(
@@ -311,6 +322,55 @@ class QuizMakerCubit extends Cubit<QuizMakerState> {
     );
 
     emit(state.copyWith(message: 'Exported:\n$quizDocPath\n$solutionDocPath'));
+  }
+
+  Future<void> exportAllVariants({
+    String? teacherName,
+    String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
+  }) async {
+    final quiz = state.selectedQuiz;
+    if (quiz == null) {
+      return;
+    }
+    if (state.generatedVariants.isEmpty) {
+      emit(
+        state.copyWith(
+          message: _isArabic ? 'لا توجد نماذج للتصدير.' : 'No variants to export.',
+        ),
+      );
+      return;
+    }
+
+    final exportedPaths = <String>[];
+    for (final variant in state.generatedVariants) {
+      final quizDocPath = await _docxExportService.exportQuizPaper(
+        quiz: quiz,
+        variant: variant,
+        teacherName: teacherName,
+        schoolName: schoolName,
+        exportLanguageCode: exportLanguageCode,
+        optionLabelStyle: optionLabelStyle,
+      );
+      final solutionDocPath = await _docxExportService.exportSolutions(
+        quiz: quiz,
+        variant: variant,
+        exportLanguageCode: exportLanguageCode,
+        optionLabelStyle: optionLabelStyle,
+      );
+      exportedPaths
+        ..add(quizDocPath)
+        ..add(solutionDocPath);
+    }
+
+    emit(
+      state.copyWith(
+        message: _isArabic
+            ? 'تم تصدير جميع النماذج (${state.generatedVariants.length}):\n${exportedPaths.join('\n')}'
+            : 'Exported all variants (${state.generatedVariants.length}):\n${exportedPaths.join('\n')}',
+      ),
+    );
   }
 
   Future<void> exportVariantToGoogleForms(GeneratedVariant variant) async {

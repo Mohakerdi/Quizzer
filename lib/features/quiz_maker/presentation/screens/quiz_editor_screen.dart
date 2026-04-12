@@ -10,11 +10,13 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:adv_basics/core/l10n/app_strings.dart';
 import 'package:adv_basics/data/models/generated_variant.dart';
+import 'package:adv_basics/data/models/question_option.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/editor_validator.dart';
 import 'package:adv_basics/features/quiz_maker/presentation/widgets/quiz_editor_panels.dart';
 import 'package:adv_basics/features/quiz_maker/presentation/widgets/question_editor_dialog.dart';
+import 'package:uuid/uuid.dart';
 
 class QuizEditorScreen extends StatefulWidget {
   const QuizEditorScreen({
@@ -26,6 +28,7 @@ class QuizEditorScreen extends StatefulWidget {
     required this.onGenerateVariants,
     required this.onPreviewVariant,
     required this.onExportVariant,
+    required this.onExportAllVariants,
     required this.onExportGoogleForms,
     required this.onAddQuestionToBank,
   });
@@ -43,6 +46,12 @@ class QuizEditorScreen extends StatefulWidget {
     String? exportLanguageCode,
     String? optionLabelStyle,
   }) onExportVariant;
+  final Future<void> Function({
+    String? teacherName,
+    String? schoolName,
+    String? exportLanguageCode,
+    String? optionLabelStyle,
+  }) onExportAllVariants;
   final Future<void> Function(GeneratedVariant variant) onExportGoogleForms;
   final Future<void> Function(QuizQuestion question) onAddQuestionToBank;
 
@@ -346,6 +355,42 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     );
   }
 
+  Future<void> _openDocxExportDialogAndExportAll() async {
+    final exportDetails = await showDialog<_DocxExportDetails>(
+      context: context,
+      builder: (dialogContext) => const _DocxExportDetailsDialog(),
+    );
+    if (exportDetails == null) {
+      return;
+    }
+    await widget.onExportAllVariants(
+      teacherName: exportDetails.nullableTeacherName,
+      schoolName: exportDetails.nullableSchoolName,
+      exportLanguageCode: exportDetails.exportLanguageCode,
+      optionLabelStyle: exportDetails.optionLabelStyle,
+    );
+  }
+
+  QuizQuestion _cloneQuestionWithNewIds(QuizQuestion source) {
+    final optionIdMap = <String, String>{
+      for (final option in source.options) option.id: const Uuid().v4(),
+    };
+    final clonedOptions = source.options
+        .map(
+          (option) => QuestionOption(
+            id: optionIdMap[option.id] ?? const Uuid().v4(),
+            text: option.text,
+            math: option.math,
+          ),
+        )
+        .toList();
+    return source.copyWith(
+      id: const Uuid().v4(),
+      options: clonedOptions,
+      correctOptionId: optionIdMap[source.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
+    );
+  }
+
   void _removeQuestion(int index) {
     if (_quiz.questions.length <= 1) {
       return;
@@ -368,6 +413,16 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       final questions = [..._quiz.questions];
       final current = questions.removeAt(index);
       questions.insert(target, current);
+      _quiz = _quiz.copyWith(questions: questions, updatedAt: DateTime.now());
+    });
+    _scheduleAutoSave();
+  }
+
+  void _duplicateQuestion(int index) {
+    setState(() {
+      final questions = [..._quiz.questions];
+      final duplicated = _cloneQuestionWithNewIds(questions[index]);
+      questions.insert(index + 1, duplicated);
       _quiz = _quiz.copyWith(questions: questions, updatedAt: DateTime.now());
     });
     _scheduleAutoSave();
@@ -405,6 +460,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                       _editQuestion(existing: _quiz.questions[index], index: index);
                     },
                     onRemoveQuestion: _removeQuestion,
+                    onDuplicateQuestion: _duplicateQuestion,
                     onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
                   ),
                 ),
@@ -415,6 +471,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
                     generatedVariants: widget.generatedVariants,
                     onPreviewVariant: widget.onPreviewVariant,
                     onExportVariant: _openDocxExportDialogAndExport,
+                    onExportAllVariants: _openDocxExportDialogAndExportAll,
                     onExportGoogleForms: widget.onExportGoogleForms,
                   ),
                 ),
