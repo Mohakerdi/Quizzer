@@ -70,7 +70,7 @@ class MathOrText extends StatelessWidget {
         children: spans,
       ),
       maxLines: maxLines,
-      overflow: overflow,
+      overflow: overflow ?? TextOverflow.clip,
       textDirection: containsArabic ? TextDirection.rtl : TextDirection.ltr,
     );
   }
@@ -83,7 +83,7 @@ class MathOrText extends StatelessWidget {
     final segments = <_MathSegment>[];
     var cursor = 0;
     while (cursor < source.length) {
-      final start = source.indexOf('$$', cursor);
+      final start = source.indexOf(r'$$', cursor);
       if (start < 0) {
         segments.add(_MathSegment(source.substring(cursor), isEquation: false));
         break;
@@ -98,7 +98,7 @@ class MathOrText extends StatelessWidget {
       if (start > cursor) {
         segments.add(_MathSegment(source.substring(cursor, start), isEquation: false));
       }
-      final end = source.indexOf('$$', start + 2);
+      final end = source.indexOf(r'$$', start + 2);
       if (end < 0) {
         segments.add(_MathSegment(source.substring(start), isEquation: false));
         break;

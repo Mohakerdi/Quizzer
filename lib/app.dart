@@ -129,13 +129,13 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     ).show(context: context);
   }
 
-  ContentTarget _buildArabicTargetContent({
+  TargetContent _buildArabicTargetContent({
     required String title,
     required String description,
   }) {
-    return ContentTarget(
+    return TargetContent(
       align: ContentAlign.bottom,
-      child: (context, controller) => Directionality(
+      child:  Directionality(
         textDirection: TextDirection.rtl,
         child: Container(
           width: 320,
