@@ -5,7 +5,7 @@ AppId={{1652115E-D9C3-4E6A-864F-B08C9643B702}
 AppName=Quizzer
 AppVersion=1.0.0
 AppPublisher=Your Name or Company
-SetupIconFile=..\windows\runner\resources\app_icon.ico
+SetupIconFile=..\windows\runner\resources\installer.ico
 DefaultDirName={autopf}\Quizzer
 DefaultGroupName=Quizzer
 

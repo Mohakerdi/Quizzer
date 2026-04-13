@@ -212,11 +212,11 @@ class GeneratedVariantsPanel extends StatelessWidget {
                                 icon: const Icon(Icons.download),
                                 onPressed: () => onExportVariant(variant),
                               ),
-                              IconButton(
-                                tooltip: AppStrings.tr(context, 'exportGoogleForms'),
-                                icon: const Icon(Icons.dynamic_form_outlined),
-                                onPressed: () => onExportGoogleForms(variant),
-                              ),
+                              // IconButton(
+                              //   tooltip: AppStrings.tr(context, 'exportGoogleForms'),
+                              //   icon: const Icon(Icons.dynamic_form_outlined),
+                              //   onPressed: () => onExportGoogleForms(variant),
+                              // ),
                             ],
                           ),
                         );
