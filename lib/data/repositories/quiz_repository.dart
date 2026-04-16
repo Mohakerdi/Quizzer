@@ -6,7 +6,7 @@ import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_
 
 class QuizRepository implements QuizRepositoryContract {
   QuizRepository({
-    QuizLocalDataSource localDataSource = const SharedPreferencesQuizLocalDataSource(),
+    required QuizLocalDataSource localDataSource,
   }) : _localDataSource = localDataSource;
 
   final QuizLocalDataSource _localDataSource;

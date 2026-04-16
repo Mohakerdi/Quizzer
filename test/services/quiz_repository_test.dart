@@ -4,13 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adv_basics/data/models/question_option.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
+import 'package:adv_basics/data/datasources/quiz_local_data_source.dart';
 import 'package:adv_basics/data/repositories/quiz_repository.dart';
 
 void main() {
   group('QuizRepository question bank behavior', () {
     test('deleting a quiz does not delete question bank entries', () async {
       SharedPreferences.setMockInitialValues({});
-      final repository = QuizRepository();
+      final repository = QuizRepository(
+        localDataSource: const SharedPreferencesQuizLocalDataSource(),
+      );
       final now = DateTime.now();
       final question = QuizQuestion(
         id: 'bank-q1',
@@ -41,7 +44,9 @@ void main() {
 
     test('deleting a bank question does not remove linked questions from quizzes', () async {
       SharedPreferences.setMockInitialValues({});
-      final repository = QuizRepository();
+      final repository = QuizRepository(
+        localDataSource: const SharedPreferencesQuizLocalDataSource(),
+      );
       final now = DateTime.now();
       final bankQuestion = QuizQuestion(
         id: 'bank-q1',

@@ -1,13 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:adv_basics/data/models/generated_variant.dart';
-import 'package:adv_basics/data/models/question_option.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/features/quiz_maker/application/quiz_session_state.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_contract.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/question_clone_service.dart';
 import 'package:adv_basics/features/quiz_maker/domain/usecases/quiz_session_use_cases.dart';
-import 'package:uuid/uuid.dart';
 
 class QuizSessionCubit extends Cubit<QuizSessionState> {
   QuizSessionCubit({
@@ -99,35 +98,6 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     );
   }
 
-  QuizQuestion _cloneQuestionForBank(QuizQuestion question) {
-    final optionIdMap = <String, String>{
-      for (final option in question.options) option.id: const Uuid().v4(),
-    };
-    final clonedOptions = question.options
-        .map(
-          (option) => QuestionOption(
-            id: optionIdMap[option.id] ?? const Uuid().v4(),
-            text: option.text,
-            math: option.math,
-          ),
-        )
-        .toList();
-    return QuizQuestion(
-      id: const Uuid().v4(),
-      text: question.text,
-      math: question.math,
-      imageRef: question.imageRef,
-      topic: question.topic,
-      difficulty: question.difficulty,
-      gradeLevel: question.gradeLevel,
-      unitOfStudy: question.unitOfStudy,
-      curriculum: question.curriculum,
-      sourceBankQuestionId: '',
-      options: clonedOptions,
-      correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
-    );
-  }
-
   Future<void> renameQuiz({
     required QuizModel quiz,
     required String title,
@@ -178,7 +148,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     required QuizQuestion question,
     required bool isArabic,
   }) async {
-    final bankQuestion = _cloneQuestionForBank(question);
+    final bankQuestion = QuestionCloneService.cloneForQuestionBank(question);
     final saved = await _repository.upsertQuestionBankQuestion(bankQuestion);
     emit(
       state.copyWith(
@@ -206,7 +176,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     required QuizQuestion question,
     required bool isArabic,
   }) async {
-    final duplicated = _cloneQuestionForBank(question);
+    final duplicated = QuestionCloneService.cloneForQuestionBank(question);
     final saved = await _repository.upsertQuestionBankQuestion(duplicated);
     emit(
       state.copyWith(

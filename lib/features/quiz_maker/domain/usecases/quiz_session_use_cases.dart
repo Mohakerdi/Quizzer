@@ -1,10 +1,10 @@
 import 'package:adv_basics/data/models/generated_variant.dart';
-import 'package:adv_basics/data/models/question_option.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/google_forms_export_service_contract.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_contract.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/variant_export_service_contract.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/question_clone_service.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
 import 'package:uuid/uuid.dart';
 
@@ -32,40 +32,11 @@ class CreateQuizFromQuestionBankUseCase {
       id: const Uuid().v4(),
       title: title.trim(),
       version: 1,
-      questions: questions.map(_cloneQuestionForNewQuiz).toList(),
+      questions: questions.map(QuestionCloneService.cloneForNewQuiz).toList(),
       createdAt: now,
       updatedAt: now,
     );
     return _repository.upsertQuiz(quiz);
-  }
-
-  QuizQuestion _cloneQuestionForNewQuiz(QuizQuestion question) {
-    final optionIdMap = <String, String>{
-      for (final option in question.options) option.id: const Uuid().v4(),
-    };
-    final clonedOptions = question.options
-        .map(
-          (option) => QuestionOption(
-            id: optionIdMap[option.id] ?? const Uuid().v4(),
-            text: option.text,
-            math: option.math,
-          ),
-        )
-        .toList();
-    return QuizQuestion(
-      id: const Uuid().v4(),
-      text: question.text,
-      math: question.math,
-      imageRef: question.imageRef,
-      topic: question.topic,
-      difficulty: question.difficulty,
-      gradeLevel: question.gradeLevel,
-      unitOfStudy: question.unitOfStudy,
-      curriculum: question.curriculum,
-      sourceBankQuestionId: question.id,
-      options: clonedOptions,
-      correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
-    );
   }
 }
 

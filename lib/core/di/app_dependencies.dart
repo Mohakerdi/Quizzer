@@ -1,3 +1,4 @@
+import 'package:adv_basics/data/datasources/quiz_local_data_source.dart';
 import 'package:adv_basics/data/repositories/quiz_repository.dart';
 import 'package:adv_basics/data/services/docx_export_service.dart';
 import 'package:adv_basics/data/services/google_forms_export_service.dart';
@@ -28,7 +29,9 @@ class AppDependencies {
   final ExportVariantToGoogleFormsUseCase exportVariantToGoogleFormsUseCase;
 
   factory AppDependencies.create() {
-    final repository = QuizRepository();
+    final repository = QuizRepository(
+      localDataSource: const SharedPreferencesQuizLocalDataSource(),
+    );
     final variantGenerator = const VariantGenerator();
     final docxExportService = const DocxExportService();
     final googleFormsExportService = const GoogleFormsExportService();
