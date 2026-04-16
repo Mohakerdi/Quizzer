@@ -2,6 +2,7 @@ import 'package:adv_basics/data/datasources/quiz_local_data_source.dart';
 import 'package:adv_basics/data/repositories/quiz_repository.dart';
 import 'package:adv_basics/data/services/docx_export_service.dart';
 import 'package:adv_basics/data/services/google_forms_export_service.dart';
+import 'package:adv_basics/core/data/app_settings_local_data_source.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
 import 'package:adv_basics/features/quiz_maker/domain/usecases/quiz_session_use_cases.dart';
 
@@ -16,6 +17,7 @@ class AppDependencies {
     required this.exportVariantUseCase,
     required this.exportAllVariantsUseCase,
     required this.exportVariantToGoogleFormsUseCase,
+    required this.appSettingsLocalDataSource,
   });
 
   final QuizRepository quizRepository;
@@ -27,6 +29,7 @@ class AppDependencies {
   final ExportVariantUseCase exportVariantUseCase;
   final ExportAllVariantsUseCase exportAllVariantsUseCase;
   final ExportVariantToGoogleFormsUseCase exportVariantToGoogleFormsUseCase;
+  final AppSettingsLocalDataSource appSettingsLocalDataSource;
 
   factory AppDependencies.create() {
     final repository = QuizRepository(
@@ -47,6 +50,7 @@ class AppDependencies {
       exportVariantUseCase: exportVariantUseCase,
       exportAllVariantsUseCase: ExportAllVariantsUseCase(exportVariantUseCase),
       exportVariantToGoogleFormsUseCase: ExportVariantToGoogleFormsUseCase(googleFormsExportService),
+      appSettingsLocalDataSource: const SharedPreferencesAppSettingsLocalDataSource(),
     );
   }
 }

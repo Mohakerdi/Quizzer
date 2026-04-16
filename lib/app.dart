@@ -27,7 +27,11 @@ class QuizMakerApp extends StatelessWidget {
     final dependencies = AppDependencies.create();
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => AppSettingsCubit()),
+        BlocProvider(
+          create: (_) => AppSettingsCubit(
+            localDataSource: dependencies.appSettingsLocalDataSource,
+          ),
+        ),
         BlocProvider(
           create: (_) => QuizSessionCubit(
             repository: dependencies.quizRepository,
@@ -231,17 +235,9 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     }
 
     final count = int.tryParse(countText);
-    if (count == null || count < 1) {
-      context.read<QuizSessionCubit>().clearMessage();
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'invalidVariantsCount'))));
-      return;
-    }
-
     await context.read<QuizSessionCubit>().generateVariants(
           quiz: quiz,
-          count: count,
+          count: count ?? -1,
           isArabic: AppStrings.isArabic(context),
         );
   }

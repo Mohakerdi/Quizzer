@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:adv_basics/core/application/app_settings_state.dart';
+import 'package:adv_basics/core/data/app_settings_local_data_source.dart';
 
 class AppSettingsCubit extends Cubit<AppSettingsState> {
-  static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
+  AppSettingsCubit({
+    required AppSettingsLocalDataSource localDataSource,
+  })  : _localDataSource = localDataSource,
+        super(const AppSettingsState.initial());
 
-  AppSettingsCubit() : super(const AppSettingsState.initial());
+  final AppSettingsLocalDataSource _localDataSource;
 
   void setLocale(Locale locale) {
     emit(state.copyWith(locale: locale));
@@ -22,13 +25,12 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     if (state.arabicTutorialSeen) {
       return false;
     }
-    final prefs = await SharedPreferences.getInstance();
-    final alreadySeen = prefs.getBool(_tutorialSeenKey) ?? false;
+    final alreadySeen = await _localDataSource.getArabicTutorialSeen();
     if (alreadySeen) {
       emit(state.copyWith(arabicTutorialSeen: true));
       return false;
     }
-    await prefs.setBool(_tutorialSeenKey, true);
+    await _localDataSource.setArabicTutorialSeen(true);
     emit(state.copyWith(arabicTutorialSeen: true));
     return true;
   }
