@@ -1,26 +1,22 @@
-import 'dart:convert';
-
 import 'package:adv_basics/data/models/generated_variant.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:adv_basics/data/datasources/quiz_local_data_source.dart';
+import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_contract.dart';
 
-class QuizRepository {
-  static const _quizzesKey = 'quizzer_quizzes_v1';
-  static const _variantsKey = 'quizzer_variants_v1';
-  static const _questionBankKey = 'quizzer_question_bank_v1';
+class QuizRepository implements QuizRepositoryContract {
+  QuizRepository({
+    QuizLocalDataSource localDataSource = const SharedPreferencesQuizLocalDataSource(),
+  }) : _localDataSource = localDataSource;
 
+  final QuizLocalDataSource _localDataSource;
+
+  @override
   Future<List<QuizModel>> loadQuizzes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_quizzesKey);
-    if (raw == null || raw.isEmpty) {
-      return [];
-    }
-
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded.map((item) => QuizModel.fromJson(item as Map<String, dynamic>)).toList();
+    return _localDataSource.loadQuizzes();
   }
 
+  @override
   Future<QuizModel> upsertQuiz(QuizModel quiz) async {
     final all = await loadQuizzes();
     final existingIndex = all.indexWhere((q) => q.id == quiz.id);
@@ -35,40 +31,28 @@ class QuizRepository {
       all.add(updatedQuiz);
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _quizzesKey,
-      jsonEncode(all.map((q) => q.toJson()).toList()),
-    );
+    await _localDataSource.saveQuizzes(all);
     return updatedQuiz;
   }
 
+  @override
   Future<void> deleteQuiz(String quizId) async {
     final all = await loadQuizzes();
     final kept = all.where((q) => q.id != quizId).toList();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_quizzesKey, jsonEncode(kept.map((q) => q.toJson()).toList()));
+    await _localDataSource.saveQuizzes(kept);
   }
 
+  @override
   Future<List<QuizQuestion>> loadQuestionBank() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_questionBankKey);
-    if (raw == null || raw.isEmpty) {
-      return [];
-    }
-
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded.map((item) => QuizQuestion.fromJson(item as Map<String, dynamic>)).toList();
+    return _localDataSource.loadQuestionBank();
   }
 
+  @override
   Future<void> saveQuestionBank(List<QuizQuestion> questions) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _questionBankKey,
-      jsonEncode(questions.map((q) => q.toJson()).toList()),
-    );
+    await _localDataSource.saveQuestionBank(questions);
   }
 
+  @override
   Future<QuizQuestion> upsertQuestionBankQuestion(QuizQuestion question) async {
     final all = await loadQuestionBank();
     final existingIndex = all.indexWhere((q) => q.id == question.id);
@@ -81,6 +65,7 @@ class QuizRepository {
     return question;
   }
 
+  @override
   Future<void> deleteQuestionBankQuestion(String bankQuestionId) async {
     final questionBank = await loadQuestionBank();
     final keptBank = questionBank.where((q) => q.id != bankQuestionId).toList();
@@ -88,48 +73,26 @@ class QuizRepository {
   }
 
   Future<Map<String, List<GeneratedVariant>>> _loadAllVariants() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_variantsKey);
-
-    if (raw == null || raw.isEmpty) {
-      return {};
-    }
-
-    final decoded = jsonDecode(raw) as Map<String, dynamic>;
-    return decoded.map(
-      (quizId, value) => MapEntry(
-        quizId,
-        (value as List<dynamic>)
-            .map((variant) => GeneratedVariant.fromJson(variant as Map<String, dynamic>))
-            .toList(),
-      ),
-    );
+    return _localDataSource.loadAllVariants();
   }
 
+  @override
   Future<List<GeneratedVariant>> loadVariantsForQuiz(String quizId) async {
     final all = await _loadAllVariants();
     return all[quizId] ?? [];
   }
 
+  @override
   Future<void> saveVariantsForQuiz(String quizId, List<GeneratedVariant> variants) async {
     final all = await _loadAllVariants();
     all[quizId] = variants;
-
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = all.map(
-      (key, value) => MapEntry(key, value.map((variant) => variant.toJson()).toList()),
-    );
-    await prefs.setString(_variantsKey, jsonEncode(encoded));
+    await _localDataSource.saveAllVariants(all);
   }
 
+  @override
   Future<void> deleteVariantsForQuiz(String quizId) async {
     final all = await _loadAllVariants();
     all.remove(quizId);
-
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = all.map(
-      (key, value) => MapEntry(key, value.map((variant) => variant.toJson()).toList()),
-    );
-    await prefs.setString(_variantsKey, jsonEncode(encoded));
+    await _localDataSource.saveAllVariants(all);
   }
 }

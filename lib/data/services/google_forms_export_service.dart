@@ -5,11 +5,13 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:adv_basics/data/models/generated_variant.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/features/quiz_maker/domain/contracts/google_forms_export_service_contract.dart';
 
-class GoogleFormsExportService {
+class GoogleFormsExportService implements GoogleFormsExportServiceContract {
   const GoogleFormsExportService();
 
-  Future<GoogleFormsExportResult> exportVariant({
+  @override
+  Future<GoogleFormsExportOutput> exportVariant({
     required QuizModel quiz,
     required GeneratedVariant variant,
   }) async {
@@ -32,7 +34,7 @@ class GoogleFormsExportService {
       flush: true,
     );
 
-    return GoogleFormsExportResult(
+    return GoogleFormsExportOutput(
       jsonPath: jsonPath,
       scriptPath: scriptPath,
     );
@@ -111,14 +113,4 @@ function buildQuizzerForm() {
 }
 ''';
   }
-}
-
-class GoogleFormsExportResult {
-  const GoogleFormsExportResult({
-    required this.jsonPath,
-    required this.scriptPath,
-  });
-
-  final String jsonPath;
-  final String scriptPath;
 }
