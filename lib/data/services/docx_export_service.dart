@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:adv_basics/data/models/generated_variant.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/core/utils/friendly_math_formatter.dart';
+import 'package:adv_basics/core/utils/latex_detection.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/variant_export_service_contract.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
@@ -980,9 +981,7 @@ class DocxExportService implements VariantExportServiceContract {
   }
 
   bool _looksLikeLatexMath(String value) {
-    return RegExp(
-      r'\\(frac|dfrac|tfrac|cfrac|sqrt|sum|int|pi|theta|times|div|leq|geq|neq|alpha|beta|gamma|delta|lambda|mu|sigma|omega|sin|cos|tan|cot|sec|csc|log|ln|lim|cdot|pm|mp|left|right|begin|end)\b',
-    ).hasMatch(value);
+    return LatexDetection.looksLikeLatexMath(value);
   }
 
   bool _containsArabic(String value) {
