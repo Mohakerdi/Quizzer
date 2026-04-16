@@ -4,6 +4,7 @@ import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/google_forms_export_service_contract.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_contract.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/variant_export_service_contract.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/quiz_import_parser.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/question_clone_service.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
 import 'package:uuid/uuid.dart';
@@ -15,6 +16,18 @@ class CreateQuizUseCase {
 
   Future<QuizModel> call(String title) async {
     return _repository.upsertQuiz(QuizModel.empty(title.trim()));
+  }
+}
+
+class ImportQuizFromJsonUseCase {
+  const ImportQuizFromJsonUseCase(this._repository, this._parser);
+
+  final QuizRepositoryContract _repository;
+  final QuizImportParser _parser;
+
+  Future<QuizModel> call(String rawJson) async {
+    final parsedQuiz = _parser.parseSingleQuiz(rawJson);
+    return _repository.upsertQuiz(parsedQuiz);
   }
 }
 

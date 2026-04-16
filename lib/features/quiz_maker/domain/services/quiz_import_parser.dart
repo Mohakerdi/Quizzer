@@ -1,0 +1,137 @@
+import 'dart:convert';
+
+import 'package:adv_basics/data/models/question_option.dart';
+import 'package:adv_basics/data/models/quiz_model.dart';
+import 'package:adv_basics/data/models/quiz_question.dart';
+import 'package:uuid/uuid.dart';
+
+class QuizImportParser {
+  const QuizImportParser();
+
+  QuizModel parseSingleQuiz(String rawJson) {
+    late final Object? decoded;
+    try {
+      decoded = jsonDecode(rawJson);
+    } catch (_) {
+      throw const FormatException('Invalid JSON format.');
+    }
+
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Top-level JSON must be an object.');
+    }
+
+    final now = DateTime.now();
+    final quizMap = _extractQuizMap(decoded);
+    final title = (quizMap['title'] as String?)?.trim();
+    final normalizedTitle = title == null || title.isEmpty ? 'Imported Quiz' : title;
+
+    final questions = _parseQuestions(quizMap['questions']);
+    if (questions.isEmpty) {
+      throw const FormatException('Imported quiz must include at least one question.');
+    }
+
+    final parsedCreatedAt = DateTime.tryParse((quizMap['createdAt'] as String?) ?? '');
+    final parsedUpdatedAt = DateTime.tryParse((quizMap['updatedAt'] as String?) ?? '');
+
+    return QuizModel(
+      id: const Uuid().v4(),
+      title: normalizedTitle,
+      version: 1,
+      questions: questions,
+      createdAt: parsedCreatedAt ?? now,
+      updatedAt: parsedUpdatedAt ?? now,
+    );
+  }
+
+  Map<String, dynamic> _extractQuizMap(Map<String, dynamic> decoded) {
+    final nestedQuiz = decoded['quiz'];
+    if (nestedQuiz is Map<String, dynamic>) {
+      return nestedQuiz;
+    }
+    return decoded;
+  }
+
+  List<QuizQuestion> _parseQuestions(Object? rawQuestions) {
+    final questionsList = rawQuestions is List ? rawQuestions : const [];
+    final parsedQuestions = <QuizQuestion>[];
+
+    for (final questionRaw in questionsList) {
+      if (questionRaw is! Map<String, dynamic>) {
+        continue;
+      }
+      parsedQuestions.add(_parseQuestion(questionRaw));
+    }
+
+    return parsedQuestions;
+  }
+
+  QuizQuestion _parseQuestion(Map<String, dynamic> json) {
+    final parsedOptions = _parseOptions(json['options']);
+    final options = parsedOptions.options;
+    final ensuredOptions = options.length >= 2
+        ? options
+        : [
+            ...options,
+            ...List.generate(
+              2 - options.length,
+              (_) => QuestionOption.create(),
+            ),
+          ];
+
+    final providedCorrectId = json['correctOptionId'] as String?;
+
+    final fallbackCorrectId = ensuredOptions.first.id;
+    final correctId = ensuredOptions.any((o) => o.id == providedCorrectId)
+        ? providedCorrectId!
+        : (parsedOptions.correctOptionIdByFlag ?? fallbackCorrectId);
+
+    return QuizQuestion(
+      id: const Uuid().v4(),
+      text: (json['text'] as String?) ?? '',
+      math: (json['math'] as String?) ?? '',
+      imageRef: (json['imageRef'] as String?) ?? '',
+      topic: (json['topic'] as String?) ?? '',
+      difficulty: (json['difficulty'] as String?) ?? '',
+      gradeLevel: (json['gradeLevel'] as String?) ?? '',
+      unitOfStudy: (json['unitOfStudy'] as String?) ?? '',
+      curriculum: (json['curriculum'] as String?) ?? '',
+      options: ensuredOptions,
+      correctOptionId: correctId,
+    );
+  }
+
+  _ParsedOptions _parseOptions(Object? rawOptions) {
+    final optionsList = rawOptions is List ? rawOptions : const [];
+    final parsed = <QuestionOption>[];
+    String? correctOptionIdByFlag;
+    for (final optionRaw in optionsList) {
+      if (optionRaw is! Map<String, dynamic>) {
+        continue;
+      }
+      final importedId = (optionRaw['id'] as String?)?.trim();
+      final option = QuestionOption(
+        id: importedId == null || importedId.isEmpty ? const Uuid().v4() : importedId,
+        text: (optionRaw['text'] as String?) ?? '',
+        math: (optionRaw['math'] as String?) ?? '',
+      );
+      if (correctOptionIdByFlag == null && optionRaw['isCorrect'] == true) {
+        correctOptionIdByFlag = option.id;
+      }
+      parsed.add(option);
+    }
+    return _ParsedOptions(
+      options: parsed,
+      correctOptionIdByFlag: correctOptionIdByFlag,
+    );
+  }
+}
+
+class _ParsedOptions {
+  const _ParsedOptions({
+    required this.options,
+    required this.correctOptionIdByFlag,
+  });
+
+  final List<QuestionOption> options;
+  final String? correctOptionIdByFlag;
+}

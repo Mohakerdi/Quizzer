@@ -9,6 +9,7 @@ class QuizListScreen extends StatelessWidget {
     required this.quizzes,
     required this.selectedQuizId,
     required this.onCreateQuiz,
+    required this.onImportQuiz,
     required this.onSelectQuiz,
     required this.onRenameQuiz,
     required this.onDuplicateQuiz,
@@ -18,6 +19,7 @@ class QuizListScreen extends StatelessWidget {
   final List<QuizModel> quizzes;
   final String? selectedQuizId;
   final Future<void> Function() onCreateQuiz;
+  final Future<void> Function() onImportQuiz;
   final Future<void> Function(QuizModel quiz) onSelectQuiz;
   final Future<void> Function(QuizModel quiz) onRenameQuiz;
   final Future<void> Function(QuizModel quiz) onDuplicateQuiz;
@@ -29,10 +31,20 @@ class QuizListScreen extends StatelessWidget {
       children: [
         ListTile(
           title: Text(AppStrings.tr(context, 'quizzes')),
-          trailing: IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: onCreateQuiz,
-            tooltip: AppStrings.tr(context, 'createQuizTooltip'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.upload_file),
+                onPressed: onImportQuiz,
+                tooltip: AppStrings.tr(context, 'importQuizTooltip'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: onCreateQuiz,
+                tooltip: AppStrings.tr(context, 'createQuizTooltip'),
+              ),
+            ],
           ),
         ),
         const Divider(height: 1),

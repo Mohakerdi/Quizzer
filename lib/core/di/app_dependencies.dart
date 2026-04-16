@@ -3,6 +3,7 @@ import 'package:adv_basics/data/repositories/quiz_repository.dart';
 import 'package:adv_basics/data/services/docx_export_service.dart';
 import 'package:adv_basics/data/services/google_forms_export_service.dart';
 import 'package:adv_basics/core/data/app_settings_local_data_source.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/quiz_import_parser.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
 import 'package:adv_basics/features/quiz_maker/domain/usecases/quiz_session_use_cases.dart';
 
@@ -10,6 +11,7 @@ class AppDependencies {
   AppDependencies._({
     required this.quizRepository,
     required this.createQuizUseCase,
+    required this.importQuizFromJsonUseCase,
     required this.createQuizFromQuestionBankUseCase,
     required this.renameQuizUseCase,
     required this.duplicateQuizUseCase,
@@ -22,6 +24,7 @@ class AppDependencies {
 
   final QuizRepository quizRepository;
   final CreateQuizUseCase createQuizUseCase;
+  final ImportQuizFromJsonUseCase importQuizFromJsonUseCase;
   final CreateQuizFromQuestionBankUseCase createQuizFromQuestionBankUseCase;
   final RenameQuizUseCase renameQuizUseCase;
   final DuplicateQuizUseCase duplicateQuizUseCase;
@@ -36,6 +39,7 @@ class AppDependencies {
       localDataSource: const SharedPreferencesQuizLocalDataSource(),
     );
     final variantGenerator = const VariantGenerator();
+    final quizImportParser = const QuizImportParser();
     final docxExportService = const DocxExportService();
     final googleFormsExportService = const GoogleFormsExportService();
     final exportVariantUseCase = ExportVariantUseCase(docxExportService);
@@ -43,6 +47,7 @@ class AppDependencies {
     return AppDependencies._(
       quizRepository: repository,
       createQuizUseCase: CreateQuizUseCase(repository),
+      importQuizFromJsonUseCase: ImportQuizFromJsonUseCase(repository, quizImportParser),
       createQuizFromQuestionBankUseCase: CreateQuizFromQuestionBankUseCase(repository),
       renameQuizUseCase: RenameQuizUseCase(repository),
       duplicateQuizUseCase: DuplicateQuizUseCase(repository),

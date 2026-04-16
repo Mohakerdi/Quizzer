@@ -36,6 +36,20 @@ class AppStrings {
         return ar ? 'الاختبارات' : 'Quizzes';
       case 'createQuizTooltip':
         return ar ? 'إنشاء اختبار' : 'Create quiz';
+      case 'importQuizTooltip':
+        return ar ? 'استيراد اختبار' : 'Import quiz';
+      case 'importQuiz':
+        return ar ? 'استيراد اختبار من JSON' : 'Import quiz from JSON';
+      case 'importQuizJsonLabel':
+        return ar ? 'بيانات JSON' : 'JSON payload';
+      case 'importQuizJsonHint':
+        return ar
+            ? 'ألصق JSON هنا (يدعم text + math/LaTeX لكل سؤال وخيار)'
+            : 'Paste JSON here (supports text + math/LaTeX for questions and options)';
+      case 'quizTitleOptional':
+        return ar ? 'عنوان الاختبار (اختياري)' : 'Quiz title (optional)';
+      case 'import':
+        return ar ? 'استيراد' : 'Import';
       case 'noQuizzesYet':
         return ar ? 'لا توجد اختبارات بعد.' : 'No quizzes yet.';
       case 'rename':

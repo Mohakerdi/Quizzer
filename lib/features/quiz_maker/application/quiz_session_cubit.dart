@@ -12,6 +12,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
   QuizSessionCubit({
     required QuizRepositoryContract repository,
     required CreateQuizUseCase createQuizUseCase,
+    required ImportQuizFromJsonUseCase importQuizFromJsonUseCase,
     required CreateQuizFromQuestionBankUseCase createQuizFromQuestionBankUseCase,
     required RenameQuizUseCase renameQuizUseCase,
     required DuplicateQuizUseCase duplicateQuizUseCase,
@@ -21,6 +22,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     required ExportVariantToGoogleFormsUseCase exportVariantToGoogleFormsUseCase,
   })  : _repository = repository,
         _createQuizUseCase = createQuizUseCase,
+        _importQuizFromJsonUseCase = importQuizFromJsonUseCase,
         _createQuizFromQuestionBankUseCase = createQuizFromQuestionBankUseCase,
         _renameQuizUseCase = renameQuizUseCase,
         _duplicateQuizUseCase = duplicateQuizUseCase,
@@ -32,6 +34,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
 
   final QuizRepositoryContract _repository;
   final CreateQuizUseCase _createQuizUseCase;
+  final ImportQuizFromJsonUseCase _importQuizFromJsonUseCase;
   final CreateQuizFromQuestionBankUseCase _createQuizFromQuestionBankUseCase;
   final RenameQuizUseCase _renameQuizUseCase;
   final DuplicateQuizUseCase _duplicateQuizUseCase;
@@ -73,6 +76,47 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
         message: 'Quiz created.',
       ),
     );
+  }
+
+  Future<void> importQuizFromJson({
+    required String rawJson,
+    required bool isArabic,
+  }) async {
+    final trimmed = rawJson.trim();
+    if (trimmed.isEmpty) {
+      emit(
+        state.copyWith(
+          message: isArabic ? 'يرجى إدخال JSON للاستيراد.' : 'Please provide JSON to import.',
+        ),
+      );
+      return;
+    }
+
+    try {
+      final imported = await _importQuizFromJsonUseCase(trimmed);
+      emit(
+        state.copyWith(
+          quizzes: [...state.quizzes, imported],
+          selectedQuiz: imported,
+          generatedVariants: const [],
+          message: isArabic ? 'تم استيراد الاختبار بنجاح.' : 'Quiz imported successfully.',
+        ),
+      );
+    } on FormatException catch (error) {
+      emit(
+        state.copyWith(
+          message: isArabic
+              ? 'تعذر استيراد JSON: ${error.message}'
+              : 'Unable to import JSON: ${error.message}',
+        ),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          message: isArabic ? 'حدث خطأ أثناء الاستيراد.' : 'An error occurred during import.',
+        ),
+      );
+    }
   }
 
   Future<void> createQuizFromQuestionBank({

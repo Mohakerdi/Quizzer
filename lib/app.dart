@@ -36,6 +36,7 @@ class QuizMakerApp extends StatelessWidget {
           create: (_) => QuizSessionCubit(
             repository: dependencies.quizRepository,
             createQuizUseCase: dependencies.createQuizUseCase,
+            importQuizFromJsonUseCase: dependencies.importQuizFromJsonUseCase,
             createQuizFromQuestionBankUseCase: dependencies.createQuizFromQuestionBankUseCase,
             renameQuizUseCase: dependencies.renameQuizUseCase,
             duplicateQuizUseCase: dependencies.duplicateQuizUseCase,
@@ -222,6 +223,52 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     await context.read<QuizSessionCubit>().renameQuiz(quiz: quiz, title: title.trim());
   }
 
+  Future<void> _importQuizFromJson(BuildContext context) async {
+    final jsonController = TextEditingController();
+    final imported = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'importQuiz')),
+        content: SizedBox(
+          width: 560,
+          child: TextField(
+            controller: jsonController,
+            minLines: 10,
+            maxLines: 18,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: AppStrings.tr(context, 'importQuizJsonLabel'),
+              hintText: AppStrings.tr(context, 'importQuizJsonHint'),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(AppStrings.tr(context, 'cancel')),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              await context.read<QuizSessionCubit>().importQuizFromJson(
+                    rawJson: jsonController.text.trim(),
+                    isArabic: AppStrings.isArabic(context),
+                  );
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop(true);
+              }
+            },
+            icon: const Icon(Icons.upload_file),
+            label: Text(AppStrings.tr(context, 'import')),
+          ),
+        ],
+      ),
+    );
+
+    if (imported == true && context.mounted) {
+      FocusScope.of(context).unfocus();
+    }
+  }
+
   Future<void> _generateVariants(BuildContext context, QuizModel quiz) async {
     final countText = await _promptText(
       context,
@@ -392,6 +439,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
           body: _HomeWorkspace(
             state: state,
             onCreateQuiz: () => _createQuiz(context),
+            onImportQuiz: () => _importQuizFromJson(context),
             onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
             onGenerateVariants: (quiz) => _generateVariants(context, quiz),
             onPreviewVariant: (variant) => _previewVariant(context, variant),
@@ -459,6 +507,7 @@ class _HomeWorkspace extends StatelessWidget {
   const _HomeWorkspace({
     required this.state,
     required this.onCreateQuiz,
+    required this.onImportQuiz,
     required this.onRenameQuiz,
     required this.onGenerateVariants,
     required this.onPreviewVariant,
@@ -468,6 +517,7 @@ class _HomeWorkspace extends StatelessWidget {
 
   final QuizSessionState state;
   final Future<void> Function() onCreateQuiz;
+  final Future<void> Function() onImportQuiz;
   final Future<void> Function(QuizModel quiz) onRenameQuiz;
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
@@ -484,6 +534,7 @@ class _HomeWorkspace extends StatelessWidget {
             quizzes: state.quizzes,
             selectedQuizId: state.selectedQuiz?.id,
             onCreateQuiz: onCreateQuiz,
+            onImportQuiz: onImportQuiz,
             onSelectQuiz: (quiz) => context.read<QuizSessionCubit>().selectQuiz(quiz),
             onRenameQuiz: onRenameQuiz,
             onDuplicateQuiz: (quiz) => context.read<QuizSessionCubit>().duplicateQuiz(quiz),
