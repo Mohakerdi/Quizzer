@@ -30,6 +30,11 @@ class QuestionCloneService {
         )
         .toList();
     final mappedCorrectOptionId = optionIdMap[question.correctOptionId];
+    if (question.options.isEmpty && question.correctOptionId.trim().isNotEmpty) {
+      throw StateError(
+        'Cannot clone question "${question.id}": question has no options but has a correct option id.',
+      );
+    }
     if (mappedCorrectOptionId == null && question.options.isNotEmpty) {
       throw StateError(
         'Cannot clone question "${question.id}": missing correct option mapping for "${question.correctOptionId}".',

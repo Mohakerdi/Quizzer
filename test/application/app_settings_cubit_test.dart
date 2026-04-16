@@ -37,7 +37,7 @@ void main() {
       localDataSource: _InMemoryAppSettingsLocalDataSource(),
     );
 
-    expect(await cubit.shouldShowArabicTutorial(), isTrue);
-    expect(await cubit.shouldShowArabicTutorial(), isFalse);
+    expect(await cubit.showArabicTutorialIfNeeded(), isTrue);
+    expect(await cubit.showArabicTutorialIfNeeded(), isFalse);
   });
 }

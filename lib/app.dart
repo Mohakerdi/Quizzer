@@ -83,7 +83,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
   final GlobalKey _questionBankTabKey = GlobalKey();
 
   Future<void> _maybeShowArabicTutorial() async {
-    final shouldShow = await context.read<AppSettingsCubit>().shouldShowArabicTutorial();
+    final shouldShow = await context.read<AppSettingsCubit>().showArabicTutorialIfNeeded();
     if (!shouldShow || !mounted) {
       return;
     }

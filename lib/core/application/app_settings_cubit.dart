@@ -21,7 +21,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     emit(state.copyWith(themeMode: next));
   }
 
-  Future<bool> shouldShowArabicTutorial() async {
+  Future<bool> showArabicTutorialIfNeeded() async {
     if (state.arabicTutorialSeen) {
       return false;
     }

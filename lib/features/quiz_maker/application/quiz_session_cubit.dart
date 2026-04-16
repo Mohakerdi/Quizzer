@@ -297,9 +297,9 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     const previewLimit = 6;
     final shownPaths = exportedPaths.take(previewLimit).join('\n');
     final hiddenCount = exportedPaths.length - previewLimit;
-    final arabicHiddenLabel = hiddenCount == 1 ? 'ملف إضافي' : 'ملفات إضافية';
+    final hiddenFilesTextArabic = hiddenCount == 1 ? 'ملف إضافي' : 'ملفات إضافية';
     final hiddenSuffix = hiddenCount > 0
-        ? (isArabic ? '\n... و$hiddenCount $arabicHiddenLabel.' : '\n... and $hiddenCount more file(s).')
+        ? (isArabic ? '\n... و$hiddenCount $hiddenFilesTextArabic.' : '\n... and $hiddenCount more file(s).')
         : '';
 
     emit(
