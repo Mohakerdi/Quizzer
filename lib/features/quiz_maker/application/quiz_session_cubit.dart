@@ -220,10 +220,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
 
   Future<void> generateVariants({
     required QuizModel quiz,
-    required int count,
+    required int? count,
     required bool isArabic,
   }) async {
-    if (count < 1) {
+    if (count == null || count < 1) {
       emit(
         state.copyWith(
           message: isArabic ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.',

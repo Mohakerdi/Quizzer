@@ -237,7 +237,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     final count = int.tryParse(countText);
     await context.read<QuizSessionCubit>().generateVariants(
           quiz: quiz,
-          count: count ?? -1,
+          count: count,
           isArabic: AppStrings.isArabic(context),
         );
   }

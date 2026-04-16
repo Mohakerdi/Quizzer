@@ -29,6 +29,7 @@ class QuestionCloneService {
           ),
         )
         .toList();
+    final mappedCorrectOptionId = optionIdMap[question.correctOptionId];
     return QuizQuestion(
       id: const Uuid().v4(),
       text: question.text,
@@ -41,7 +42,7 @@ class QuestionCloneService {
       curriculum: question.curriculum,
       sourceBankQuestionId: sourceBankQuestionId,
       options: clonedOptions,
-      correctOptionId: optionIdMap[question.correctOptionId] ?? (clonedOptions.isNotEmpty ? clonedOptions.first.id : ''),
+      correctOptionId: mappedCorrectOptionId ?? '',
     );
   }
 }
