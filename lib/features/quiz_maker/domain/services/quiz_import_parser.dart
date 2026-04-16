@@ -153,7 +153,7 @@ class QuizImportParser {
   }
 
   bool _hasMathDelimiters(String value) {
-    return RegExp(r'\\?\$\$').hasMatch(value);
+    return RegExp(r'\$\$').hasMatch(value);
   }
 
   bool _looksLikeLatexMath(String value) {
