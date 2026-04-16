@@ -46,8 +46,6 @@ class AppStrings {
         return ar
             ? 'ألصق JSON هنا (يدعم text + math/LaTeX لكل سؤال وخيار)'
             : 'Paste JSON here (supports text + math/LaTeX for questions and options)';
-      case 'quizTitleOptional':
-        return ar ? 'عنوان الاختبار (اختياري)' : 'Quiz title (optional)';
       case 'import':
         return ar ? 'استيراد' : 'Import';
       case 'noQuizzesYet':

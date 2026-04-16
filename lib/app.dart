@@ -225,7 +225,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
 
   Future<void> _importQuizFromJson(BuildContext context) async {
     final jsonController = TextEditingController();
-    final imported = await showDialog<bool>(
+    final jsonToImport = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppStrings.tr(context, 'importQuiz')),
@@ -244,18 +244,12 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(),
             child: Text(AppStrings.tr(context, 'cancel')),
           ),
           FilledButton.icon(
-            onPressed: () async {
-              await context.read<QuizSessionCubit>().importQuizFromJson(
-                    rawJson: jsonController.text.trim(),
-                    isArabic: AppStrings.isArabic(context),
-                  );
-              if (ctx.mounted) {
-                Navigator.of(ctx).pop(true);
-              }
+            onPressed: () {
+              Navigator.of(ctx).pop(jsonController.text.trim());
             },
             icon: const Icon(Icons.upload_file),
             label: Text(AppStrings.tr(context, 'import')),
@@ -264,9 +258,14 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
       ),
     );
 
-    if (imported == true && context.mounted) {
-      FocusScope.of(context).unfocus();
+    if (jsonToImport == null || jsonToImport.isEmpty || !context.mounted) {
+      return;
     }
+
+    await context.read<QuizSessionCubit>().importQuizFromJson(
+          rawJson: jsonToImport,
+          isArabic: AppStrings.isArabic(context),
+        );
   }
 
   Future<void> _generateVariants(BuildContext context, QuizModel quiz) async {

@@ -13,11 +13,11 @@ class QuizImportParser {
     try {
       decoded = jsonDecode(rawJson);
     } catch (_) {
-      throw const FormatException('Invalid JSON format.');
+      throw const FormatException('Invalid JSON: expected a valid JSON string.');
     }
 
     if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Top-level JSON must be an object.');
+      throw const FormatException('Invalid JSON structure: expected a JSON object (curly braces).');
     }
 
     final now = DateTime.now();
@@ -27,7 +27,7 @@ class QuizImportParser {
 
     final questions = _parseQuestions(quizMap['questions']);
     if (questions.isEmpty) {
-      throw const FormatException('Imported quiz must include at least one question.');
+      throw const FormatException('Quiz must contain at least one question in the questions array.');
     }
 
     final parsedCreatedAt = DateTime.tryParse((quizMap['createdAt'] as String?) ?? '');
@@ -126,6 +126,7 @@ class QuizImportParser {
   }
 }
 
+/// Parsed option list and the first option id marked with `isCorrect: true`.
 class _ParsedOptions {
   const _ParsedOptions({
     required this.options,
