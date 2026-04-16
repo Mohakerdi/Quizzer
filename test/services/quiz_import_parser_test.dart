@@ -6,6 +6,7 @@ void main() {
   const parser = QuizImportParser();
 
   test('parses quiz JSON and preserves math fields', () {
+    // JSON string escaping uses \\ so jsonDecode returns single backslashes.
     const rawJson = '''
 {
   "schemaVersion": 1,

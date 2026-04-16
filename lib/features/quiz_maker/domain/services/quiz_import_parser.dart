@@ -8,6 +8,10 @@ import 'package:uuid/uuid.dart';
 class QuizImportParser {
   const QuizImportParser();
 
+  /// Parses one quiz JSON payload and preserves `math` text as decoded from JSON.
+  ///
+  /// For LaTeX content, callers should provide valid JSON escaping, e.g. `\\frac`
+  /// inside JSON to represent a single backslash in the final parsed string.
   QuizModel parseSingleQuiz(String rawJson) {
     late final Object? decoded;
     try {
