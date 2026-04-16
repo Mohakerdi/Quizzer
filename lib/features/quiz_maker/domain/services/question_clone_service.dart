@@ -23,13 +23,18 @@ class QuestionCloneService {
     final clonedOptions = question.options
         .map(
           (option) => QuestionOption(
-            id: optionIdMap[option.id] ?? const Uuid().v4(),
+            id: optionIdMap[option.id]!,
             text: option.text,
             math: option.math,
           ),
         )
         .toList();
     final mappedCorrectOptionId = optionIdMap[question.correctOptionId];
+    if (mappedCorrectOptionId == null && question.options.isNotEmpty) {
+      throw StateError(
+        'Cannot clone question "${question.id}": missing correct option mapping for "${question.correctOptionId}".',
+      );
+    }
     return QuizQuestion(
       id: const Uuid().v4(),
       text: question.text,
