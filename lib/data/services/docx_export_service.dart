@@ -945,7 +945,7 @@ class DocxExportService implements VariantExportServiceContract {
     required String text,
     required String math,
   }) {
-    final normalizedText = text.trim();
+    final normalizedText = _normalizeTextForWordMath(text);
     final normalizedMath = math.trim();
     if (normalizedMath.isEmpty) {
       return normalizedText;
@@ -957,8 +957,32 @@ class DocxExportService implements VariantExportServiceContract {
     return '$normalizedText  ($inlineMath)';
   }
 
+  String _normalizeTextForWordMath(String text) {
+    final normalized = text.trim();
+    if (normalized.isEmpty) {
+      return '';
+    }
+    if (_hasMathDelimiters(normalized)) {
+      return normalized;
+    }
+    if (_looksLikeLatexMath(normalized)) {
+      return '\$\$$normalized\$\$';
+    }
+    return normalized;
+  }
+
   String _normalizeTextForExport(String text) {
     return FriendlyMathFormatter.format(text);
+  }
+
+  bool _hasMathDelimiters(String value) {
+    return RegExp(r'\\?\$\$').hasMatch(value);
+  }
+
+  bool _looksLikeLatexMath(String value) {
+    return RegExp(
+      r'\\(frac|dfrac|tfrac|cfrac|sqrt|sum|int|pi|theta|times|div|leq|geq|neq|alpha|beta|gamma|delta|lambda|mu|sigma|omega|sin|cos|tan|cot|sec|csc|log|ln|lim|cdot|pm|mp|left|right|begin|end)\b',
+    ).hasMatch(value);
   }
 
   bool _containsArabic(String value) {

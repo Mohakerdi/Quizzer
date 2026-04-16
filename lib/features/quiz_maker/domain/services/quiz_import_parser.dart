@@ -99,7 +99,7 @@ class QuizImportParser {
 
     return QuizQuestion(
       id: const Uuid().v4(),
-      text: (json['text'] as String?) ?? '',
+      text: _normalizeImportedText((json['text'] as String?) ?? ''),
       math: (json['math'] as String?) ?? '',
       imageRef: (json['imageRef'] as String?) ?? '',
       topic: (json['topic'] as String?) ?? '',
@@ -123,7 +123,7 @@ class QuizImportParser {
       final importedId = (optionRaw['id'] as String?)?.trim();
       final option = QuestionOption(
         id: importedId == null || importedId.isEmpty ? const Uuid().v4() : importedId,
-        text: (optionRaw['text'] as String?) ?? '',
+        text: _normalizeImportedText((optionRaw['text'] as String?) ?? ''),
         math: (optionRaw['math'] as String?) ?? '',
       );
       if (correctOptionIdByFlag == null && optionRaw['isCorrect'] == true) {
@@ -135,6 +135,30 @@ class QuizImportParser {
       options: parsed,
       correctOptionIdByFlag: correctOptionIdByFlag,
     );
+  }
+
+  String _normalizeImportedText(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return '';
+    }
+    if (_hasMathDelimiters(normalized)) {
+      return normalized;
+    }
+    if (_looksLikeLatexMath(normalized)) {
+      return '\$\$$normalized\$\$';
+    }
+    return normalized;
+  }
+
+  bool _hasMathDelimiters(String value) {
+    return RegExp(r'\\?\$\$').hasMatch(value);
+  }
+
+  bool _looksLikeLatexMath(String value) {
+    return RegExp(
+      r'\\(frac|dfrac|tfrac|cfrac|sqrt|sum|int|pi|theta|times|div|leq|geq|neq|alpha|beta|gamma|delta|lambda|mu|sigma|omega|sin|cos|tan|cot|sec|csc|log|ln|lim|cdot|pm|mp|left|right|begin|end)\b',
+    ).hasMatch(value);
   }
 }
 

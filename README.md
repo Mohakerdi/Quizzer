@@ -22,7 +22,7 @@ Quizzer is now a **quiz creation app** focused on building teacher-friendly mult
     - GeoGebra-like math keyboard input (`math_keyboard` package).
     - Live LaTeX preview for math expressions.
     - Supports richer function/operator entry than simple symbol chips.
-    - Imported JSON keeps `math` fields untouched so equations remain editable/exportable.
+    - Imported JSON keeps `math` fields untouched, and LaTeX-like `text` values are auto-wrapped for inline equation rendering/export.
 5. **First launch Arabic tutorial**
    - A one-time in-app coach-mark walkthrough appears on first app open with Arabic guidance.
 6. **Generate Variants**

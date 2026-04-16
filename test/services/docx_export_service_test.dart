@@ -395,6 +395,40 @@ void main() {
     expect(solutionsXml, contains('<m:r><m:t>π</m:t></m:r>'));
   });
 
+  test('renders latex-like imported option text as Word equation in solutions export', () {
+    final quiz = QuizModel.empty('Math');
+    final variant = GeneratedVariant(
+      id: 'V8',
+      quizId: quiz.id,
+      seed: 9,
+      generatedAt: DateTime(2026),
+      questions: const [
+        GeneratedQuestion(
+          questionId: 'q1',
+          text: 'Compute',
+          math: '',
+          imageRef: '',
+          correctOptionId: 'o1',
+          options: [
+            QuestionOption(id: 'o1', text: r'\frac{1}{2}'),
+            QuestionOption(id: 'o2', text: 'regular'),
+          ],
+        ),
+      ],
+    );
+
+    final service = const DocxExportService();
+    final solutionsXml = service.buildSolutionsDocumentXmlForTest(
+      quiz: quiz,
+      variant: variant,
+      renderEquationsAsWordMath: true,
+    );
+
+    expect(solutionsXml, contains('<m:oMath>'));
+    expect(solutionsXml, contains('<m:f><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>'));
+    expect(solutionsXml, isNot(contains(r'\frac{1}{2}')));
+  });
+
   test('exports inline $$math$$ in text as normalized plain text', () {
     final quiz = QuizModel.empty('Math');
     final variant = GeneratedVariant(

@@ -65,4 +65,28 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('wraps latex-like imported text in inline math delimiters', () {
+    const rawJson = '''
+{
+  "title": "Latex Text",
+  "questions": [
+    {
+      "text": "\\\\frac{1}{2}x",
+      "options": [
+        {"text": "\\\\sqrt{9}", "isCorrect": true},
+        {"text": "Regular option"}
+      ]
+    }
+  ]
+}
+''';
+
+    final quiz = parser.parseSingleQuiz(rawJson);
+    final question = quiz.questions.first;
+
+    expect(question.text, r'$$\frac{1}{2}x$$');
+    expect(question.options.first.text, r'$$\sqrt{9}$$');
+    expect(question.options.last.text, 'Regular option');
+  });
 }
