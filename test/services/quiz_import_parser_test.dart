@@ -29,6 +29,8 @@ void main() {
     expect(quiz.title, 'Math Quiz');
     expect(quiz.questions, hasLength(1));
     expect(quiz.questions.first.math, '\\frac{1}{2}x + 3 = 7');
+    expect(quiz.questions.first.options.first.math, '');
+    expect(quiz.questions.first.options.last.math, '');
     expect(quiz.questions.first.correctOptionId, quiz.questions.first.options.first.id);
   });
 

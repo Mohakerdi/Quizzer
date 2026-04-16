@@ -34,8 +34,8 @@ class QuizImportParser {
       throw const FormatException('Quiz must contain at least one question in the questions array.');
     }
 
-    final parsedCreatedAt = DateTime.tryParse((quizMap['createdAt'] as String?) ?? '');
-    final parsedUpdatedAt = DateTime.tryParse((quizMap['updatedAt'] as String?) ?? '');
+    final parsedCreatedAt = _parseDateTime(quizMap['createdAt']);
+    final parsedUpdatedAt = _parseDateTime(quizMap['updatedAt']);
 
     return QuizModel(
       id: const Uuid().v4(),
@@ -67,6 +67,14 @@ class QuizImportParser {
     }
 
     return parsedQuestions;
+  }
+
+  DateTime? _parseDateTime(Object? rawValue) {
+    final text = rawValue as String?;
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(text);
   }
 
   QuizQuestion _parseQuestion(Map<String, dynamic> json) {
