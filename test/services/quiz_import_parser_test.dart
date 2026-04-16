@@ -89,4 +89,28 @@ void main() {
     expect(question.options.first.text, r'$$\sqrt{9}$$');
     expect(question.options.last.text, 'Regular option');
   });
+
+  test('does not re-wrap text that already contains inline math delimiters', () {
+    const rawJson = '''
+{
+  "title": "Existing Delimiters",
+  "questions": [
+    {
+      "text": "\$\$x^2\$\$",
+      "options": [
+        {"text": "\$\$\\\\frac{1}{2}\$\$", "isCorrect": true},
+        {"text": "\\\\$\\\\$literal\\\\$\\\\$"}
+      ]
+    }
+  ]
+}
+''';
+
+    final quiz = parser.parseSingleQuiz(rawJson);
+    final question = quiz.questions.first;
+
+    expect(question.text, r'$$x^2$$');
+    expect(question.options.first.text, r'$$\frac{1}{2}$$');
+    expect(question.options.last.text, r'\$\$literal\$\$');
+  });
 }

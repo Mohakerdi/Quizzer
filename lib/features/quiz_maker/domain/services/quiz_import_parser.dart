@@ -139,25 +139,7 @@ class QuizImportParser {
   }
 
   String _normalizeImportedText(String value) {
-    final normalized = value.trim();
-    if (normalized.isEmpty) {
-      return '';
-    }
-    if (_hasMathDelimiters(normalized)) {
-      return normalized;
-    }
-    if (_looksLikeLatexMath(normalized)) {
-      return '${r'$$'}$normalized${r'$$'}';
-    }
-    return normalized;
-  }
-
-  bool _hasMathDelimiters(String value) {
-    return RegExp(r'\$\$').hasMatch(value);
-  }
-
-  bool _looksLikeLatexMath(String value) {
-    return LatexDetection.looksLikeLatexMath(value);
+    return LatexDetection.wrapLatexLikeTextWithInlineDelimiters(value);
   }
 }
 

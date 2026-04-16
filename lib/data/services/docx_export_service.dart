@@ -959,29 +959,11 @@ class DocxExportService implements VariantExportServiceContract {
   }
 
   String _normalizeTextForWordMath(String text) {
-    final normalized = text.trim();
-    if (normalized.isEmpty) {
-      return '';
-    }
-    if (_hasMathDelimiters(normalized)) {
-      return normalized;
-    }
-    if (_looksLikeLatexMath(normalized)) {
-      return '${r'$$'}$normalized${r'$$'}';
-    }
-    return normalized;
+    return LatexDetection.wrapLatexLikeTextWithInlineDelimiters(text);
   }
 
   String _normalizeTextForExport(String text) {
     return FriendlyMathFormatter.format(text);
-  }
-
-  bool _hasMathDelimiters(String value) {
-    return RegExp(r'\$\$').hasMatch(value);
-  }
-
-  bool _looksLikeLatexMath(String value) {
-    return LatexDetection.looksLikeLatexMath(value);
   }
 
   bool _containsArabic(String value) {
