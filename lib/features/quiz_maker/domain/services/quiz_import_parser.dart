@@ -147,7 +147,7 @@ class QuizImportParser {
       return normalized;
     }
     if (_looksLikeLatexMath(normalized)) {
-      return r'$$' + normalized + r'$$';
+      return '${r'$$'}$normalized${r'$$'}';
     }
     return normalized;
   }
