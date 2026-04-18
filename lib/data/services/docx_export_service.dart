@@ -326,7 +326,7 @@ class DocxExportService implements VariantExportServiceContract {
 
     return _documentTemplate(
       title: exportInArabic ? 'ورقة الأسئلة: ${quiz.title}' : 'Question Paper: ${quiz.title}',
-      body: _table(rows.join(), rtl: isRtl),
+      body: _table(rows.join()),
       rtl: isRtl,
     );
   }
@@ -446,14 +446,13 @@ class DocxExportService implements VariantExportServiceContract {
 
     return _documentTemplate(
       title: exportInArabic ? 'مفتاح الإجابة' : 'Answer Key',
-      body: _table(rows.join(), rtl: isRtl),
+      body: _table(rows.join()),
       rtl: isRtl,
     );
   }
 
   String _documentTemplate({required String title, required String body, required bool rtl}) {
     final bidi = rtl ? '<w:bidi/>' : '';
-    final sectionBidi = rtl ? '<w:bidi w:val="1"/>' : '';
     final jc = rtl ? 'right' : 'center';
     final spacerJc = rtl ? 'right' : 'left';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -468,20 +467,16 @@ class DocxExportService implements VariantExportServiceContract {
     <w:sectPr>
       <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
       <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
-      $sectionBidi
+      $bidi
     </w:sectPr>
   </w:body>
 </w:document>''';
   }
 
-  String _table(String rows, {required bool rtl}) {
-    final tableBidi = rtl ? '<w:bidiVisual/>' : '';
-    final tableJc = rtl ? '<w:jc w:val="right"/>' : '';
+  String _table(String rows) {
     return '''<w:tbl>
   <w:tblPr>
     <w:tblW w:w="$_tableTotalWidthTwips" w:type="dxa"/>
-    $tableBidi
-    $tableJc
     <w:tblLayout w:type="fixed"/>
     <w:tblBorders>
       <w:top w:val="single" w:sz="12"/>
