@@ -122,8 +122,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(AppStrings.tr(context, 'validationErrors')),
-        content: SizedBox(
-          width: 520,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,13 +197,14 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       context: context,
       barrierDismissible: false,
       builder: (cropDialogContext) {
+        final mediaSize = MediaQuery.sizeOf(cropDialogContext);
         var isCropping = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
             title: Text(AppStrings.tr(context, 'editImage')),
             content: SizedBox(
-              width: 720,
-              height: 520,
+              width: mediaSize.width * 0.9,
+              height: mediaSize.height * 0.65,
               child: Crop(
                 image: imageBytes,
                 controller: cropController,
@@ -586,73 +587,78 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(AppStrings.tr(context, 'docxExportDetails')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _teacherController,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'teacherName'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _schoolController,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'schoolName'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _exportLanguageCode,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'exportLanguage'),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: 'en',
-                child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _teacherController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'teacherName'),
+                ),
               ),
-              DropdownMenuItem(
-                value: 'ar',
-                child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _schoolController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'schoolName'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _exportLanguageCode,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'exportLanguage'),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'en',
+                    child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ar',
+                    child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _exportLanguageCode = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _optionLabelStyle,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'optionLabelStyle'),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'latin',
+                    child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'arabic',
+                    child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _optionLabelStyle = value;
+                  });
+                },
               ),
             ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _exportLanguageCode = value;
-              });
-            },
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _optionLabelStyle,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'optionLabelStyle'),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: 'latin',
-                child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
-              ),
-              DropdownMenuItem(
-                value: 'arabic',
-                child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
-              ),
-            ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _optionLabelStyle = value;
-              });
-            },
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(

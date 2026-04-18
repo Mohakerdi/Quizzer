@@ -92,7 +92,7 @@ class DocxExportService implements VariantExportServiceContract {
     String documentXml, {
     List<_EmbeddedImageAsset> imageAssets = const [],
   }) async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await _resolveExportDirectory();
     final filePath = '${dir.path}/$fileName';
     final contentTypesBytes = utf8.encode(_buildContentTypes(imageAssets));
     final relsBytes = utf8.encode(_rels);
@@ -124,6 +124,29 @@ class DocxExportService implements VariantExportServiceContract {
     final file = File(filePath);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
+  }
+
+  Future<Directory> _resolveExportDirectory() async {
+    if (Platform.isAndroid) {
+      const preferredDirectoryPath = '/storage/emulated/0/Namazej';
+      final preferredDirectory = Directory(preferredDirectoryPath);
+      try {
+        if (!await preferredDirectory.exists()) {
+          await preferredDirectory.create(recursive: true);
+        }
+        if (await preferredDirectory.exists()) {
+          return preferredDirectory;
+        }
+      } catch (_) {
+        // Fall back when direct external path is unavailable on this device.
+      }
+
+      final externalDirectory = await getExternalStorageDirectory();
+      if (externalDirectory != null) {
+        return externalDirectory;
+      }
+    }
+    return getApplicationDocumentsDirectory();
   }
 
   @visibleForTesting
