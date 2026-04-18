@@ -22,7 +22,7 @@ class DocxExportService implements VariantExportServiceContract {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
-  static const String _androidPreferredExportDirectoryPath = '/storage/emulated/0/Namazej';
+  static const String _androidExportPath = '/storage/emulated/0/Namazej';
 
   @override
   Future<String> exportQuizPaper({
@@ -129,19 +129,17 @@ class DocxExportService implements VariantExportServiceContract {
 
   Future<Directory> _resolveExportDirectory() async {
     if (Platform.isAndroid) {
-      final preferredDirectory = Directory(_androidPreferredExportDirectoryPath);
+      final preferredDirectory = Directory(_androidExportPath);
       try {
         if (!await preferredDirectory.exists()) {
           await preferredDirectory.create(recursive: true);
         }
-        if (await preferredDirectory.exists()) {
-          return preferredDirectory;
-        }
+        return preferredDirectory;
       } catch (error) {
         // Fall back when direct external path is unavailable on this device.
         if (kDebugMode) {
           debugPrint(
-            'Failed to prepare export directory $_androidPreferredExportDirectoryPath: $error',
+            'Failed to prepare export directory $_androidExportPath: $error',
           );
         }
       }
