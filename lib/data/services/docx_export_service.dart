@@ -33,6 +33,11 @@ class DocxExportService implements VariantExportServiceContract {
     String? exportLanguageCode,
     String? optionLabelStyle,
   }) async {
+    final rtl = _resolveRtlForExport(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: exportLanguageCode,
+    );
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final equationRegistry = _EquationAssetRegistry();
     final content = _buildQuizDocumentXml(
@@ -54,6 +59,7 @@ class DocxExportService implements VariantExportServiceContract {
         exportType: 'quiz',
       ),
       content,
+      rtl: rtl,
       imageAssets: [...imageAssetsByQuestion.values],
     );
   }
@@ -65,6 +71,11 @@ class DocxExportService implements VariantExportServiceContract {
     String? exportLanguageCode,
     String? optionLabelStyle,
   }) async {
+    final rtl = _resolveRtlForExport(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: exportLanguageCode,
+    );
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final equationRegistry = _EquationAssetRegistry();
     final content = _buildSolutionsDocumentXml(
@@ -84,6 +95,7 @@ class DocxExportService implements VariantExportServiceContract {
         exportType: 'answer',
       ),
       content,
+      rtl: rtl,
       imageAssets: [...imageAssetsByQuestion.values],
     );
   }
@@ -91,6 +103,7 @@ class DocxExportService implements VariantExportServiceContract {
   Future<String> _writeDocx(
     String fileName,
     String documentXml, {
+    required bool rtl,
     List<_EmbeddedImageAsset> imageAssets = const [],
   }) async {
     final dir = await _resolveExportDirectory();
@@ -99,7 +112,7 @@ class DocxExportService implements VariantExportServiceContract {
     final relsBytes = utf8.encode(_rels);
     final docRelsBytes = utf8.encode(_buildDocRels(imageAssets));
     final documentBytes = utf8.encode(documentXml);
-    final stylesBytes = utf8.encode(_styles);
+    final stylesBytes = utf8.encode(_buildStylesXml(rtl: rtl));
 
     final archive = Archive()
       ..addFile(ArchiveFile('[Content_Types].xml', contentTypesBytes.length, contentTypesBytes))
@@ -440,6 +453,7 @@ class DocxExportService implements VariantExportServiceContract {
 
   String _documentTemplate({required String title, required String body, required bool rtl}) {
     final bidi = rtl ? '<w:bidi/>' : '';
+    final sectionBidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
     final spacerJc = rtl ? 'right' : 'left';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -454,6 +468,7 @@ class DocxExportService implements VariantExportServiceContract {
     <w:sectPr>
       <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
       <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
+      $sectionBidi
     </w:sectPr>
   </w:body>
 </w:document>''';
@@ -1011,6 +1026,21 @@ class DocxExportService implements VariantExportServiceContract {
     return _containsArabic(fallbackContent);
   }
 
+  bool _resolveRtlForExport({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required String? exportLanguageCode,
+  }) {
+    return _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
+        quiz.title,
+        ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
+        ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
+      ].join(' '),
+    );
+  }
+
   bool _isArabicLanguageCode(String? languageCode) {
     return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
   }
@@ -1034,9 +1064,15 @@ const _rels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>''';
 
-const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+String _buildStylesXml({required bool rtl}) {
+  final bidi = rtl ? '<w:bidi/>' : '';
+  final jc = rtl ? 'right' : 'left';
+  return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
+    <w:pPrDefault>
+      <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
+    </w:pPrDefault>
     <w:rPrDefault>
       <w:rPr>
         <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>
@@ -1044,7 +1080,13 @@ const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       </w:rPr>
     </w:rPrDefault>
   </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:qFormat/>
+    <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
+  </w:style>
 </w:styles>''';
+}
 
 class _EmbeddedImageAsset {
   _EmbeddedImageAsset({
