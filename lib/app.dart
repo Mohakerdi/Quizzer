@@ -80,6 +80,8 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
   static const _githubUrl = 'https://github.com/Mohakerdi';
   static const _linkedinUrl = 'https://www.linkedin.com/in/mohammad-kerdi-733126364';
   static const _telegramUrl = 'https://t.me/MOHA_KRDI';
+  static const double _jsonImportDialogMaxWidth = 560;
+  static const double _templateImportDialogMaxWidth = 640;
   static const _importQuizTemplateJson = '''
 {
   "title": "My Imported Quiz",
@@ -274,7 +276,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
           ],
         ),
         content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
+          constraints: const BoxConstraints(maxWidth: _jsonImportDialogMaxWidth),
           child: TextField(
             controller: jsonController,
             minLines: 10,
@@ -319,7 +321,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
       builder: (ctx) => AlertDialog(
         title: Text(AppStrings.tr(context, 'importTemplateTitle')),
         content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: _templateImportDialogMaxWidth),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

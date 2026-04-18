@@ -60,6 +60,9 @@ class QuizEditorScreen extends StatefulWidget {
 }
 
 class _QuizEditorScreenState extends State<QuizEditorScreen> {
+  static const double _validationDialogMaxWidth = 520;
+  static const double _cropDialogWidthFactor = 0.9;
+  static const double _cropDialogHeightFactor = 0.65;
   late QuizModel _quiz;
   final _validator = const EditorValidator();
   final ImagePicker _imagePicker = ImagePicker();
@@ -123,7 +126,7 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       builder: (_) => AlertDialog(
         title: Text(AppStrings.tr(context, 'validationErrors')),
         content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
+          constraints: const BoxConstraints(maxWidth: _validationDialogMaxWidth),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,8 +206,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           builder: (context, setDialogState) => AlertDialog(
             title: Text(AppStrings.tr(context, 'editImage')),
             content: SizedBox(
-              width: mediaSize.width * 0.9,
-              height: mediaSize.height * 0.65,
+              width: mediaSize.width * _cropDialogWidthFactor,
+              height: mediaSize.height * _cropDialogHeightFactor,
               child: Crop(
                 image: imageBytes,
                 controller: cropController,
@@ -559,6 +562,7 @@ class _DocxExportDetailsDialog extends StatefulWidget {
 }
 
 class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
+  static const double _dialogMaxWidth = 420;
   final _teacherController = TextEditingController();
   final _schoolController = TextEditingController();
   bool _defaultsInitialized = false;
@@ -588,7 +592,7 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
     return AlertDialog(
       title: Text(AppStrings.tr(context, 'docxExportDetails')),
       content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: _dialogMaxWidth),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
