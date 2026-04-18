@@ -506,7 +506,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(
+                Flexible(
                   child: Text(
                     AppStrings.tr(context, 'appTitle'),
                     overflow: TextOverflow.ellipsis,

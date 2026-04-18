@@ -137,8 +137,11 @@ class DocxExportService implements VariantExportServiceContract {
         if (await preferredDirectory.exists()) {
           return preferredDirectory;
         }
-      } catch (_) {
+      } catch (error) {
         // Fall back when direct external path is unavailable on this device.
+        if (kDebugMode) {
+          debugPrint('Failed to prepare export directory $preferredDirectoryPath: $error');
+        }
       }
 
       final externalDirectory = await getExternalStorageDirectory();
