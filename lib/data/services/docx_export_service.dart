@@ -453,7 +453,6 @@ class DocxExportService implements VariantExportServiceContract {
 
   String _documentTemplate({required String title, required String body, required bool rtl}) {
     final bidi = rtl ? '<w:bidi/>' : '';
-    final sectionBidi = rtl ? '<w:bidi/>' : '';
     final jc = rtl ? 'right' : 'center';
     final spacerJc = rtl ? 'right' : 'left';
     return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -468,7 +467,7 @@ class DocxExportService implements VariantExportServiceContract {
     <w:sectPr>
       <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
       <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
-      $sectionBidi
+      $bidi
     </w:sectPr>
   </w:body>
 </w:document>''';
@@ -1065,13 +1064,13 @@ const _rels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </Relationships>''';
 
 String _buildStylesXml({required bool rtl}) {
-  final bidi = rtl ? '<w:bidi/>' : '';
-  final jc = rtl ? 'right' : 'left';
+  final bidiTag = rtl ? '<w:bidi/>' : '';
+  final paragraphAlignment = rtl ? 'right' : 'left';
   return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
     <w:pPrDefault>
-      <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
+      <w:pPr>$bidiTag<w:jc w:val="$paragraphAlignment"/></w:pPr>
     </w:pPrDefault>
     <w:rPrDefault>
       <w:rPr>
@@ -1083,7 +1082,7 @@ String _buildStylesXml({required bool rtl}) {
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
     <w:name w:val="Normal"/>
     <w:qFormat/>
-    <w:pPr>$bidi<w:jc w:val="$jc"/></w:pPr>
+    <w:pPr>$bidiTag<w:jc w:val="$paragraphAlignment"/></w:pPr>
   </w:style>
 </w:styles>''';
 }
