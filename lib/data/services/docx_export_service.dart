@@ -286,7 +286,7 @@ class DocxExportService implements VariantExportServiceContract {
       rows.add(
         _row(
           _maybeFlipCellsForRtl([
-            _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
+            _cell('Q${i + 1}', bold: true, align: isRtl ? 'right' : 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
               colSpan: 3,
@@ -402,7 +402,7 @@ class DocxExportService implements VariantExportServiceContract {
       rows.add(
         _row(
           _maybeFlipCellsForRtl([
-            _cell('${i + 1}', align: 'center', rtl: isRtl),
+            _cell('${i + 1}', align: isRtl ? 'right' : 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
               colSpan: 3,
@@ -503,8 +503,9 @@ class DocxExportService implements VariantExportServiceContract {
           (value) => _cell(
             value,
             bold: true,
-            align: 'center',
+            align: rtl ? 'right' : 'center',
             fillColor: 'EDEDED',
+            rtl: rtl,
           ),
         )
         .toList();
