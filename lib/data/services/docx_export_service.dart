@@ -22,6 +22,7 @@ class DocxExportService implements VariantExportServiceContract {
   static const int _thirdColumnWidthTwips = 3168;
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
+  static const String _androidExportPath = '/storage/emulated/0/Namazej';
 
   @override
   Future<String> exportQuizPaper({
@@ -32,6 +33,11 @@ class DocxExportService implements VariantExportServiceContract {
     String? exportLanguageCode,
     String? optionLabelStyle,
   }) async {
+    final rtl = _resolveRtlForExport(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: exportLanguageCode,
+    );
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final equationRegistry = _EquationAssetRegistry();
     final content = _buildQuizDocumentXml(
@@ -53,6 +59,7 @@ class DocxExportService implements VariantExportServiceContract {
         exportType: 'quiz',
       ),
       content,
+      rtl: rtl,
       imageAssets: [...imageAssetsByQuestion.values],
     );
   }
@@ -64,6 +71,11 @@ class DocxExportService implements VariantExportServiceContract {
     String? exportLanguageCode,
     String? optionLabelStyle,
   }) async {
+    final rtl = _resolveRtlForExport(
+      quiz: quiz,
+      variant: variant,
+      exportLanguageCode: exportLanguageCode,
+    );
     final imageAssetsByQuestion = await _prepareImageAssets(variant.questions);
     final equationRegistry = _EquationAssetRegistry();
     final content = _buildSolutionsDocumentXml(
@@ -83,6 +95,7 @@ class DocxExportService implements VariantExportServiceContract {
         exportType: 'answer',
       ),
       content,
+      rtl: rtl,
       imageAssets: [...imageAssetsByQuestion.values],
     );
   }
@@ -90,15 +103,16 @@ class DocxExportService implements VariantExportServiceContract {
   Future<String> _writeDocx(
     String fileName,
     String documentXml, {
+    required bool rtl,
     List<_EmbeddedImageAsset> imageAssets = const [],
   }) async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await _resolveExportDirectory();
     final filePath = '${dir.path}/$fileName';
     final contentTypesBytes = utf8.encode(_buildContentTypes(imageAssets));
     final relsBytes = utf8.encode(_rels);
     final docRelsBytes = utf8.encode(_buildDocRels(imageAssets));
     final documentBytes = utf8.encode(documentXml);
-    final stylesBytes = utf8.encode(_styles);
+    final stylesBytes = utf8.encode(_buildStylesXml(rtl: rtl));
 
     final archive = Archive()
       ..addFile(ArchiveFile('[Content_Types].xml', contentTypesBytes.length, contentTypesBytes))
@@ -124,6 +138,31 @@ class DocxExportService implements VariantExportServiceContract {
     final file = File(filePath);
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
+  }
+
+  Future<Directory> _resolveExportDirectory() async {
+    if (Platform.isAndroid) {
+      final preferredDirectory = Directory(_androidExportPath);
+      try {
+        if (!await preferredDirectory.exists()) {
+          await preferredDirectory.create(recursive: true);
+        }
+        return preferredDirectory;
+      } catch (error) {
+        // Fall back when direct external path is unavailable on this device.
+        if (kDebugMode) {
+          debugPrint(
+            'Failed to prepare export directory $_androidExportPath: $error',
+          );
+        }
+      }
+
+      final externalDirectory = await getExternalStorageDirectory();
+      if (externalDirectory != null) {
+        return externalDirectory;
+      }
+    }
+    return getApplicationDocumentsDirectory();
   }
 
   @visibleForTesting
@@ -247,7 +286,7 @@ class DocxExportService implements VariantExportServiceContract {
       rows.add(
         _row(
           _maybeFlipCellsForRtl([
-            _cell('Q${i + 1}', bold: true, align: 'center', rtl: isRtl),
+            _cell('Q${i + 1}', bold: true, align: isRtl ? 'right' : 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
               colSpan: 3,
@@ -363,7 +402,7 @@ class DocxExportService implements VariantExportServiceContract {
       rows.add(
         _row(
           _maybeFlipCellsForRtl([
-            _cell('${i + 1}', align: 'center', rtl: isRtl),
+            _cell('${i + 1}', align: isRtl ? 'right' : 'center', rtl: isRtl),
             _cell(
               prompt.toString(),
               colSpan: 3,
@@ -428,6 +467,7 @@ class DocxExportService implements VariantExportServiceContract {
     <w:sectPr>
       <w:pgSz w:w="$_pageWidthTwips" w:h="$_pageHeightTwips"/>
       <w:pgMar w:top="$_pageMarginTwips" w:right="$_pageMarginTwips" w:bottom="$_pageMarginTwips" w:left="$_pageMarginTwips"/>
+      $bidi
     </w:sectPr>
   </w:body>
 </w:document>''';
@@ -463,8 +503,9 @@ class DocxExportService implements VariantExportServiceContract {
           (value) => _cell(
             value,
             bold: true,
-            align: 'center',
+            align: rtl ? 'right' : 'center',
             fillColor: 'EDEDED',
+            rtl: rtl,
           ),
         )
         .toList();
@@ -985,6 +1026,21 @@ class DocxExportService implements VariantExportServiceContract {
     return _containsArabic(fallbackContent);
   }
 
+  bool _resolveRtlForExport({
+    required QuizModel quiz,
+    required GeneratedVariant variant,
+    required String? exportLanguageCode,
+  }) {
+    return _isRtlLayout(
+      exportLanguageCode: exportLanguageCode,
+      fallbackContent: [
+        quiz.title,
+        ...variant.questions.map((q) => _composeForExport(text: q.text, math: q.math)),
+        ...variant.questions.expand((q) => q.options.map((o) => _composeForExport(text: o.text, math: o.math))),
+      ].join(' '),
+    );
+  }
+
   bool _isArabicLanguageCode(String? languageCode) {
     return (languageCode ?? '').trim().toLowerCase().startsWith('ar');
   }
@@ -1008,9 +1064,15 @@ const _rels = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>''';
 
-const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+String _buildStylesXml({required bool rtl}) {
+  final bidiTag = rtl ? '<w:bidi/>' : '';
+  final paragraphAlignment = rtl ? 'right' : 'left';
+  return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
+    <w:pPrDefault>
+      <w:pPr>$bidiTag<w:jc w:val="$paragraphAlignment"/></w:pPr>
+    </w:pPrDefault>
     <w:rPrDefault>
       <w:rPr>
         <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/>
@@ -1018,7 +1080,13 @@ const _styles = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       </w:rPr>
     </w:rPrDefault>
   </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:qFormat/>
+    <w:pPr>$bidiTag<w:jc w:val="$paragraphAlignment"/></w:pPr>
+  </w:style>
 </w:styles>''';
+}
 
 class _EmbeddedImageAsset {
   _EmbeddedImageAsset({

@@ -23,6 +23,7 @@ class QuestionBankScreen extends StatefulWidget {
 }
 
 class _QuestionBankScreenState extends State<QuestionBankScreen> {
+  static const double _compactFilterLayoutBreakpoint = 700;
   final _gradeController = TextEditingController();
   final _unitController = TextEditingController();
   final _curriculumController = TextEditingController();
@@ -65,41 +66,78 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _gradeController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: AppStrings.tr(context, 'gradeLevel'),
-                    border: const OutlineInputBorder(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compactLayout = constraints.maxWidth < _compactFilterLayoutBreakpoint;
+              if (compactLayout) {
+                return Column(
+                  children: [
+                    TextField(
+                      controller: _gradeController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'gradeLevel'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _unitController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'unitOfStudy'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _curriculumController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'curriculum'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _gradeController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'gradeLevel'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _unitController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: AppStrings.tr(context, 'unitOfStudy'),
-                    border: const OutlineInputBorder(),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _unitController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'unitOfStudy'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _curriculumController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: AppStrings.tr(context, 'curriculum'),
-                    border: const OutlineInputBorder(),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _curriculumController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: AppStrings.tr(context, 'curriculum'),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           Wrap(

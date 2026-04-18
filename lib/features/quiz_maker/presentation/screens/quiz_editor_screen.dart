@@ -60,6 +60,9 @@ class QuizEditorScreen extends StatefulWidget {
 }
 
 class _QuizEditorScreenState extends State<QuizEditorScreen> {
+  static const double _validationDialogMaxWidth = 520;
+  static const double _cropDialogWidthFactor = 0.9;
+  static const double _cropDialogHeightFactor = 0.65;
   late QuizModel _quiz;
   final _validator = const EditorValidator();
   final ImagePicker _imagePicker = ImagePicker();
@@ -122,8 +125,8 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(AppStrings.tr(context, 'validationErrors')),
-        content: SizedBox(
-          width: 520,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _validationDialogMaxWidth),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,13 +200,14 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
       context: context,
       barrierDismissible: false,
       builder: (cropDialogContext) {
+        final mediaSize = MediaQuery.sizeOf(cropDialogContext);
         var isCropping = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
             title: Text(AppStrings.tr(context, 'editImage')),
             content: SizedBox(
-              width: 720,
-              height: 520,
+              width: mediaSize.width * _cropDialogWidthFactor,
+              height: mediaSize.height * _cropDialogHeightFactor,
               child: Crop(
                 image: imageBytes,
                 controller: cropController,
@@ -558,6 +562,7 @@ class _DocxExportDetailsDialog extends StatefulWidget {
 }
 
 class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
+  static const double _dialogMaxWidth = 420;
   final _teacherController = TextEditingController();
   final _schoolController = TextEditingController();
   bool _defaultsInitialized = false;
@@ -586,73 +591,78 @@ class _DocxExportDetailsDialogState extends State<_DocxExportDetailsDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(AppStrings.tr(context, 'docxExportDetails')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _teacherController,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'teacherName'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _schoolController,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'schoolName'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _exportLanguageCode,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'exportLanguage'),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: 'en',
-                child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _dialogMaxWidth),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _teacherController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'teacherName'),
+                ),
               ),
-              DropdownMenuItem(
-                value: 'ar',
-                child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _schoolController,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'schoolName'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _exportLanguageCode,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'exportLanguage'),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'en',
+                    child: Text(AppStrings.tr(context, 'exportLanguageEnglish')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ar',
+                    child: Text(AppStrings.tr(context, 'exportLanguageArabic')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _exportLanguageCode = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _optionLabelStyle,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tr(context, 'optionLabelStyle'),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'latin',
+                    child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'arabic',
+                    child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _optionLabelStyle = value;
+                  });
+                },
               ),
             ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _exportLanguageCode = value;
-              });
-            },
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _optionLabelStyle,
-            decoration: InputDecoration(
-              labelText: AppStrings.tr(context, 'optionLabelStyle'),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: 'latin',
-                child: Text(AppStrings.tr(context, 'optionLabelStyleLatin')),
-              ),
-              DropdownMenuItem(
-                value: 'arabic',
-                child: Text(AppStrings.tr(context, 'optionLabelStyleArabic')),
-              ),
-            ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() {
-                _optionLabelStyle = value;
-              });
-            },
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(
