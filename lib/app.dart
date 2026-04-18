@@ -657,7 +657,7 @@ class _HomeWorkspace extends StatelessWidget {
         return Row(
           children: [
             SizedBox(
-              width: 320,
+              width: 340,
               child: _buildQuizListPane(context),
             ),
             const VerticalDivider(width: 1),
