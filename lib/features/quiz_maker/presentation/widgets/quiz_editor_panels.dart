@@ -21,26 +21,25 @@ class QuizEditorActionsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         FilledButton.icon(
           onPressed: onSave,
           icon: const Icon(Icons.save),
           label: Text(AppStrings.tr(context, 'saveQuiz')),
         ),
-        const SizedBox(width: 8),
         OutlinedButton.icon(
           onPressed: onValidate,
           icon: const Icon(Icons.rule),
           label: Text(AppStrings.tr(context, 'validate')),
         ),
-        const SizedBox(width: 8),
         OutlinedButton.icon(
           onPressed: onAddQuestion,
           icon: const Icon(Icons.add),
           label: Text(AppStrings.tr(context, 'addQuestion')),
         ),
-        const SizedBox(width: 8),
         FilledButton.icon(
           onPressed: onGenerateVariants,
           icon: const Icon(Icons.shuffle),
@@ -172,15 +171,43 @@ class GeneratedVariantsPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    AppStrings.tr(context, 'generatedVariantsTitle'),
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 380;
+                      if (compact) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppStrings.tr(context, 'generatedVariantsTitle'),
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: generatedVariants.isEmpty ? null : onExportAllVariants,
+                              icon: const Icon(Icons.download_for_offline_outlined),
+                              label: Text(AppStrings.tr(context, 'exportAllDocx')),
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              AppStrings.tr(context, 'generatedVariantsTitle'),
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: generatedVariants.isEmpty ? null : onExportAllVariants,
+                            icon: const Icon(Icons.download_for_offline_outlined),
+                            label: Text(AppStrings.tr(context, 'exportAllDocx')),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: generatedVariants.isEmpty ? null : onExportAllVariants,
-                  icon: const Icon(Icons.download_for_offline_outlined),
-                  label: Text(AppStrings.tr(context, 'exportAllDocx')),
                 ),
               ],
             ),

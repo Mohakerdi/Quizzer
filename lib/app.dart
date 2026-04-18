@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,44 +14,56 @@ import 'package:adv_basics/features/question_bank/presentation/screens/question_
 import 'package:adv_basics/features/quiz_maker/presentation/screens/quiz_editor_screen.dart';
 import 'package:adv_basics/features/quiz_list/presentation/screens/quiz_list_screen.dart';
 import 'package:adv_basics/features/variant_preview/presentation/screens/variant_preview_screen.dart';
-import 'package:adv_basics/data/services/docx_export_service.dart';
-import 'package:adv_basics/data/services/google_forms_export_service.dart';
-import 'package:adv_basics/data/repositories/quiz_repository.dart';
-import 'package:adv_basics/features/quiz_maker/domain/services/variant_generator.dart';
-import 'package:adv_basics/features/quiz_maker/application/quiz_maker_cubit.dart';
-import 'package:adv_basics/features/quiz_maker/application/quiz_maker_state.dart';
+import 'package:adv_basics/core/application/app_settings_cubit.dart';
+import 'package:adv_basics/core/application/app_settings_state.dart';
+import 'package:adv_basics/core/di/app_dependencies.dart';
+import 'package:adv_basics/features/quiz_maker/application/quiz_session_cubit.dart';
+import 'package:adv_basics/features/quiz_maker/application/quiz_session_state.dart';
 
 class QuizMakerApp extends StatelessWidget {
   const QuizMakerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => QuizMakerCubit(
-        repository: QuizRepository(),
-        variantGenerator: const VariantGenerator(),
-        docxExportService: const DocxExportService(),
-        googleFormsExportService: const GoogleFormsExportService(),
-      )..loadData(),
-      child: BlocSelector<QuizMakerCubit, QuizMakerState, ({Locale locale, ThemeMode themeMode})>(
-        selector: (state) => (locale: state.locale, themeMode: state.themeMode),
-        builder: (context, appConfig) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Quizzer Maker',
-            locale: appConfig.locale,
-            supportedLocales: const [Locale('en'), Locale('ar')],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            theme: buildLightTheme(),
-            darkTheme: buildDarkTheme(),
-            themeMode: appConfig.themeMode,
-            home: const QuizMakerHome(),
-          );
-        },
+    final dependencies = AppDependencies.create();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => AppSettingsCubit(
+            localDataSource: dependencies.appSettingsLocalDataSource,
+          ),
+        ),
+        BlocProvider(
+          create: (_) => QuizSessionCubit(
+            repository: dependencies.quizRepository,
+            createQuizUseCase: dependencies.createQuizUseCase,
+            importQuizFromJsonUseCase: dependencies.importQuizFromJsonUseCase,
+            createQuizFromQuestionBankUseCase: dependencies.createQuizFromQuestionBankUseCase,
+            renameQuizUseCase: dependencies.renameQuizUseCase,
+            duplicateQuizUseCase: dependencies.duplicateQuizUseCase,
+            generateVariantsUseCase: dependencies.generateVariantsUseCase,
+            exportVariantUseCase: dependencies.exportVariantUseCase,
+            exportAllVariantsUseCase: dependencies.exportAllVariantsUseCase,
+            exportVariantToGoogleFormsUseCase: dependencies.exportVariantToGoogleFormsUseCase,
+          )..loadData(),
+        ),
+      ],
+      child: BlocBuilder<AppSettingsCubit, AppSettingsState>(
+        builder: (context, appConfig) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Quizzer Maker',
+          locale: appConfig.locale,
+          supportedLocales: const [Locale('en'), Locale('ar')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          theme: buildLightTheme(),
+          darkTheme: buildDarkTheme(),
+          themeMode: appConfig.themeMode,
+          home: const QuizMakerHome(),
+        ),
       ),
     );
   }
@@ -65,28 +77,50 @@ class QuizMakerHome extends StatefulWidget {
 }
 
 class _QuizMakerHomeState extends State<QuizMakerHome> {
-  static const _tutorialSeenKey = 'quizzer_arabic_tutorial_seen_v1';
   static const _githubUrl = 'https://github.com/Mohakerdi';
   static const _linkedinUrl = 'https://www.linkedin.com/in/mohammad-kerdi-733126364';
   static const _telegramUrl = 'https://t.me/MOHA_KRDI';
+  static const _importQuizTemplateJson = '''
+{
+  "title": "My Imported Quiz",
+  "createdAt": "2026-04-16T20:00:00Z",
+  "updatedAt": "2026-04-16T20:00:00Z",
+  "questions": [
+    {
+      "text": "Solve the equation",
+      "math": "\\\\frac{1}{2}x + 3 = 7",
+      "imageRef": "",
+      "topic": "Algebra",
+      "difficulty": "Medium",
+      "gradeLevel": "8",
+      "unitOfStudy": "Linear Equations",
+      "curriculum": "Math",
+      "correctOptionId": "opt-1",
+      "options": [
+        {
+          "id": "opt-1",
+          "text": "x = 8",
+          "math": "",
+          "isCorrect": true
+        },
+        {
+          "id": "opt-2",
+          "text": "x = 4",
+          "math": "",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}
+''';
   final GlobalKey _languageButtonKey = GlobalKey();
   final GlobalKey _newQuizFabKey = GlobalKey();
   final GlobalKey _questionBankTabKey = GlobalKey();
-  bool _checkedTutorial = false;
 
   Future<void> _maybeShowArabicTutorial() async {
-    if (_checkedTutorial) {
-      return;
-    }
-    _checkedTutorial = true;
-    final prefs = await SharedPreferences.getInstance();
-    final alreadySeen = prefs.getBool(_tutorialSeenKey) ?? false;
-    if (alreadySeen || !mounted) {
-      return;
-    }
-
-    await prefs.setBool(_tutorialSeenKey, true);
-    if (!mounted) {
+    final shouldShow = await context.read<AppSettingsCubit>().showArabicTutorialIfNeeded();
+    if (!shouldShow || !mounted) {
       return;
     }
 
@@ -207,7 +241,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     if (title == null || title.trim().isEmpty || !context.mounted) {
       return;
     }
-    await context.read<QuizMakerCubit>().createQuiz(title.trim());
+    await context.read<QuizSessionCubit>().createQuiz(title.trim());
   }
 
   Future<void> _renameQuiz(BuildContext context, QuizModel quiz) async {
@@ -221,7 +255,112 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
       return;
     }
 
-    await context.read<QuizMakerCubit>().renameQuiz(quiz: quiz, title: title.trim());
+    await context.read<QuizSessionCubit>().renameQuiz(quiz: quiz, title: title.trim());
+  }
+
+  Future<void> _importQuizFromJson(BuildContext context) async {
+    final jsonController = TextEditingController();
+    final jsonToImport = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Expanded(child: Text(AppStrings.tr(context, 'importQuiz'))),
+            IconButton(
+              tooltip: AppStrings.tr(context, 'importTemplateInfoTooltip'),
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => _showImportTemplateDialog(context),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 560,
+          child: TextField(
+            controller: jsonController,
+            minLines: 10,
+            maxLines: 18,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: AppStrings.tr(context, 'importQuizJsonLabel'),
+              hintText: AppStrings.tr(context, 'importQuizJsonHint'),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppStrings.tr(context, 'cancel')),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop(jsonController.text.trim());
+            },
+            icon: const Icon(Icons.upload_file),
+            label: Text(AppStrings.tr(context, 'import')),
+          ),
+        ],
+      ),
+    );
+    jsonController.dispose();
+
+    if (jsonToImport == null || jsonToImport.isEmpty || !context.mounted) {
+      return;
+    }
+
+    await context.read<QuizSessionCubit>().importQuizFromJson(
+          rawJson: jsonToImport,
+          isArabic: AppStrings.isArabic(context),
+        );
+  }
+
+  Future<void> _showImportTemplateDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'importTemplateTitle')),
+        content: SizedBox(
+          width: 640,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(AppStrings.tr(context, 'importTemplateDescription')),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                constraints: const BoxConstraints(maxHeight: 320),
+                child: SingleChildScrollView(
+                  child: SelectableText(_importQuizTemplateJson),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppStrings.tr(context, 'close')),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(const ClipboardData(text: _importQuizTemplateJson));
+              if (!mounted) {
+                return;
+              }
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'importTemplateCopied'))));
+            },
+            icon: const Icon(Icons.copy),
+            label: Text(AppStrings.tr(context, 'copyTemplate')),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _generateVariants(BuildContext context, QuizModel quiz) async {
@@ -237,15 +376,11 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     }
 
     final count = int.tryParse(countText);
-    if (count == null || count < 1) {
-      context.read<QuizMakerCubit>().clearMessage();
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'invalidVariantsCount'))));
-      return;
-    }
-
-    await context.read<QuizMakerCubit>().generateVariants(quiz: quiz, count: count);
+    await context.read<QuizSessionCubit>().generateVariants(
+          quiz: quiz,
+          count: count,
+          isArabic: AppStrings.isArabic(context),
+        );
   }
 
   Future<void> _previewVariant(BuildContext context, GeneratedVariant variant) async {
@@ -269,9 +404,10 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     if (title == null || title.trim().isEmpty || !context.mounted) {
       return;
     }
-    await context.read<QuizMakerCubit>().createQuizFromQuestionBank(
+    await context.read<QuizSessionCubit>().createQuizFromQuestionBank(
           title: title.trim(),
           questions: selectedQuestions,
+          isArabic: AppStrings.isArabic(context),
         );
   }
 
@@ -326,16 +462,14 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<QuizMakerCubit, QuizMakerState>(
+    return BlocConsumer<QuizSessionCubit, QuizSessionState>(
       listenWhen: (previous, current) => previous.message != current.message,
       buildWhen: (previous, current) =>
           previous.isLoading != current.isLoading ||
           previous.quizzes != current.quizzes ||
           previous.selectedQuiz != current.selectedQuiz ||
           previous.generatedVariants != current.generatedVariants ||
-          previous.questionBank != current.questionBank ||
-          previous.locale != current.locale ||
-          previous.themeMode != current.themeMode,
+          previous.questionBank != current.questionBank,
       listener: (context, state) {
         final message = state.message;
         if (message == null || message.isEmpty) {
@@ -346,7 +480,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
           ..clearSnackBars()
           ..showSnackBar(SnackBar(content: Text(message)));
 
-        context.read<QuizMakerCubit>().clearMessage();
+        context.read<QuizSessionCubit>().clearMessage();
       },
       builder: (context, state) {
         if (state.isLoading) {
@@ -388,9 +522,9 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
             ),
             actions: [
               _AppBarActions(
-                themeMode: state.themeMode,
-                onToggleTheme: () => context.read<QuizMakerCubit>().toggleThemeMode(),
-                onSetLocale: (locale) => context.read<QuizMakerCubit>().setLocale(locale),
+                themeMode: context.watch<AppSettingsCubit>().state.themeMode,
+                onToggleTheme: () => context.read<AppSettingsCubit>().toggleThemeMode(),
+                onSetLocale: (locale) => context.read<AppSettingsCubit>().setLocale(locale),
                 onShowInfo: () => _showInfoDialog(context),
                 languageButtonKey: _languageButtonKey,
               ),
@@ -399,6 +533,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
           body: _HomeWorkspace(
             state: state,
             onCreateQuiz: () => _createQuiz(context),
+            onImportQuiz: () => _importQuizFromJson(context),
             onRenameQuiz: (quiz) => _renameQuiz(context, quiz),
             onGenerateVariants: (quiz) => _generateVariants(context, quiz),
             onPreviewVariant: (variant) => _previewVariant(context, variant),
@@ -466,6 +601,7 @@ class _HomeWorkspace extends StatelessWidget {
   const _HomeWorkspace({
     required this.state,
     required this.onCreateQuiz,
+    required this.onImportQuiz,
     required this.onRenameQuiz,
     required this.onGenerateVariants,
     required this.onPreviewVariant,
@@ -473,8 +609,9 @@ class _HomeWorkspace extends StatelessWidget {
     required this.questionBankTabKey,
   });
 
-  final QuizMakerState state;
+  final QuizSessionState state;
   final Future<void> Function() onCreateQuiz;
+  final Future<void> Function() onImportQuiz;
   final Future<void> Function(QuizModel quiz) onRenameQuiz;
   final Future<void> Function(QuizModel quiz) onGenerateVariants;
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
@@ -491,10 +628,11 @@ class _HomeWorkspace extends StatelessWidget {
             quizzes: state.quizzes,
             selectedQuizId: state.selectedQuiz?.id,
             onCreateQuiz: onCreateQuiz,
-            onSelectQuiz: (quiz) => context.read<QuizMakerCubit>().selectQuiz(quiz),
+            onImportQuiz: onImportQuiz,
+            onSelectQuiz: (quiz) => context.read<QuizSessionCubit>().selectQuiz(quiz),
             onRenameQuiz: onRenameQuiz,
-            onDuplicateQuiz: (quiz) => context.read<QuizMakerCubit>().duplicateQuiz(quiz),
-            onDeleteQuiz: (quiz) => context.read<QuizMakerCubit>().deleteQuiz(quiz),
+            onDuplicateQuiz: (quiz) => context.read<QuizSessionCubit>().duplicateQuiz(quiz),
+            onDeleteQuiz: (quiz) => context.read<QuizSessionCubit>().deleteQuiz(quiz),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -517,14 +655,14 @@ class _HomeWorkspace extends StatelessWidget {
                           : QuizEditorScreen(
                               quiz: state.selectedQuiz!,
                               generatedVariants: state.generatedVariants,
-                              onQuizChanged: (quiz) => context.read<QuizMakerCubit>().saveQuiz(quiz),
-                              onQuizAutoSave: (quiz) => context.read<QuizMakerCubit>().saveQuizSilently(quiz),
+                              onQuizChanged: (quiz) => context.read<QuizSessionCubit>().saveQuiz(quiz),
+                              onQuizAutoSave: (quiz) => context.read<QuizSessionCubit>().saveQuizSilently(quiz),
                               onGenerateVariants: onGenerateVariants,
                               onPreviewVariant: onPreviewVariant,
                                onExportVariant:
                                    (variant, {teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
-                                   .read<QuizMakerCubit>()
-                                   .exportVariant(
+                                    .read<QuizSessionCubit>()
+                                    .exportVariant(
                                     variant,
                                     teacherName: teacherName,
                                     schoolName: schoolName,
@@ -533,26 +671,36 @@ class _HomeWorkspace extends StatelessWidget {
                                    ),
                                onExportAllVariants:
                                    ({teacherName, schoolName, exportLanguageCode, optionLabelStyle}) => context
-                                   .read<QuizMakerCubit>()
-                                   .exportAllVariants(
-                                     teacherName: teacherName,
-                                     schoolName: schoolName,
-                                     exportLanguageCode: exportLanguageCode,
-                                     optionLabelStyle: optionLabelStyle,
-                                   ),
-                               onExportGoogleForms:
-                                   (variant) => context.read<QuizMakerCubit>().exportVariantToGoogleForms(variant),
-                               onAddQuestionToBank:
-                                   (question) => context.read<QuizMakerCubit>().addQuestionToQuestionBank(question),
-                             ),
-                       QuestionBankScreen(
-                         questions: state.questionBank,
-                         onCreateQuizFromSelection: onCreateQuizFromBankSelection,
-                         onDuplicateQuestion:
-                             (question) => context.read<QuizMakerCubit>().duplicateQuestionInQuestionBank(question),
-                         onDeleteQuestion: (question) =>
-                             context.read<QuizMakerCubit>().deleteQuestionFromQuestionBank(question.id),
-                       ),
+                                    .read<QuizSessionCubit>()
+                                    .exportAllVariants(
+                                      isArabic: AppStrings.isArabic(context),
+                                      teacherName: teacherName,
+                                      schoolName: schoolName,
+                                      exportLanguageCode: exportLanguageCode,
+                                      optionLabelStyle: optionLabelStyle,
+                                    ),
+                                onExportGoogleForms:
+                                    (variant) => context.read<QuizSessionCubit>().exportVariantToGoogleForms(variant),
+                                onAddQuestionToBank:
+                                    (question) => context.read<QuizSessionCubit>().addQuestionToQuestionBank(
+                                          question: question,
+                                          isArabic: AppStrings.isArabic(context),
+                                        ),
+                              ),
+                        QuestionBankScreen(
+                          questions: state.questionBank,
+                          onCreateQuizFromSelection: onCreateQuizFromBankSelection,
+                          onDuplicateQuestion:
+                              (question) => context.read<QuizSessionCubit>().duplicateQuestionInQuestionBank(
+                                    question: question,
+                                    isArabic: AppStrings.isArabic(context),
+                                  ),
+                          onDeleteQuestion: (question) =>
+                              context.read<QuizSessionCubit>().deleteQuestionFromQuestionBank(
+                                bankQuestionId: question.id,
+                                isArabic: AppStrings.isArabic(context),
+                              ),
+                        ),
                     ],
                   ),
                 ),

@@ -461,34 +461,70 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: QuizQuestionsPanel(
-                    questions: _quiz.questions,
-                    onMoveQuestion: _moveQuestion,
-                    onEditQuestion: (index) {
-                      _editQuestion(existing: _quiz.questions[index], index: index);
-                    },
-                    onRemoveQuestion: _removeQuestion,
-                    onDuplicateQuestion: _duplicateQuestion,
-                    onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 2,
-                  child: GeneratedVariantsPanel(
-                    generatedVariants: widget.generatedVariants,
-                    onPreviewVariant: widget.onPreviewVariant,
-                    onExportVariant: _openDocxExportDialogAndExport,
-                    onExportAllVariants: _openDocxExportDialogAndExportAll,
-                    onExportGoogleForms: widget.onExportGoogleForms,
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compactLayout = constraints.maxWidth < 900;
+                if (compactLayout) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: QuizQuestionsPanel(
+                          questions: _quiz.questions,
+                          onMoveQuestion: _moveQuestion,
+                          onEditQuestion: (index) {
+                            _editQuestion(existing: _quiz.questions[index], index: index);
+                          },
+                          onRemoveQuestion: _removeQuestion,
+                          onDuplicateQuestion: _duplicateQuestion,
+                          onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        flex: 2,
+                        child: GeneratedVariantsPanel(
+                          generatedVariants: widget.generatedVariants,
+                          onPreviewVariant: widget.onPreviewVariant,
+                          onExportVariant: _openDocxExportDialogAndExport,
+                          onExportAllVariants: _openDocxExportDialogAndExportAll,
+                          onExportGoogleForms: widget.onExportGoogleForms,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: QuizQuestionsPanel(
+                        questions: _quiz.questions,
+                        onMoveQuestion: _moveQuestion,
+                        onEditQuestion: (index) {
+                          _editQuestion(existing: _quiz.questions[index], index: index);
+                        },
+                        onRemoveQuestion: _removeQuestion,
+                        onDuplicateQuestion: _duplicateQuestion,
+                        onAddQuestionToBank: (index) => widget.onAddQuestionToBank(_quiz.questions[index]),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: GeneratedVariantsPanel(
+                        generatedVariants: widget.generatedVariants,
+                        onPreviewVariant: widget.onPreviewVariant,
+                        onExportVariant: _openDocxExportDialogAndExport,
+                        onExportAllVariants: _openDocxExportDialogAndExportAll,
+                        onExportGoogleForms: widget.onExportGoogleForms,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],

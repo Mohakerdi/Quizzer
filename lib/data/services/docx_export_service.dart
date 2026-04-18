@@ -5,11 +5,13 @@ import 'dart:typed_data';
 import 'package:adv_basics/data/models/generated_variant.dart';
 import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/core/utils/friendly_math_formatter.dart';
+import 'package:adv_basics/core/utils/latex_detection.dart';
+import 'package:adv_basics/features/quiz_maker/domain/contracts/variant_export_service_contract.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
-class DocxExportService {
+class DocxExportService implements VariantExportServiceContract {
   const DocxExportService();
   static const int _pageWidthTwips = 11906;
   static const int _pageHeightTwips = 16838;
@@ -21,6 +23,7 @@ class DocxExportService {
   // Kept 2 twips wider so all 4 columns sum exactly to _tableTotalWidthTwips.
   static const int _fourthColumnWidthTwips = 3170;
 
+  @override
   Future<String> exportQuizPaper({
     required QuizModel quiz,
     required GeneratedVariant variant,
@@ -54,6 +57,7 @@ class DocxExportService {
     );
   }
 
+  @override
   Future<String> exportSolutions({
     required QuizModel quiz,
     required GeneratedVariant variant,
@@ -942,7 +946,7 @@ class DocxExportService {
     required String text,
     required String math,
   }) {
-    final normalizedText = text.trim();
+    final normalizedText = _normalizeTextForWordMath(text);
     final normalizedMath = math.trim();
     if (normalizedMath.isEmpty) {
       return normalizedText;
@@ -952,6 +956,10 @@ class DocxExportService {
       return inlineMath;
     }
     return '$normalizedText  ($inlineMath)';
+  }
+
+  String _normalizeTextForWordMath(String text) {
+    return LatexDetection.wrapLatexLikeTextWithInlineDelimiters(text);
   }
 
   String _normalizeTextForExport(String text) {
