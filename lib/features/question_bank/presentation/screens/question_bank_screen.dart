@@ -23,6 +23,7 @@ class QuestionBankScreen extends StatefulWidget {
 }
 
 class _QuestionBankScreenState extends State<QuestionBankScreen> {
+  static const double _compactFilterLayoutBreakpoint = 700;
   final _gradeController = TextEditingController();
   final _unitController = TextEditingController();
   final _curriculumController = TextEditingController();
@@ -67,7 +68,7 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
           const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
-              final compactLayout = constraints.maxWidth < 700;
+              final compactLayout = constraints.maxWidth < _compactFilterLayoutBreakpoint;
               if (compactLayout) {
                 return Column(
                   children: [

@@ -622,12 +622,13 @@ class _HomeWorkspace extends StatelessWidget {
   final Future<void> Function(GeneratedVariant variant) onPreviewVariant;
   final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromBankSelection;
   final GlobalKey questionBankTabKey;
+  static const double _compactLayoutBreakpoint = 900;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compactLayout = constraints.maxWidth < 900;
+        final compactLayout = constraints.maxWidth < _compactLayoutBreakpoint;
         if (compactLayout) {
           return DefaultTabController(
             length: 3,
