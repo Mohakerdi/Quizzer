@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -79,6 +80,40 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
   static const _githubUrl = 'https://github.com/Mohakerdi';
   static const _linkedinUrl = 'https://www.linkedin.com/in/mohammad-kerdi-733126364';
   static const _telegramUrl = 'https://t.me/MOHA_KRDI';
+  static const _importQuizTemplateJson = '''
+{
+  "title": "My Imported Quiz",
+  "createdAt": "2026-04-16T20:00:00Z",
+  "updatedAt": "2026-04-16T20:00:00Z",
+  "questions": [
+    {
+      "text": "Solve the equation",
+      "math": "\\\\frac{1}{2}x + 3 = 7",
+      "imageRef": "",
+      "topic": "Algebra",
+      "difficulty": "Medium",
+      "gradeLevel": "8",
+      "unitOfStudy": "Linear Equations",
+      "curriculum": "Math",
+      "correctOptionId": "opt-1",
+      "options": [
+        {
+          "id": "opt-1",
+          "text": "x = 8",
+          "math": "",
+          "isCorrect": true
+        },
+        {
+          "id": "opt-2",
+          "text": "x = 4",
+          "math": "",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}
+''';
   final GlobalKey _languageButtonKey = GlobalKey();
   final GlobalKey _newQuizFabKey = GlobalKey();
   final GlobalKey _questionBankTabKey = GlobalKey();
@@ -228,7 +263,16 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     final jsonToImport = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppStrings.tr(context, 'importQuiz')),
+        title: Row(
+          children: [
+            Expanded(child: Text(AppStrings.tr(context, 'importQuiz'))),
+            IconButton(
+              tooltip: AppStrings.tr(context, 'importTemplateInfoTooltip'),
+              icon: const Icon(Icons.info_outline),
+              onPressed: () => _showImportTemplateDialog(context),
+            ),
+          ],
+        ),
         content: SizedBox(
           width: 560,
           child: TextField(
@@ -257,6 +301,7 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
         ],
       ),
     );
+    jsonController.dispose();
 
     if (jsonToImport == null || jsonToImport.isEmpty || !context.mounted) {
       return;
@@ -266,6 +311,56 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
           rawJson: jsonToImport,
           isArabic: AppStrings.isArabic(context),
         );
+  }
+
+  Future<void> _showImportTemplateDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppStrings.tr(context, 'importTemplateTitle')),
+        content: SizedBox(
+          width: 640,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(AppStrings.tr(context, 'importTemplateDescription')),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                constraints: const BoxConstraints(maxHeight: 320),
+                child: SingleChildScrollView(
+                  child: SelectableText(_importQuizTemplateJson),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppStrings.tr(context, 'close')),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(const ClipboardData(text: _importQuizTemplateJson));
+              if (!mounted) {
+                return;
+              }
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'importTemplateCopied'))));
+            },
+            icon: const Icon(Icons.copy),
+            label: Text(AppStrings.tr(context, 'copyTemplate')),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _generateVariants(BuildContext context, QuizModel quiz) async {
