@@ -10,12 +10,14 @@ class QuestionBankScreen extends StatefulWidget {
     required this.questions,
     required this.onCreateQuizFromSelection,
     required this.onDuplicateQuestion,
+    required this.onAddQuestionToActiveQuiz,
     required this.onDeleteQuestion,
   });
 
   final List<QuizQuestion> questions;
   final Future<void> Function(List<QuizQuestion> questions) onCreateQuizFromSelection;
   final Future<void> Function(QuizQuestion question) onDuplicateQuestion;
+  final Future<void> Function(QuizQuestion question) onAddQuestionToActiveQuiz;
   final Future<void> Function(QuizQuestion question) onDeleteQuestion;
 
   @override
@@ -218,6 +220,13 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
                                   icon: const Icon(Icons.copy),
                                   onPressed: () async {
                                     await widget.onDuplicateQuestion(question);
+                                  },
+                                ),
+                                IconButton(
+                                  tooltip: AppStrings.tr(context, 'addQuestionToActiveQuiz'),
+                                  icon: const Icon(Icons.playlist_add),
+                                  onPressed: () async {
+                                    await widget.onAddQuestionToActiveQuiz(question);
                                   },
                                 ),
                                 IconButton(
