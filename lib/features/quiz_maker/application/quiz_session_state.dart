@@ -9,6 +9,7 @@ class QuizSessionState extends Equatable {
     required this.quizzes,
     required this.selectedQuiz,
     required this.generatedVariants,
+    required this.variantCountsByQuizId,
     required this.questionBank,
     required this.isLoading,
     this.message,
@@ -17,6 +18,7 @@ class QuizSessionState extends Equatable {
   final List<QuizModel> quizzes;
   final QuizModel? selectedQuiz;
   final List<GeneratedVariant> generatedVariants;
+  final Map<String, int> variantCountsByQuizId;
   final List<QuizQuestion> questionBank;
   final bool isLoading;
   final String? message;
@@ -25,6 +27,7 @@ class QuizSessionState extends Equatable {
       : quizzes = const [],
         selectedQuiz = null,
         generatedVariants = const [],
+        variantCountsByQuizId = const {},
         questionBank = const [],
         isLoading = true,
         message = null;
@@ -34,6 +37,7 @@ class QuizSessionState extends Equatable {
     QuizModel? selectedQuiz,
     bool clearSelectedQuiz = false,
     List<GeneratedVariant>? generatedVariants,
+    Map<String, int>? variantCountsByQuizId,
     List<QuizQuestion>? questionBank,
     bool? isLoading,
     String? message,
@@ -43,6 +47,7 @@ class QuizSessionState extends Equatable {
       quizzes: quizzes ?? this.quizzes,
       selectedQuiz: clearSelectedQuiz ? null : (selectedQuiz ?? this.selectedQuiz),
       generatedVariants: generatedVariants ?? this.generatedVariants,
+      variantCountsByQuizId: variantCountsByQuizId ?? this.variantCountsByQuizId,
       questionBank: questionBank ?? this.questionBank,
       isLoading: isLoading ?? this.isLoading,
       message: clearMessage ? null : (message ?? this.message),
@@ -50,5 +55,16 @@ class QuizSessionState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [quizzes, selectedQuiz, generatedVariants, questionBank, isLoading, message];
+  List<Object?> get props => [
+        quizzes,
+        selectedQuiz,
+        generatedVariants,
+        variantCountsByQuizId.entries
+            .map((entry) => '${entry.key}:${entry.value}')
+            .toList()
+          ..sort(),
+        questionBank,
+        isLoading,
+        message,
+      ];
 }

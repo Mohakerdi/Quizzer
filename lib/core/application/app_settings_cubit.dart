@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,13 +14,28 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
 
   final AppSettingsLocalDataSource _localDataSource;
 
+  Future<void> loadSettings() async {
+    final locale = await _localDataSource.getLocale();
+    final themeMode = await _localDataSource.getThemeMode();
+    final arabicTutorialSeen = await _localDataSource.getArabicTutorialSeen();
+    emit(
+      state.copyWith(
+        locale: locale,
+        themeMode: themeMode,
+        arabicTutorialSeen: arabicTutorialSeen,
+      ),
+    );
+  }
+
   void setLocale(Locale locale) {
     emit(state.copyWith(locale: locale));
+    unawaited(_localDataSource.setLocale(locale));
   }
 
   void toggleThemeMode() {
     final next = state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     emit(state.copyWith(themeMode: next));
+    unawaited(_localDataSource.setThemeMode(next));
   }
 
   Future<bool> showArabicTutorialIfNeeded() async {

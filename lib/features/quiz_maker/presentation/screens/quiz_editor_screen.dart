@@ -343,6 +343,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _openDocxExportDialogAndExport(GeneratedVariant variant) async {
+    if (widget.generatedVariants.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'noVariantsToExport'))));
+      return;
+    }
     final exportDetails = await showDialog<_DocxExportDetails>(
       context: context,
       builder: (dialogContext) => const _DocxExportDetailsDialog(),
@@ -360,6 +366,12 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
   }
 
   Future<void> _openDocxExportDialogAndExportAll() async {
+    if (widget.generatedVariants.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'noVariantsToExport'))));
+      return;
+    }
     final exportDetails = await showDialog<_DocxExportDetails>(
       context: context,
       builder: (dialogContext) => const _DocxExportDetailsDialog(),

@@ -31,7 +31,7 @@ class QuizMakerApp extends StatelessWidget {
         BlocProvider(
           create: (_) => AppSettingsCubit(
             localDataSource: dependencies.appSettingsLocalDataSource,
-          ),
+          )..loadSettings(),
         ),
         BlocProvider(
           create: (_) => QuizSessionCubit(
@@ -378,11 +378,43 @@ class _QuizMakerHomeState extends State<QuizMakerHome> {
     }
 
     final count = int.tryParse(countText);
+    if (count == null || count < 1 || count > 20) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(AppStrings.tr(context, 'variantCountRangeError'))));
+      return;
+    }
+
     await context.read<QuizSessionCubit>().generateVariants(
           quiz: quiz,
           count: count,
           isArabic: AppStrings.isArabic(context),
         );
+  }
+
+  Future<bool> _confirmDestructiveAction({
+    required BuildContext context,
+    required String title,
+    required String body,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.tr(context, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.tr(context, 'delete')),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   Future<void> _previewVariant(BuildContext context, GeneratedVariant variant) async {
@@ -702,7 +734,18 @@ class _HomeWorkspace extends StatelessWidget {
       onSelectQuiz: (quiz) => context.read<QuizSessionCubit>().selectQuiz(quiz),
       onRenameQuiz: onRenameQuiz,
       onDuplicateQuiz: (quiz) => context.read<QuizSessionCubit>().duplicateQuiz(quiz),
-      onDeleteQuiz: (quiz) => context.read<QuizSessionCubit>().deleteQuiz(quiz),
+      onDeleteQuiz: (quiz) async {
+        final confirmed = await _confirmDestructiveAction(
+          context: context,
+          title: AppStrings.tr(context, 'confirmDeleteQuizTitle'),
+          body: AppStrings.tr(context, 'confirmDeleteQuizMessage'),
+        );
+        if (!confirmed || !context.mounted) {
+          return;
+        }
+        await context.read<QuizSessionCubit>().deleteQuiz(quiz);
+      },
+      variantCountsByQuizId: state.variantCountsByQuizId,
     );
   }
 
@@ -721,6 +764,7 @@ class _HomeWorkspace extends StatelessWidget {
           .read<QuizSessionCubit>()
           .exportVariant(
             variant,
+            isArabic: AppStrings.isArabic(context),
             teacherName: teacherName,
             schoolName: schoolName,
             exportLanguageCode: exportLanguageCode,
@@ -735,7 +779,10 @@ class _HomeWorkspace extends StatelessWidget {
             exportLanguageCode: exportLanguageCode,
             optionLabelStyle: optionLabelStyle,
           ),
-      onExportGoogleForms: (variant) => context.read<QuizSessionCubit>().exportVariantToGoogleForms(variant),
+      onExportGoogleForms: (variant) => context.read<QuizSessionCubit>().exportVariantToGoogleForms(
+            variant,
+            isArabic: AppStrings.isArabic(context),
+          ),
       onAddQuestionToBank: (question) => context.read<QuizSessionCubit>().addQuestionToQuestionBank(
             question: question,
             isArabic: AppStrings.isArabic(context),
@@ -751,8 +798,22 @@ class _HomeWorkspace extends StatelessWidget {
             question: question,
             isArabic: AppStrings.isArabic(context),
           ),
-      onDeleteQuestion: (question) => context.read<QuizSessionCubit>().deleteQuestionFromQuestionBank(
-            bankQuestionId: question.id,
+      onDeleteQuestion: (question) async {
+        final confirmed = await _confirmDestructiveAction(
+          context: context,
+          title: AppStrings.tr(context, 'confirmDeleteBankQuestionTitle'),
+          body: AppStrings.tr(context, 'confirmDeleteBankQuestionMessage'),
+        );
+        if (!confirmed || !context.mounted) {
+          return;
+        }
+        await context.read<QuizSessionCubit>().deleteQuestionFromQuestionBank(
+              bankQuestionId: question.id,
+              isArabic: AppStrings.isArabic(context),
+            );
+      },
+      onAddQuestionToActiveQuiz: (question) => context.read<QuizSessionCubit>().addQuestionFromQuestionBankToSelectedQuiz(
+            bankQuestion: question,
             isArabic: AppStrings.isArabic(context),
           ),
     );

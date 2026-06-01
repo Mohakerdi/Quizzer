@@ -75,6 +75,13 @@ class QuizQuestionsPanel extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final question = questions[index];
+        String correctOptionText = AppStrings.tr(context, 'emptyOption');
+        for (final option in question.options) {
+          if (option.id == question.correctOptionId) {
+            correctOptionText = option.composedText;
+            break;
+          }
+        }
         return Card(
           elevation: 0,
           color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -102,6 +109,16 @@ class QuizQuestionsPanel extends StatelessWidget {
                       ? 'الخيارات: ${question.options.length}'
                       : 'Options: ${question.options.length}',
                   style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.tr(context, 'correctOption'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                MathOrText(
+                  correctOptionText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 Wrap(

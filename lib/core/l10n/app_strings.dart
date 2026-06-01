@@ -32,8 +32,16 @@ class AppStrings {
         return ar ? 'المحدد حاليًا' : 'Currently selected';
       case 'invalidVariantsCount':
         return ar ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.';
+      case 'variantCountRangeError':
+        return ar ? 'أدخل عدد نماذج من 1 إلى 20.' : 'Enter a variant count between 1 and 20.';
       case 'quizzes':
         return ar ? 'الاختبارات' : 'Quizzes';
+      case 'quizSortMenuTooltip':
+        return ar ? 'ترتيب قائمة الاختبارات' : 'Sort quiz list';
+      case 'sortMostRecentlyUpdated':
+        return ar ? 'الأحدث تحديثًا' : 'Most recently updated';
+      case 'sortTitle':
+        return ar ? 'العنوان (أ-ي)' : 'Title (A-Z)';
       case 'createQuizTooltip':
         return ar ? 'إنشاء اختبار' : 'Create quiz';
       case 'importQuizTooltip':
@@ -61,7 +69,9 @@ class AppStrings {
       case 'import':
         return ar ? 'استيراد' : 'Import';
       case 'noQuizzesYet':
-        return ar ? 'لا توجد اختبارات بعد.' : 'No quizzes yet.';
+        return ar ? 'لا توجد اختبارات بعد' : 'No quizzes yet';
+      case 'quizListEmptyDescription':
+        return ar ? 'أنشئ اختبارك الأول للبدء في إضافة الأسئلة وتوليد النماذج.' : 'Create your first quiz to start adding questions and generating variants.';
       case 'rename':
         return ar ? 'إعادة تسمية' : 'Rename';
       case 'duplicate':
@@ -78,6 +88,8 @@ class AppStrings {
         return ar ? 'النماذج المُولَّدة' : 'Generated Variants';
       case 'noVariantsYet':
         return ar ? 'لم يتم توليد نماذج بعد.' : 'No variants generated yet.';
+      case 'noVariantsToExport':
+        return ar ? 'لا توجد نماذج للتصدير.' : 'No variants to export.';
       case 'preview':
         return ar ? 'معاينة' : 'Preview';
       case 'exportDocx':
@@ -146,6 +158,8 @@ class AppStrings {
         return ar ? 'إزالة' : 'Remove';
       case 'options':
         return ar ? 'الخيارات' : 'Options';
+      case 'correctOption':
+        return ar ? 'الإجابة الصحيحة:' : 'Correct option:';
       case 'emptyOption':
         return ar ? '(خيار فارغ)' : '(empty option)';
       case 'saveQuestion':
@@ -214,8 +228,18 @@ class AppStrings {
         return ar ? 'إضافة إلى بنك الأسئلة' : 'Add to question bank';
       case 'deleteQuestionFromBank':
         return ar ? 'حذف من بنك الأسئلة' : 'Delete from question bank';
+      case 'addQuestionToActiveQuiz':
+        return ar ? 'إضافة إلى الاختبار الحالي' : 'Add to active quiz';
       case 'duplicateQuestion':
         return ar ? 'نسخ السؤال' : 'Duplicate question';
+      case 'confirmDeleteQuizTitle':
+        return ar ? 'تأكيد حذف الاختبار' : 'Confirm quiz deletion';
+      case 'confirmDeleteQuizMessage':
+        return ar ? 'هل أنت متأكد من حذف هذا الاختبار؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this quiz? This action cannot be undone.';
+      case 'confirmDeleteBankQuestionTitle':
+        return ar ? 'تأكيد حذف السؤال' : 'Confirm question deletion';
+      case 'confirmDeleteBankQuestionMessage':
+        return ar ? 'هل أنت متأكد من حذف هذا السؤال من بنك الأسئلة؟' : 'Are you sure you want to delete this question from the question bank?';
       case 'tutorialSkip':
         return ar ? 'تخطي' : 'Skip';
       case 'tutorialWelcomeTitle':

@@ -5,6 +5,7 @@ import 'package:adv_basics/data/models/quiz_model.dart';
 import 'package:adv_basics/data/models/quiz_question.dart';
 import 'package:adv_basics/features/quiz_maker/application/quiz_session_state.dart';
 import 'package:adv_basics/features/quiz_maker/domain/contracts/quiz_repository_contract.dart';
+import 'package:adv_basics/features/quiz_maker/domain/services/editor_validator.dart';
 import 'package:adv_basics/features/quiz_maker/domain/services/question_clone_service.dart';
 import 'package:adv_basics/features/quiz_maker/domain/usecases/quiz_session_use_cases.dart';
 
@@ -42,6 +43,16 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
   final ExportVariantUseCase _exportVariantUseCase;
   final ExportAllVariantsUseCase _exportAllVariantsUseCase;
   final ExportVariantToGoogleFormsUseCase _exportVariantToGoogleFormsUseCase;
+  final EditorValidator _editorValidator = const EditorValidator();
+
+  Future<Map<String, int>> _loadVariantCountsForQuizzes(List<QuizModel> quizzes) async {
+    final entries = <String, int>{};
+    for (final quiz in quizzes) {
+      final variants = await _repository.loadVariantsForQuiz(quiz.id);
+      entries[quiz.id] = variants.length;
+    }
+    return entries;
+  }
 
   Future<void> loadData() async {
     emit(state.copyWith(isLoading: true, clearMessage: true));
@@ -50,6 +61,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     final questionBank = await _repository.loadQuestionBank();
     final selected = quizzes.isNotEmpty ? quizzes.first : null;
     final variants = selected == null ? <GeneratedVariant>[] : await _repository.loadVariantsForQuiz(selected.id);
+    final variantCountsByQuizId = await _loadVariantCountsForQuizzes(quizzes);
 
     emit(
       state.copyWith(
@@ -57,6 +69,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
         questionBank: questionBank,
         selectedQuiz: selected,
         generatedVariants: variants,
+        variantCountsByQuizId: variantCountsByQuizId,
         isLoading: false,
       ),
     );
@@ -73,6 +86,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
         quizzes: [...state.quizzes, created],
         selectedQuiz: created,
         generatedVariants: const [],
+        variantCountsByQuizId: {
+          ...state.variantCountsByQuizId,
+          created.id: 0,
+        },
         message: 'Quiz created.',
       ),
     );
@@ -99,6 +116,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
           quizzes: [...state.quizzes, imported],
           selectedQuiz: imported,
           generatedVariants: const [],
+          variantCountsByQuizId: {
+            ...state.variantCountsByQuizId,
+            imported.id: 0,
+          },
           message: isArabic ? 'تم استيراد الاختبار بنجاح.' : 'Quiz imported successfully.',
         ),
       );
@@ -137,6 +158,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
         quizzes: [...state.quizzes, created],
         selectedQuiz: created,
         generatedVariants: const [],
+        variantCountsByQuizId: {
+          ...state.variantCountsByQuizId,
+          created.id: 0,
+        },
         message: isArabic ? 'تم إنشاء اختبار من بنك الأسئلة.' : 'Quiz created from question bank.',
       ),
     );
@@ -165,6 +190,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     emit(
       state.copyWith(
         quizzes: [...state.quizzes, duplicated],
+        variantCountsByQuizId: {
+          ...state.variantCountsByQuizId,
+          duplicated.id: 0,
+        },
         message: 'Quiz duplicated.',
       ),
     );
@@ -177,12 +206,17 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     final remaining = state.quizzes.where((q) => q.id != quiz.id).toList();
     final selected = state.selectedQuiz?.id == quiz.id ? (remaining.isNotEmpty ? remaining.first : null) : state.selectedQuiz;
     final variants = selected == null ? <GeneratedVariant>[] : await _repository.loadVariantsForQuiz(selected.id);
+    final variantCountsByQuizId = Map<String, int>.from(state.variantCountsByQuizId)..remove(quiz.id);
+    if (selected != null) {
+      variantCountsByQuizId[selected.id] = variants.length;
+    }
 
     emit(
       state.copyWith(
         quizzes: remaining,
         selectedQuiz: selected,
         generatedVariants: variants,
+        variantCountsByQuizId: variantCountsByQuizId,
         message: 'Quiz deleted.',
       ),
     );
@@ -236,6 +270,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
       state.copyWith(
         selectedQuiz: quiz,
         generatedVariants: variants,
+        variantCountsByQuizId: {
+          ...state.variantCountsByQuizId,
+          quiz.id: variants.length,
+        },
       ),
     );
   }
@@ -267,10 +305,22 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     required int? count,
     required bool isArabic,
   }) async {
-    if (count == null || count < 1) {
+    final errors = _editorValidator.validate(quiz);
+    if (errors.isNotEmpty) {
       emit(
         state.copyWith(
-          message: isArabic ? 'يرجى إدخال عدد صحيح للنماذج.' : 'Please enter a valid number of variants.',
+          message: isArabic
+              ? 'لا يمكن توليد النماذج قبل تصحيح الأخطاء: ${errors.first}'
+              : 'Cannot generate variants until validation errors are fixed: ${errors.first}',
+        ),
+      );
+      return;
+    }
+
+    if (count == null || count < 1 || count > 20) {
+      emit(
+        state.copyWith(
+          message: isArabic ? 'أدخل عدد نماذج من 1 إلى 20.' : 'Enter a variant count between 1 and 20.',
         ),
       );
       return;
@@ -282,6 +332,10 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     emit(
       state.copyWith(
         generatedVariants: variants,
+        variantCountsByQuizId: {
+          ...state.variantCountsByQuizId,
+          quiz.id: variants.length,
+        },
         message: isArabic ? 'تم توليد ${variants.length} نموذج(نماذج).' : 'Generated ${variants.length} variant(s).',
       ),
     );
@@ -289,6 +343,7 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
 
   Future<void> exportVariant(
     GeneratedVariant variant, {
+    required bool isArabic,
     String? teacherName,
     String? schoolName,
     String? exportLanguageCode,
@@ -296,6 +351,14 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
   }) async {
     final quiz = state.selectedQuiz;
     if (quiz == null) {
+      return;
+    }
+    if (state.generatedVariants.isEmpty) {
+      emit(
+        state.copyWith(
+          message: isArabic ? 'لا توجد نماذج للتصدير.' : 'No variants to export.',
+        ),
+      );
       return;
     }
     final paths = await _exportVariantUseCase(
@@ -355,9 +418,20 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     );
   }
 
-  Future<void> exportVariantToGoogleForms(GeneratedVariant variant) async {
+  Future<void> exportVariantToGoogleForms(
+    GeneratedVariant variant, {
+    required bool isArabic,
+  }) async {
     final quiz = state.selectedQuiz;
     if (quiz == null) {
+      return;
+    }
+    if (state.generatedVariants.isEmpty) {
+      emit(
+        state.copyWith(
+          message: isArabic ? 'لا توجد نماذج للتصدير.' : 'No variants to export.',
+        ),
+      );
       return;
     }
 
@@ -365,6 +439,37 @@ class QuizSessionCubit extends Cubit<QuizSessionState> {
     emit(
       state.copyWith(
         message: 'Google Forms export files created:\n${result.scriptPath}\n${result.jsonPath}',
+      ),
+    );
+  }
+
+  Future<void> addQuestionFromQuestionBankToSelectedQuiz({
+    required QuizQuestion bankQuestion,
+    required bool isArabic,
+  }) async {
+    final selectedQuiz = state.selectedQuiz;
+    if (selectedQuiz == null) {
+      emit(
+        state.copyWith(
+          message: isArabic
+              ? 'اختر اختبارًا أولًا لإضافة السؤال إليه.'
+              : 'Select a quiz first to add this question.',
+        ),
+      );
+      return;
+    }
+
+    final cloned = QuestionCloneService.cloneForNewQuiz(bankQuestion);
+    final updatedQuiz = selectedQuiz.copyWith(
+      questions: [...selectedQuiz.questions, cloned],
+      updatedAt: DateTime.now(),
+    );
+    final saved = await _repository.upsertQuiz(updatedQuiz);
+    emit(
+      state.copyWith(
+        quizzes: state.quizzes.map((q) => q.id == saved.id ? saved : q).toList(),
+        selectedQuiz: saved,
+        message: isArabic ? 'تمت إضافة السؤال إلى الاختبار الحالي.' : 'Question added to current quiz.',
       ),
     );
   }
